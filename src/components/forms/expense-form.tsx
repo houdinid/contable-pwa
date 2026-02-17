@@ -15,6 +15,7 @@ interface ExpenseFormProps {
     isEditing?: boolean;
 }
 
+// Force rebuild
 export function ExpenseForm({ initialData, onSubmit, isEditing = false }: ExpenseFormProps) {
     const router = useRouter();
     const { contacts, expenseCategories, addContact, businessIdentities, expenses } = useData();
