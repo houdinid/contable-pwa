@@ -1,14 +1,9 @@
 import { useState, useEffect } from "react";
 
-interface MoneyInputProps {
+interface MoneyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
     value?: number | string;
     onValueChange: (value: number) => void;
-    placeholder?: string;
-    className?: string;
     currencySymbol?: string;
-    disabled?: boolean;
-    required?: boolean;
-    min?: number;
 }
 
 export function MoneyInput({
@@ -19,22 +14,24 @@ export function MoneyInput({
     currencySymbol = "$",
     disabled = false,
     required = false,
-    min
+    min,
+    ...props
 }: MoneyInputProps) {
     const [displayValue, setDisplayValue] = useState("");
 
-    // Format number to currency string (e.g. 10000 -> 10.000)
-    const formatValue = (val: number | string | undefined): string => {
-        if (val === undefined || val === null || val === "") return "";
+    // Check if value behaves like a number for initial state
+    const safeValue = value === undefined || value === null ? "" : value;
 
-        // Convert to string and handle decimals
-        // Expect input val to be a standard number (10000.50)
+    // Format number to currency string (e.g. 10000 -> 10.000)
+    const formatValue = (val: number | string): string => {
+        if (val === "") return "";
+
         const parts = val.toString().split(".");
         const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
         let formatted = integerPart;
         if (parts.length > 1) {
-            formatted += "," + parts[1]; // Use comma for decimal separator in display
+            formatted += "," + parts[1];
         }
         return formatted;
     };
@@ -42,55 +39,39 @@ export function MoneyInput({
     // Sync external value to display value
     useEffect(() => {
         if (value !== undefined && value !== null) {
-            // Avoid re-formatting if the display value matches the number (handling typing float)
-            // But here we just sync. The issue of cursor jumping might happen if we natively accept formatted input.
-            // Let's rely on the fact that parent passes the NUMBER.
-
-            // We need to be careful not to override "10.000," while user is typing.
-            // We can check if the current displayValue parses to the same number.
-
             const currentNumeric = parseCurrency(displayValue);
+            // Only update if there is a real difference to avoid cursor jumps
             if (currentNumeric !== Number(value)) {
                 setDisplayValue(formatValue(value));
             }
         } else {
-            setDisplayValue("");
+            if (displayValue !== "") setDisplayValue("");
         }
-    }, [value]);
+    }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const parseCurrency = (val: string): number => {
-        // Remove dots (thousands) and replace comma with dot (decimal)
         const cleanVal = val.replace(/\./g, "").replace(",", ".");
         return cleanVal === "" ? 0 : Number(cleanVal);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let input = e.target.value;
-
-        // Allow only numbers and comma
-        // Remove anything that is not digit or comma
         let cleanInput = input.replace(/[^0-9,]/g, "");
 
-        // Prevent multiple commas
         const commaCount = (cleanInput.match(/,/g) || []).length;
         if (commaCount > 1) {
-            // Keep only first comma
             const parts = cleanInput.split(",");
             cleanInput = parts[0] + "," + parts.slice(1).join("");
         }
 
-        // Format integer part
         const parts = cleanInput.split(",");
-        const integerPart = parts[0].replace(/\./g, ""); // strip existing dots to re-format
-
-        // Re-add dots to integer part
+        const integerPart = parts[0].replace(/\./g, "");
         const formattedInt = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
         let newDisplayValue = formattedInt;
         if (parts.length > 1) {
             newDisplayValue += "," + parts[1];
         } else if (input.endsWith(",")) {
-            // User just typed comma
             newDisplayValue += ",";
         }
 
@@ -106,6 +87,7 @@ export function MoneyInput({
                 </div>
             )}
             <input
+                {...props}
                 type="text"
                 inputMode="decimal"
                 value={displayValue}
