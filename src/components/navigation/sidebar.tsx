@@ -14,7 +14,8 @@ import {
     Package,
     Wifi,
     Wallet,
-    FileText
+    FileText,
+    Camera
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -28,6 +29,7 @@ const menuItems = [
     { name: "Gastos", href: "/dashboard/expenses", icon: Receipt },
     { name: "Tesorería", href: "/dashboard/treasury", icon: Wallet },
     { name: "Redes WiFi", href: "/dashboard/wifi", icon: Wifi },
+    { name: "CCTV", href: "/dashboard/cctv", icon: Camera },
     { name: "Reportes", href: "/dashboard/reports", icon: BarChart3 },
     { name: "Configuración", href: "/dashboard/settings", icon: Settings },
 ];

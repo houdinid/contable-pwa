@@ -252,3 +252,39 @@ create policy "Allow all access" on service_orders for all using (true) with che
 
 alter table service_order_items enable row level security;
 create policy "Allow all access" on service_order_items for all using (true) with check (true);
+
+-- CCTV Systems
+create table if not exists cctv_systems (
+  id uuid primary key,
+  client_id uuid references contacts(id),
+  branch text,
+  brand text,
+  model text,
+  serial_number text,
+  channels numeric,
+  technology text,
+  disk_capacity text,
+  ip_address text,
+  http_port text,
+  rtsp_port text,
+  email text,
+  qr_code_url text, -- Storage path
+  photo_url text, -- Storage path
+  observations text,
+  created_at timestamptz default now()
+);
+
+-- CCTV Users (Credenciales del sistema CCTV)
+create table if not exists cctv_users (
+  id uuid primary key,
+  cctv_system_id uuid references cctv_systems(id) on delete cascade,
+  username text not null,
+  password text not null,
+  is_admin boolean default false
+);
+
+alter table cctv_systems enable row level security;
+create policy "Allow all access" on cctv_systems for all using (true) with check (true);
+
+alter table cctv_users enable row level security;
+create policy "Allow all access" on cctv_users for all using (true) with check (true);
