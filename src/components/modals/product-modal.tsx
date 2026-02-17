@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useData } from '@/context/data-context';
 import type { Product } from '@/types';
+import { MoneyInput } from "@/components/ui/money-input";
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -106,11 +107,17 @@ export default function ProductModal({ isOpen, onClose, productToEdit }: Product
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Stock Inicial</label>
-                            <input
-                                type="number"
-                                value={stock}
-                                onChange={(e) => setStock(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            <MoneyInput
+                                value={stock === '' ? 0 : Number(stock)}
+                                // stock state is string in this component, but MoneyInput expects number value for 'value' prop usually?
+                                // Wait, MoneyInputProps definition: value: number | string | undefined.
+                                // Let's check MoneyInput definition.
+                                // export interface MoneyInputProps { value?: number | string; ... }
+                                // Yes.
+                                // onValueChange gives number.
+                                onValueChange={(val) => setStock(val.toString())}
+                                currencySymbol=""
+                                placeholder="0"
                                 required
                             />
                         </div>
@@ -119,36 +126,31 @@ export default function ProductModal({ isOpen, onClose, productToEdit }: Product
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Precio Venta</label>
-                            <input
-                                type="number"
+                            <MoneyInput
                                 value={price}
-                                onChange={(e) => setPrice(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                onValueChange={(val) => setPrice(val.toString())}
                                 required
-                                min="0"
+                                placeholder="0.00"
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Costo Unitario</label>
-                            <input
-                                type="number"
+                            <MoneyInput
                                 value={cost}
-                                onChange={(e) => setCost(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                onValueChange={(val) => setCost(val.toString())}
                                 required
-                                min="0"
+                                placeholder="0.00"
                             />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Stock Mínimo (Alerta)</label>
-                        <input
-                            type="number"
+                        <MoneyInput
                             value={minStock}
-                            onChange={(e) => setMinStock(e.target.value)}
+                            onValueChange={(val) => setMinStock(val.toString())}
+                            currencySymbol=""
                             placeholder="Opcional"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                         />
                     </div>
 

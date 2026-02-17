@@ -61,8 +61,8 @@ export default function ExpensesPage() {
             </div>
 
             {/* Expenses List */}
-            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden transition-colors">
-                <table className="w-full text-left text-sm">
+            <div className="bg-card rounded-xl shadow-sm border border-border overflow-x-auto transition-colors">
+                <table className="w-full text-left text-sm min-w-[800px]">
                     <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 font-medium border-b border-border transition-colors">
                         <tr>
                             <th className="px-6 py-4">Descripción</th>

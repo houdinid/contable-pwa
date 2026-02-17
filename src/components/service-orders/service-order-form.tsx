@@ -6,6 +6,7 @@ import { useData } from "@/context/data-context";
 import { Plus, Trash, Save, ArrowLeft, Calendar, User, FileText } from "lucide-react";
 import type { ServiceOrder, ServiceOrderItem, ServiceOrderStatus } from "@/types";
 import { ContactFormModal } from "@/components/forms/contact-form-modal";
+import { MoneyInput } from "@/components/ui/money-input";
 
 interface ServiceOrderFormProps {
     initialData?: ServiceOrder;
@@ -386,27 +387,22 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
                                 <div className="flex w-full md:w-auto gap-2 items-start">
                                     <div className="flex-1 md:w-24">
                                         <label className="block text-xs font-medium text-muted-foreground mb-1 md:hidden">Cant.</label>
-                                        <input
-                                            type="number"
+                                        <MoneyInput
                                             value={item.quantity}
-                                            onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))}
-                                            min="1"
-                                            className="w-full px-4 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-[42px] transition-colors"
+                                            onValueChange={(val) => handleItemChange(item.id, 'quantity', val)}
+                                            currencySymbol=""
                                             placeholder="Cant."
-                                            required
+                                            className="h-[42px]"
+                                            min={1}
                                         />
                                     </div>
                                     <div className="flex-1 md:w-32">
                                         <label className="block text-xs font-medium text-muted-foreground mb-1 md:hidden">Precio</label>
-                                        <input
-                                            type="number"
+                                        <MoneyInput
                                             value={item.price}
-                                            onChange={(e) => handleItemChange(item.id, 'price', Number(e.target.value))}
-                                            min="0"
-                                            step="0.01"
-                                            className="w-full px-4 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-[42px] transition-colors"
+                                            onValueChange={(val) => handleItemChange(item.id, 'price', val)}
                                             placeholder="Precio"
-                                            required
+                                            className="h-[42px]"
                                         />
                                     </div>
                                     <div className="flex-1 md:w-32 py-2 text-right font-medium text-foreground flex flex-col justify-center h-[42px]">

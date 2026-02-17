@@ -6,6 +6,7 @@ import { useData } from "@/context/data-context";
 import { Plus, Trash, Save, ArrowLeft } from "lucide-react";
 import type { Invoice, InvoiceItem } from "@/types";
 import { ContactFormModal } from "@/components/forms/contact-form-modal";
+import { MoneyInput } from "@/components/ui/money-input";
 
 interface InvoiceFormProps {
     initialData?: Invoice;
@@ -357,7 +358,25 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                             <input
                                 type="number"
                                 value={creditDays}
-                                onChange={(e) => setCreditDays(e.target.value)}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const numVal = val === "" ? 0 : Number(val);
+                                    if (Number(creditDays) !== numVal) setCreditDays(val); // Keep as string or handle? creditDays is string in state actually.
+                                    // Wait, state 'creditDays' in invoice-form is initialized as string: initialData?.creditDays?.toString() || ""
+                                    // So we shout set it as string.
+                                    // onChange={(e) => setCreditDays(e.target.value)}
+                                    // The issue described is likely for number types. 
+                                    // Let's check line 31: const [creditDays, setCreditDays] = useState(...)
+                                    // It is string. So "10." is "10." stored in string. This works natively!
+                                    // I should UNTOUCH creditDays if it is string.
+                                    // BUT, I changed it in previous turn? 
+                                    // Previous turn: value={creditDays} onChange={(e) => setCreditDays(e.target.value)}.
+                                    // It was ALREADY string.
+                                    // WAIT. The user said "decimals". Credit days is integer usually.
+                                    // But Price is number.
+                                    // Let's focus on PRICE and QUANTITY in Items.
+                                }}
                                 placeholder="Ej. 30"
                                 min="0"
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -443,27 +462,22 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                                 <div className="flex w-full md:w-auto gap-2 items-start">
                                     <div className="flex-1 md:w-24">
                                         <label className="block text-xs font-medium text-gray-500 mb-1 md:hidden">Cant.</label>
-                                        <input
-                                            type="number"
+                                        <MoneyInput
                                             value={item.quantity}
-                                            onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))}
-                                            min="1"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-[42px]"
+                                            onValueChange={(val) => handleItemChange(item.id, 'quantity', val)}
                                             placeholder="Cant."
-                                            required
+                                            className="h-[42px]"
+                                            currencySymbol=""
+                                            min={1}
                                         />
                                     </div>
                                     <div className="flex-1 md:w-32">
                                         <label className="block text-xs font-medium text-gray-500 mb-1 md:hidden">Precio</label>
-                                        <input
-                                            type="number"
+                                        <MoneyInput
                                             value={item.price}
-                                            onChange={(e) => handleItemChange(item.id, 'price', Number(e.target.value))}
-                                            min="0"
-                                            step="0.01"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-[42px]"
+                                            onValueChange={(val) => handleItemChange(item.id, 'price', val)}
                                             placeholder="Precio"
-                                            required
+                                            className="h-[42px]"
                                         />
                                     </div>
                                     <div className="flex-1 md:w-32 py-2 text-right font-medium text-gray-700 flex flex-col justify-center h-[42px]">

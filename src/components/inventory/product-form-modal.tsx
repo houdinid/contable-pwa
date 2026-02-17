@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useData } from "@/context/data-context";
 import { X, Save, Package } from "lucide-react";
 import type { Product } from "@/types";
+import { MoneyInput } from "@/components/ui/money-input";
 
 interface ProductFormModalProps {
     isOpen: boolean;
@@ -137,12 +138,12 @@ export function ProductFormModal({ isOpen, onClose, product, initialData, onSucc
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Stock Actual</label>
-                            <input
-                                type="number"
+                            <MoneyInput
                                 required
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
                                 value={formData.stock}
-                                onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                                onValueChange={(val) => setFormData({ ...formData, stock: val })}
+                                currencySymbol=""
+                                placeholder="0"
                             />
                         </div>
                     </div>
@@ -150,39 +151,31 @@ export function ProductFormModal({ isOpen, onClose, product, initialData, onSucc
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Precio Compra (Costo)</label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-2 text-gray-500">$</span>
-                                <input
-                                    type="number"
-                                    required
-                                    className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    value={formData.cost}
-                                    onChange={(e) => setFormData({ ...formData, cost: Number(e.target.value) })}
-                                />
-                            </div>
+                            <MoneyInput
+                                required
+                                value={formData.cost}
+                                onValueChange={(val) => setFormData({ ...formData, cost: val })}
+                                placeholder="0.00"
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Precio Venta</label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-2 text-gray-500">$</span>
-                                <input
-                                    type="number"
-                                    required
-                                    className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    value={formData.price}
-                                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                                />
-                            </div>
+                            <MoneyInput
+                                required
+                                value={formData.price}
+                                onValueChange={(val) => setFormData({ ...formData, price: val })}
+                                placeholder="0.00"
+                            />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Stock Mínimo (Alerta)</label>
-                        <input
-                            type="number"
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        <MoneyInput
                             value={formData.minStock}
-                            onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
+                            onValueChange={(val) => setFormData({ ...formData, minStock: val })}
+                            currencySymbol=""
+                            placeholder="5"
                         />
                     </div>
 

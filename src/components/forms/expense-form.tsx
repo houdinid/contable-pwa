@@ -6,6 +6,7 @@ import type { Expense } from "@/types";
 import { parseDianXml } from "@/lib/xml-parser";
 import { compressImage } from "@/lib/image-utils";
 import { ContactFormModal } from "@/components/forms/contact-form-modal";
+import { MoneyInput } from "@/components/ui/money-input";
 import { OCRService } from "@/lib/ocr-service";
 
 interface ExpenseFormProps {
@@ -349,20 +350,12 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
                     {/* Amount */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Monto Total</label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span className="text-gray-500 font-bold">$</span>
-                            </div>
-                            <input
-                                type="number"
-                                value={formData.amount}
-                                onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium"
-                                placeholder="0.00"
-                                min="0"
-                                required
-                            />
-                        </div>
+                        <MoneyInput
+                            required
+                            value={formData.amount}
+                            onValueChange={(val) => setFormData({ ...formData, amount: val })}
+                            placeholder="0.00"
+                        />
                     </div>
 
                     {/* Date */}

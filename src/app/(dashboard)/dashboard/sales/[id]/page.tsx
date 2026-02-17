@@ -7,6 +7,7 @@ import { Printer, ArrowLeft, Download, Mail, Edit, FileText, DollarSign, Upload,
 import type { Invoice } from "@/types";
 import { OCRService } from "@/lib/ocr-service";
 import { generatePDF, sharePDF } from "@/lib/pdf-generator";
+import { MoneyInput } from "@/components/ui/money-input";
 
 export default function InvoiceDetailPage() {
     const params = useParams();
@@ -527,13 +528,11 @@ export default function InvoiceDetailPage() {
                             <form onSubmit={handlePaymentSubmit} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Monto a pagar</label>
-                                    <input
-                                        type="number"
+                                    <MoneyInput
                                         required
-                                        min={0}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
                                         value={paymentForm.amount}
-                                        onChange={e => setPaymentForm({ ...paymentForm, amount: Number(e.target.value) })}
+                                        onValueChange={(val) => setPaymentForm({ ...paymentForm, amount: val })}
+                                        placeholder="0.00"
                                     />
                                     <p className="text-xs text-gray-500 mt-1">Saldo pendiente: ${remainingBalance.toLocaleString()}</p>
                                 </div>

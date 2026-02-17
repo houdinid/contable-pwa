@@ -8,6 +8,7 @@ import { parseDianXml } from "@/lib/xml-parser";
 import { ProductFormModal } from "@/components/inventory/product-form-modal";
 import { compressImage } from "@/lib/image-utils";
 import { ContactFormModal } from "@/components/forms/contact-form-modal";
+import { MoneyInput } from "@/components/ui/money-input";
 
 interface PurchaseFormProps {
     onClose: () => void;
@@ -388,22 +389,20 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cant.</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    className="w-full px-3 py-2 border border-border bg-background rounded-lg text-sm text-foreground focus:ring-2 focus:ring-indigo-500"
+                                <MoneyInput
                                     value={itemQuantity}
-                                    onChange={(e) => setItemQuantity(Number(e.target.value))}
+                                    onValueChange={(val) => setItemQuantity(val)}
+                                    currencySymbol=""
+                                    placeholder="0"
+                                    min={1}
                                 />
                             </div>
                             <div className="md:col-span-3">
                                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Costo Unit.</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    className="w-full px-3 py-2 border border-border bg-background rounded-lg text-sm text-foreground focus:ring-2 focus:ring-indigo-500"
+                                <MoneyInput
                                     value={itemCost}
-                                    onChange={(e) => setItemCost(Number(e.target.value))}
+                                    onValueChange={(val) => setItemCost(val)}
+                                    placeholder="0"
                                 />
                             </div>
                             <div className="md:col-span-2">

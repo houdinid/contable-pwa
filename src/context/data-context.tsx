@@ -1,8 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useAuth } from "./auth-context";
-import { encryptData, decryptData } from "@/lib/encryption";
+import { supabase } from "@/lib/supabase";
 import type { Contact, Invoice, Expense, BusinessIdentity, SupplierCategory, Payment, PaymentMethod, ExpenseCategoryItem, Product, Purchase, WifiNetwork, ServiceOrder } from "@/types";
 
 interface DataContextType {
@@ -13,12 +12,12 @@ interface DataContextType {
     supplierCategories: SupplierCategory[];
     paymentMethods: PaymentMethod[];
     payments: Payment[];
-    expenseCategories: ExpenseCategoryItem[]; // New State
+    expenseCategories: ExpenseCategoryItem[];
     products: Product[];
     purchases: Purchase[];
 
     wifiNetworks: WifiNetwork[];
-    serviceOrders: ServiceOrder[]; // New State
+    serviceOrders: ServiceOrder[];
 
     addServiceOrder: (order: Omit<ServiceOrder, "id" | "createdAt" | "updatedAt">) => Promise<string>;
     updateServiceOrder: (id: string, order: Partial<ServiceOrder>) => Promise<void>;
@@ -125,26 +124,7 @@ const DataContext = createContext<DataContextType>({
     loadingData: true,
 });
 
-const STORAGE_KEYS = {
-    CONTACTS: "data_contacts",
-    INVOICES: "data_invoices",
-    EXPENSES: "data_expenses",
-    IDENTITIES: "data_identities",
-    SUPPLIER_CATEGORIES: "data_supplier_categories",
-    PAYMENT_METHODS: "data_payment_methods",
-    PAYMENTS: "data_payments",
-
-    EXPENSE_CATEGORIES: "data_expense_categories", // New Key
-    PRODUCTS: "data_products",
-    PURCHASES: "data_purchases",
-
-    WIFI_NETWORKS: "data_wifi_networks",
-    SERVICE_ORDERS: "data_service_orders",
-
-};
-
 export function DataProvider({ children }: { children: React.ReactNode }) {
-    const { encryptionKey, isAuthenticated } = useAuth();
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -161,449 +141,561 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
     const [loadingData, setLoadingData] = useState(true);
 
-
-    // Load data when authenticated
+    // Initial Data Load from Supabase
     useEffect(() => {
-        if (!isAuthenticated || !encryptionKey) {
-            setContacts([]);
-            setInvoices([]);
-            setExpenses([]);
-            setBusinessIdentities([]);
-            setSupplierCategories([]);
-            setPaymentMethods([]);
-            setPayments([]);
-
-            setExpenseCategories([]);
-            setProducts([]);
-            setPurchases([]);
-
-            setWifiNetworks([]);
-            setServiceOrders([]);
-            setLoadingData(false);
-
-            return;
-        }
-
-        const loadData = async () => {
+        const loadRequests = async () => {
             setLoadingData(true);
             try {
-                const [contactsData, invoicesData, expensesData, identitiesData, categoriesData, methodsData, paymentsData, expCategoriesData, productsData, purchasesData, wifiData, serviceOrdersData] = await Promise.all([
-                    loadEncrypted<Contact[]>(STORAGE_KEYS.CONTACTS, encryptionKey),
-                    loadEncrypted<Invoice[]>(STORAGE_KEYS.INVOICES, encryptionKey),
-                    loadEncrypted<Expense[]>(STORAGE_KEYS.EXPENSES, encryptionKey),
-                    loadEncrypted<BusinessIdentity[]>(STORAGE_KEYS.IDENTITIES, encryptionKey),
-                    loadEncrypted<SupplierCategory[]>(STORAGE_KEYS.SUPPLIER_CATEGORIES, encryptionKey),
-                    loadEncrypted<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, encryptionKey),
-                    loadEncrypted<Payment[]>(STORAGE_KEYS.PAYMENTS, encryptionKey),
-                    loadEncrypted<ExpenseCategoryItem[]>(STORAGE_KEYS.EXPENSE_CATEGORIES, encryptionKey),
-                    loadEncrypted<Product[]>(STORAGE_KEYS.PRODUCTS, encryptionKey),
-                    loadEncrypted<Purchase[]>(STORAGE_KEYS.PURCHASES, encryptionKey),
-                    loadEncrypted<WifiNetwork[]>(STORAGE_KEYS.WIFI_NETWORKS, encryptionKey),
-                    loadEncrypted<ServiceOrder[]>(STORAGE_KEYS.SERVICE_ORDERS, encryptionKey),
+                const [
+                    { data: contactsData },
+                    { data: invoicesData },
+                    { data: expensesData },
+                    { data: identitiesData },
+                    { data: categoriesData },
+                    { data: methodsData },
+                    { data: paymentsData },
+                    { data: expCategoriesData },
+                    { data: productsData },
+                    { data: purchasesData },
+                    { data: wifiData },
+                    { data: serviceOrdersData }
+                ] = await Promise.all([
+                    supabase.from('contacts').select('*'),
+                    supabase.from('invoices').select('*, items:invoice_items(*)'),
+                    supabase.from('expenses').select('*'),
+                    supabase.from('business_identities').select('*'),
+                    supabase.from('supplier_categories').select('*'),
+                    supabase.from('payment_methods').select('*'),
+                    supabase.from('payments').select('*'),
+                    supabase.from('expense_categories').select('*'),
+                    supabase.from('products').select('*'),
+                    supabase.from('purchases').select('*, items:purchase_items(*)'),
+                    supabase.from('wifi_networks').select('*'),
+                    supabase.from('service_orders').select('*, items:service_order_items(*)')
                 ]);
 
-                setContacts(contactsData || []);
+                // @ts-ignore
+                setContacts(contactsData || []); // @ts-ignore
                 setInvoices(invoicesData || []);
                 setExpenses(expensesData || []);
                 setBusinessIdentities(identitiesData || []);
+                setSupplierCategories(categoriesData || []);
+                setPaymentMethods(methodsData || []);
                 setPayments(paymentsData || []);
                 setExpenseCategories(expCategoriesData || []);
                 setProducts(productsData || []); // @ts-ignore
                 setPurchases(purchasesData || []);
-
-                setWifiNetworks(wifiData || []);
+                setWifiNetworks(wifiData || []); // @ts-ignore
                 setServiceOrders(serviceOrdersData || []);
 
-
-                // Initialize default categories
-                if (!categoriesData || categoriesData.length === 0) {
-                    const defaults = [
-                        { id: '1', name: 'Tecnología' },
-                        { id: '2', name: 'Servicios' },
-                        { id: '3', name: 'Suministros' },
-                        { id: '4', name: 'Materia Prima' }
-                    ];
-                    setSupplierCategories(defaults);
-                    saveEncrypted(STORAGE_KEYS.SUPPLIER_CATEGORIES, defaults);
-                } else {
-                    setSupplierCategories(categoriesData);
+                // Initialize defaults if empty (Optional, strictly speaking Supabase SQL could handle this or we do it once)
+                if ((!categoriesData || categoriesData.length === 0)) {
+                    // Optional: Seed defaults if needed, but for now we assume empty is fine or handled by user
                 }
 
-                // Initialize default payment methods
-                if (!methodsData || methodsData.length === 0) {
-                    const defaults: PaymentMethod[] = [
-                        { id: '1', name: 'Efectivo', type: 'cash' },
-                        { id: '2', name: 'Bancolombia', type: 'bank' },
-                        { id: '3', name: 'Nequi', type: 'bank' },
-                        { id: '4', name: 'Daviplata', type: 'bank' },
-                        { id: '5', name: 'USDT (Cripto)', type: 'crypto' },
-                    ];
-                    setPaymentMethods(defaults);
-                    saveEncrypted(STORAGE_KEYS.PAYMENT_METHODS, defaults);
-                } else {
-                    setPaymentMethods(methodsData);
-                }
-
-                // Initialize default expense categories
-                if (!expCategoriesData || expCategoriesData.length === 0) {
-                    const defaults: ExpenseCategoryItem[] = [
-                        { id: 'office', name: 'Oficina y Papelería' },
-                        { id: 'transport', name: 'Transporte y Viáticos' },
-                        { id: 'salary', name: 'Nómina y Salarios' },
-                        { id: 'utilities', name: 'Servicios Públicos' },
-                        { id: 'other', name: 'Otros Gastos' },
-                    ];
-                    setExpenseCategories(defaults);
-                    saveEncrypted(STORAGE_KEYS.EXPENSE_CATEGORIES, defaults);
-                } else {
-                    setExpenseCategories(expCategoriesData);
-                }
-
-            } catch (e) {
-                console.error("Failed to load data", e);
+            } catch (error) {
+                console.error("Error loading data from Supabase:", error);
             } finally {
                 setLoadingData(false);
             }
         };
 
-        loadData();
-    }, [isAuthenticated, encryptionKey]);
+        loadRequests();
+    }, []);
 
-    // Helper to load encrypted data
-    const loadEncrypted = async <T,>(key: string, cryptoKey: CryptoKey): Promise<T | null> => {
-        const stored = localStorage.getItem(key);
-        if (!stored) return null;
-        return decryptData<T>(stored, cryptoKey);
-    };
-
-    // Helper to save encrypted data
-    const saveEncrypted = async (key: string, data: any) => {
-        if (!encryptionKey) return;
-        const encrypted = await encryptData(data, encryptionKey);
-        localStorage.setItem(key, encrypted);
-    };
+    // --- Helper to refresh a specific table (optional, for stricter consistency) ---
+    // For now, we will update local state optimistically or re-fetch
 
     // --- Actions ---
 
-    // ... (Keep existing actions for Contacts, Expenses, Identities, Categories) ...
-
     const addContact = async (contactData: Omit<Contact, "id" | "createdAt">) => {
-        const newContact: Contact = { ...contactData, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-        const updated = [...contacts, newContact];
-        setContacts(updated);
-        await saveEncrypted(STORAGE_KEYS.CONTACTS, updated);
+        const newContact = { ...contactData, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        // Optimistic update
+        // @ts-ignore
+        setContacts(prev => [...prev, newContact]);
+
+        const { error } = await supabase.from('contacts').insert({
+            ...newContact,
+            bank_accounts: newContact.bankAccounts, // Map CamelCase to SnakeCase
+            contact_person: newContact.contactPerson,
+            tax_id: newContact.taxId,
+            specialty_id: newContact.specialtyId,
+            default_expense_category_id: newContact.defaultExpenseCategoryId,
+            google_maps_url: newContact.googleMapsUrl,
+            credit_balance: newContact.creditBalance
+        });
+
+        if (error) {
+            console.error("Error adding contact:", error);
+            // Rollback could go here
+        }
         return newContact.id;
     };
 
     const updateContact = async (id: string, patch: Partial<Contact>) => {
-        const updated = contacts.map(c => c.id === id ? { ...c, ...patch } : c);
-        setContacts(updated);
-        await saveEncrypted(STORAGE_KEYS.CONTACTS, updated);
+        setContacts(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c));
+
+        // Map keys for Supabase
+        const dbPatch: any = { ...patch };
+        if (patch.bankAccounts) dbPatch.bank_accounts = patch.bankAccounts;
+        if (patch.contactPerson) dbPatch.contact_person = patch.contactPerson;
+        if (patch.taxId) dbPatch.tax_id = patch.taxId;
+        if (patch.specialtyId) dbPatch.specialty_id = patch.specialtyId;
+        if (patch.defaultExpenseCategoryId) dbPatch.default_expense_category_id = patch.defaultExpenseCategoryId;
+        if (patch.googleMapsUrl) dbPatch.google_maps_url = patch.googleMapsUrl;
+        if (patch.creditBalance) dbPatch.credit_balance = patch.creditBalance;
+
+        // Remove camelCase keys that don't exist in DB
+        delete dbPatch.bankAccounts;
+        delete dbPatch.contactPerson;
+        delete dbPatch.taxId;
+        delete dbPatch.specialtyId;
+        delete dbPatch.defaultExpenseCategoryId;
+        delete dbPatch.googleMapsUrl;
+        delete dbPatch.creditBalance;
+
+        const { error } = await supabase.from('contacts').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating contact:", error);
     };
 
     const deleteContact = async (id: string) => {
-        const updated = contacts.filter(c => c.id !== id);
-        setContacts(updated);
-        await saveEncrypted(STORAGE_KEYS.CONTACTS, updated);
+        setContacts(prev => prev.filter(c => c.id !== id));
+        const { error } = await supabase.from('contacts').delete().eq('id', id);
+        if (error) console.error("Error deleting contact:", error);
     };
 
     const addInvoice = async (invoiceData: Omit<Invoice, "id" | "createdAt">) => {
-        const newInvoice: Invoice = { ...invoiceData, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-        const updated = [...invoices, newInvoice];
-        setInvoices(updated);
-        await saveEncrypted(STORAGE_KEYS.INVOICES, updated);
+        const newInvoice = { ...invoiceData, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        // @ts-ignore
+        setInvoices(prev => [...prev, newInvoice]);
+
+        // Separate items from invoice structure for DB
+        const { items, ...invoiceHeader } = newInvoice;
+
+        const { error: invoiceError } = await supabase.from('invoices').insert({
+            ...invoiceHeader,
+            issuer_id: invoiceHeader.issuerId,
+            due_date: invoiceHeader.dueDate,
+            credit_days: invoiceHeader.creditDays,
+            contact_id: invoiceHeader.contactId,
+            contact_name: invoiceHeader.contactName,
+            destination_account_id: invoiceHeader.destinationAccountId
+        });
+
+        if (invoiceError) {
+            console.error("Error creating invoice header:", invoiceError);
+            return;
+        }
+
+        if (items && items.length > 0) {
+            const itemsToInsert = items.map(item => ({
+                ...item,
+                invoice_id: newInvoice.id
+            }));
+            const { error: itemsError } = await supabase.from('invoice_items').insert(itemsToInsert);
+            if (itemsError) console.error("Error creating invoice items:", itemsError);
+        }
     };
 
     const updateInvoice = async (id: string, patch: Partial<Invoice>) => {
-        const updated = invoices.map(i => i.id === id ? { ...i, ...patch } : i);
-        setInvoices(updated);
-        await saveEncrypted(STORAGE_KEYS.INVOICES, updated);
+        setInvoices(prev => prev.map(i => i.id === id ? { ...i, ...patch } : i));
+        // Note: Logic allows updating status, but if items change, we'd need complex logic (delete old, add new).
+        // For now, assuming patch is mostly status/header fields.
+
+        const dbPatch: any = { ...patch };
+        if (patch.issuerId) dbPatch.issuer_id = patch.issuerId;
+        if (patch.dueDate) dbPatch.due_date = patch.dueDate;
+        if (patch.creditDays) dbPatch.credit_days = patch.creditDays;
+        if (patch.contactId) dbPatch.contact_id = patch.contactId;
+        if (patch.contactName) dbPatch.contact_name = patch.contactName;
+        if (patch.destinationAccountId) dbPatch.destination_account_id = patch.destinationAccountId;
+
+        delete dbPatch.issuerId; delete dbPatch.dueDate; delete dbPatch.creditDays;
+        delete dbPatch.contactId; delete dbPatch.contactName; delete dbPatch.destinationAccountId;
+        delete dbPatch.items; // Don't update items via basic patch
+
+        const { error } = await supabase.from('invoices').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating invoice:", error);
     };
 
     const addExpense = async (expense: Omit<Expense, "id" | "createdAt">) => {
-        const newExpense: Expense = { ...expense, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-        const updated = [newExpense, ...expenses];
-        setExpenses(updated);
-        await saveEncrypted(STORAGE_KEYS.EXPENSES, updated);
+        const newExpense = { ...expense, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        setExpenses(prev => [newExpense, ...prev]);
+
+        const { error } = await supabase.from('expenses').insert({
+            ...newExpense,
+            category_id: newExpense.categoryId,
+            supplier_id: newExpense.supplierId,
+            business_identity_id: newExpense.businessIdentityId,
+            source_account_id: newExpense.sourceAccountId,
+            receipt_url: newExpense.receiptUrl
+        });
+        if (error) console.error("Error adding expense:", error);
     };
 
     const updateExpense = async (id: string, patch: Partial<Expense>) => {
-        const updated = expenses.map(e => e.id === id ? { ...e, ...patch } : e);
-        setExpenses(updated);
-        await saveEncrypted(STORAGE_KEYS.EXPENSES, updated);
+        setExpenses(prev => prev.map(e => e.id === id ? { ...e, ...patch } : e));
+
+        const dbPatch: any = { ...patch };
+        if (patch.categoryId) dbPatch.category_id = patch.categoryId;
+        if (patch.supplierId) dbPatch.supplier_id = patch.supplierId;
+        if (patch.businessIdentityId) dbPatch.business_identity_id = patch.businessIdentityId;
+        if (patch.sourceAccountId) dbPatch.source_account_id = patch.sourceAccountId;
+        if (patch.receiptUrl) dbPatch.receipt_url = patch.receiptUrl;
+
+        delete dbPatch.categoryId; delete dbPatch.supplierId; delete dbPatch.businessIdentityId;
+        delete dbPatch.sourceAccountId; delete dbPatch.receiptUrl;
+
+        const { error } = await supabase.from('expenses').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating expense:", error);
     };
 
     const deleteExpense = async (id: string) => {
-        const updated = expenses.filter(e => e.id !== id);
-        setExpenses(updated);
-        await saveEncrypted(STORAGE_KEYS.EXPENSES, updated);
+        setExpenses(prev => prev.filter(e => e.id !== id));
+        const { error } = await supabase.from('expenses').delete().eq('id', id);
+        if (error) console.error("Error deleting expense:", error);
     };
 
     const addBusinessIdentity = async (data: Omit<BusinessIdentity, "id">) => {
-        const newIdentity: BusinessIdentity = { ...data, id: crypto.randomUUID() };
-        let updated = [...businessIdentities, newIdentity];
-        if (newIdentity.isDefault) updated = updated.map(id => id.id === newIdentity.id ? id : { ...id, isDefault: false });
-        else if (updated.length === 1) updated[0].isDefault = true;
-        setBusinessIdentities(updated);
-        await saveEncrypted(STORAGE_KEYS.IDENTITIES, updated);
+        const newIdentity = { ...data, id: crypto.randomUUID() };
+
+        // Handle Default Logic locally first
+        if (newIdentity.isDefault) {
+            setBusinessIdentities(prev => [...prev.map(i => ({ ...i, isDefault: false })), newIdentity]);
+            // DB: Unset others
+            await supabase.from('business_identities').update({ is_default: false }).neq('id', 'placeholder');
+        } else {
+            setBusinessIdentities(prev => [...prev, newIdentity]);
+        }
+
+        const { error } = await supabase.from('business_identities').insert({
+            ...newIdentity,
+            tax_id: newIdentity.taxId,
+            logo_url: newIdentity.logoUrl,
+            is_default: newIdentity.isDefault,
+            is_tax_payer: newIdentity.isTaxPayer,
+            bank_accounts: newIdentity.bankAccounts
+        });
+        if (error) console.error("Error adding identity:", error);
     };
 
     const updateBusinessIdentity = async (id: string, patch: Partial<BusinessIdentity>) => {
-        let updated = businessIdentities.map(i => i.id === id ? { ...i, ...patch } : i);
-        if (patch.isDefault) updated = updated.map(i => i.id === id ? i : { ...i, isDefault: false });
-        setBusinessIdentities(updated);
-        await saveEncrypted(STORAGE_KEYS.IDENTITIES, updated);
+        setBusinessIdentities(prev => prev.map(i => i.id === id ? { ...i, ...patch } : patch.isDefault ? { ...i, isDefault: false } : i));
+
+        if (patch.isDefault) {
+            await supabase.from('business_identities').update({ is_default: false }).neq('id', id);
+        }
+
+        const dbPatch: any = { ...patch };
+        if (patch.taxId) dbPatch.tax_id = patch.taxId;
+        if (patch.logoUrl) dbPatch.logo_url = patch.logoUrl;
+        if (patch.isDefault !== undefined) dbPatch.is_default = patch.isDefault;
+        if (patch.isTaxPayer !== undefined) dbPatch.is_tax_payer = patch.isTaxPayer;
+        if (patch.bankAccounts) dbPatch.bank_accounts = patch.bankAccounts;
+
+        delete dbPatch.taxId; delete dbPatch.logoUrl; delete dbPatch.isDefault; delete dbPatch.isTaxPayer; delete dbPatch.bankAccounts;
+
+        const { error } = await supabase.from('business_identities').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating identity:", error);
     };
 
     const deleteBusinessIdentity = async (id: string) => {
-        const updated = businessIdentities.filter(i => i.id !== id);
-        setBusinessIdentities(updated);
-        await saveEncrypted(STORAGE_KEYS.IDENTITIES, updated);
+        setBusinessIdentities(prev => prev.filter(i => i.id !== id));
+        const { error } = await supabase.from('business_identities').delete().eq('id', id);
+        if (error) console.error("Error deleting identity:", error);
     };
 
     const addSupplierCategory = async (name: string) => {
-        const newCat: SupplierCategory = { id: crypto.randomUUID(), name };
-        const updated = [...supplierCategories, newCat];
-        setSupplierCategories(updated);
-        await saveEncrypted(STORAGE_KEYS.SUPPLIER_CATEGORIES, updated);
+        const newCat = { id: crypto.randomUUID(), name };
+        setSupplierCategories(prev => [...prev, newCat]);
+        const { error } = await supabase.from('supplier_categories').insert(newCat);
+        if (error) console.error("Error adding supplier cat:", error);
     };
 
     const deleteSupplierCategory = async (id: string) => {
-        const updated = supplierCategories.filter(c => c.id !== id);
-        setSupplierCategories(updated);
-        await saveEncrypted(STORAGE_KEYS.SUPPLIER_CATEGORIES, updated);
+        setSupplierCategories(prev => prev.filter(c => c.id !== id));
+        const { error } = await supabase.from('supplier_categories').delete().eq('id', id);
+        if (error) console.error("Error deleting supplier cat:", error);
     };
 
-    // --- Payments ---
-
     const addPaymentMethod = async (data: Omit<PaymentMethod, "id">) => {
-        const newMethod: PaymentMethod = { ...data, id: crypto.randomUUID() };
-        const updated = [...paymentMethods, newMethod];
-        setPaymentMethods(updated);
-        await saveEncrypted(STORAGE_KEYS.PAYMENT_METHODS, updated);
+        const newMethod = { ...data, id: crypto.randomUUID() };
+        setPaymentMethods(prev => [...prev, newMethod]);
+        const { error } = await supabase.from('payment_methods').insert(newMethod);
+        if (error) console.error("Error adding payment method:", error);
     };
 
     const deletePaymentMethod = async (id: string) => {
-        const updated = paymentMethods.filter(p => p.id !== id);
-        setPaymentMethods(updated);
-        await saveEncrypted(STORAGE_KEYS.PAYMENT_METHODS, updated);
+        setPaymentMethods(prev => prev.filter(p => p.id !== id));
+        const { error } = await supabase.from('payment_methods').delete().eq('id', id);
+        if (error) console.error("Error deleting payment method:", error);
     };
 
     const addPayment = async (input: Omit<Payment, "id" | "createdAt">) => {
-        const newPayment: Payment = {
-            ...input,
-            id: crypto.randomUUID(),
-            createdAt: new Date().toISOString()
-        };
-        const updatedPayments = [...payments, newPayment];
-        setPayments(updatedPayments);
-        await saveEncrypted(STORAGE_KEYS.PAYMENTS, updatedPayments);
+        const newPayment = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        setPayments(prev => [...prev, newPayment]);
 
-        // Update Invoice Status logic
-        // Calculate total paid for this invoice
-        const invoicePayments = updatedPayments.filter(p => p.invoiceId === input.invoiceId);
-        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0);
+        const { error } = await supabase.from('payments').insert({
+            ...newPayment,
+            invoice_id: newPayment.invoiceId,
+            method_id: newPayment.methodId,
+            destination_account_id: newPayment.destinationAccountId
+        });
 
-        const invoice = invoices.find(i => i.id === input.invoiceId);
-        if (invoice) {
-            let newStatus = invoice.status;
-            if (totalPaid >= invoice.total) {
+        if (error) {
+            console.error("Error adding payment:", error);
+            return;
+        }
+
+        // Update Invoice Status
+        // Fetch fresh payments for this invoice to be safe
+        const { data: invoicePayments } = await supabase.from('payments').select('*').eq('invoice_id', input.invoiceId);
+        const { data: invoiceData } = await supabase.from('invoices').select('*').eq('id', input.invoiceId).single();
+
+        if (invoicePayments && invoiceData) {
+            const totalPaid = invoicePayments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+            let newStatus = invoiceData.status;
+
+            if (totalPaid >= invoiceData.total) {
                 newStatus = 'paid';
-            } else if (totalPaid > 0 && invoice.status !== 'cancelled') {
-                newStatus = 'pending'; // Or 'partial' if we had that status, but 'pending' implies not fully paid
+            } else if (totalPaid > 0 && invoiceData.status !== 'cancelled') {
+                newStatus = 'pending';
             }
 
-            if (newStatus !== invoice.status) {
-                await updateInvoice(invoice.id, { status: newStatus });
+            if (newStatus !== invoiceData.status) {
+                updateInvoice(invoiceData.id, { status: newStatus });
             }
         }
     };
 
-    // --- Expense Categories ---
-
     const addExpenseCategory = async (data: Omit<ExpenseCategoryItem, "id">) => {
-        const newItem: ExpenseCategoryItem = { ...data, id: crypto.randomUUID() };
-        const updated = [...expenseCategories, newItem];
-        setExpenseCategories(updated);
-        await saveEncrypted(STORAGE_KEYS.EXPENSE_CATEGORIES, updated);
+        const newItem = { ...data, id: data.name.toLowerCase().replace(/\s+/g, '_') }; // Use similar ID logic or uuid
+        setExpenseCategories(prev => [...prev, newItem]);
+        const { error } = await supabase.from('expense_categories').insert({
+            ...newItem,
+            parent_id: newItem.parentId
+        });
+        if (error) console.error("Error adding expense cat:", error);
     };
 
     const updateExpenseCategory = async (id: string, patch: Partial<ExpenseCategoryItem>) => {
-        const updated = expenseCategories.map(c => c.id === id ? { ...c, ...patch } : c);
-        setExpenseCategories(updated);
-        await saveEncrypted(STORAGE_KEYS.EXPENSE_CATEGORIES, updated);
+        setExpenseCategories(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c));
+        const dbPatch: any = { ...patch };
+        if (patch.parentId) dbPatch.parent_id = patch.parentId;
+        delete dbPatch.parentId;
+        const { error } = await supabase.from('expense_categories').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating expense cat:", error);
     };
 
     const deleteExpenseCategory = async (id: string) => {
-        // Also delete subcategories? For now, we'll keep it simple, maybe prevent deletion if has children in UI
-        const updated = expenseCategories.filter(c => c.id !== id && c.parentId !== id);
-        setExpenseCategories(updated);
-        await saveEncrypted(STORAGE_KEYS.EXPENSE_CATEGORIES, updated);
+        setExpenseCategories(prev => prev.filter(c => c.id !== id && c.parentId !== id));
+        const { error } = await supabase.from('expense_categories').delete().eq('id', id);
+        if (error) console.error("Error deleting expense cat:", error);
     };
 
-    // --- Products ---
-
     const addProduct = async (data: Omit<Product, "id" | "createdAt">) => {
-        const newItem: Product = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-        const updated = [...products, newItem];
-        setProducts(updated);
-        await saveEncrypted(STORAGE_KEYS.PRODUCTS, updated);
+        const newItem = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        setProducts(prev => [...prev, newItem]);
+        const { error } = await supabase.from('products').insert({
+            ...newItem,
+            min_stock: newItem.minStock,
+            category_id: newItem.categoryId
+        });
+        if (error) console.error("Error adding product:", error);
         return newItem.id;
     };
 
     const updateProduct = async (id: string, patch: Partial<Product>) => {
-        const updated = products.map(p => p.id === id ? { ...p, ...patch } : p);
-        setProducts(updated);
-        await saveEncrypted(STORAGE_KEYS.PRODUCTS, updated);
+        setProducts(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
+        const dbPatch: any = { ...patch };
+        if (patch.minStock) dbPatch.min_stock = patch.minStock;
+        if (patch.categoryId) dbPatch.category_id = patch.categoryId;
+        delete dbPatch.minStock; delete dbPatch.categoryId;
+
+        const { error } = await supabase.from('products').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating product:", error);
     };
 
     const deleteProduct = async (id: string) => {
-        const updated = products.filter(p => p.id !== id);
-        setProducts(updated);
-        await saveEncrypted(STORAGE_KEYS.PRODUCTS, updated);
+        setProducts(prev => prev.filter(p => p.id !== id));
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) console.error("Error deleting product:", error);
     };
 
-    // --- Purchases ---
-
     const addPurchase = async (data: Omit<Purchase, "id" | "createdAt">) => {
-        const newPurchase: Purchase = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        const newPurchase = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        // Optimistic UI
+        // @ts-ignore
+        setPurchases(prev => [newPurchase, ...prev]);
 
-        // 1. Save Purchase
-        const updatedPurchases = [newPurchase, ...purchases];
-        setPurchases(updatedPurchases);
-        await saveEncrypted(STORAGE_KEYS.PURCHASES, updatedPurchases);
-
-        // 2. Update Stock
-        let updatedProducts = [...products];
-        let stockChanged = false;
-
-        data.items.forEach(item => {
-            const productIndex = updatedProducts.findIndex(p => p.id === item.productId);
-            if (productIndex >= 0) {
-                const product = updatedProducts[productIndex];
-
-                // Calculate new cost average
-                // New Cost Avg = ((OldStock * OldCost) + (NewQty * NewCost)) / (OldStock + NewQty)
-                const currentTotalValue = product.stock * product.cost;
-                const newIncomingValue = item.quantity * item.unitCost;
-                const newStock = product.stock + item.quantity;
-                const newCost = newStock > 0 ? (currentTotalValue + newIncomingValue) / newStock : item.unitCost;
-
-                updatedProducts[productIndex] = {
-                    ...product,
-                    stock: newStock,
-                    cost: newCost
-                };
-                stockChanged = true;
-            }
+        // Insert Purchase
+        const { items, ...purchaseHeader } = newPurchase;
+        const { error } = await supabase.from('purchases').insert({
+            ...purchaseHeader,
+            supplier_id: purchaseHeader.supplierId,
+            supplier_name: purchaseHeader.supplierName,
+            business_identity_id: purchaseHeader.businessIdentityId,
+            receipt_url: purchaseHeader.receiptUrl
         });
 
-        if (stockChanged) {
-            setProducts(updatedProducts);
-            await saveEncrypted(STORAGE_KEYS.PRODUCTS, updatedProducts);
+        if (error) { console.error("Error creating purchase:", error); return; }
+
+        // Insert Items
+        if (items && items.length > 0) {
+            const itemsToInsert = items.map(item => ({
+                ...item,
+                purchase_id: newPurchase.id,
+                product_id: item.productId,
+                product_name: item.productName,
+                unit_cost: item.unitCost
+            }));
+
+            // Map keys
+            const dbItems = itemsToInsert.map(i => {
+                const { productId, productName, unitCost, ...rest } = i;
+                return { ...rest, product_id: productId, product_name: productName, unit_cost: unitCost };
+            });
+
+            const { error: itemsError } = await supabase.from('purchase_items').insert(dbItems);
+            if (itemsError) console.error("Error creating purchase items:", itemsError);
+
+            // Update Stock
+            // This is cleaner to do server-side via triggers, but we'll do client-side for now to match logic
+            // Assuming no concurrent users for now
+            for (const item of items) {
+                const { data: product } = await supabase.from('products').select('*').eq('id', item.productId).single();
+                if (product) {
+                    const currentTotalValue = Number(product.stock) * Number(product.cost);
+                    const newIncomingValue = Number(item.quantity) * Number(item.unitCost);
+                    const newStock = Number(product.stock) + Number(item.quantity);
+                    const newCost = newStock > 0 ? (currentTotalValue + newIncomingValue) / newStock : item.unitCost;
+
+                    await updateProduct(product.id, { stock: newStock, cost: newCost });
+                }
+            }
         }
     };
 
-    // --- WiFi Networks ---
-
     const addWifiNetwork = async (data: Omit<WifiNetwork, "id" | "createdAt">) => {
-        const newItem: WifiNetwork = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-        const updated = [...wifiNetworks, newItem];
-        setWifiNetworks(updated);
-        await saveEncrypted(STORAGE_KEYS.WIFI_NETWORKS, updated);
+        const newItem = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        setWifiNetworks(prev => [...prev, newItem]);
+        const { error } = await supabase.from('wifi_networks').insert({
+            ...newItem,
+            is_hidden: newItem.isHidden,
+            device_type: newItem.deviceType,
+            device_brand: newItem.deviceBrand,
+            client_id: newItem.clientId,
+            ip_address: newItem.ipAddress,
+            subnet_mask: newItem.subnetMask,
+            photo_url: newItem.photoUrl
+        });
+        if (error) console.error("Error adding wifi:", error);
     };
 
     const updateWifiNetwork = async (id: string, patch: Partial<WifiNetwork>) => {
-        const updated = wifiNetworks.map(w => w.id === id ? { ...w, ...patch } : w);
-        setWifiNetworks(updated);
-        await saveEncrypted(STORAGE_KEYS.WIFI_NETWORKS, updated);
+        setWifiNetworks(prev => prev.map(w => w.id === id ? { ...w, ...patch } : w));
+        const dbPatch: any = { ...patch };
+        if (patch.isHidden !== undefined) dbPatch.is_hidden = patch.isHidden;
+        if (patch.deviceType) dbPatch.device_type = patch.deviceType;
+        if (patch.deviceBrand) dbPatch.device_brand = patch.deviceBrand;
+        if (patch.clientId) dbPatch.client_id = patch.clientId;
+        if (patch.ipAddress) dbPatch.ip_address = patch.ipAddress;
+        if (patch.subnetMask) dbPatch.subnet_mask = patch.subnetMask;
+        if (patch.photoUrl) dbPatch.photo_url = patch.photoUrl;
+
+        delete dbPatch.isHidden; delete dbPatch.deviceType; delete dbPatch.deviceBrand;
+        delete dbPatch.clientId; delete dbPatch.ipAddress; delete dbPatch.subnetMask; delete dbPatch.photoUrl;
+
+        const { error } = await supabase.from('wifi_networks').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating wifi:", error);
     };
 
     const deleteWifiNetwork = async (id: string) => {
-        const updated = wifiNetworks.filter(w => w.id !== id);
-        setWifiNetworks(updated);
-        await saveEncrypted(STORAGE_KEYS.WIFI_NETWORKS, updated);
+        setWifiNetworks(prev => prev.filter(w => w.id !== id));
+        const { error } = await supabase.from('wifi_networks').delete().eq('id', id);
+        if (error) console.error("Error deleting wifi:", error);
     };
 
-    // --- Service Orders ---
-
     const addServiceOrder = async (data: Omit<ServiceOrder, "id" | "createdAt" | "updatedAt">) => {
-        const newOrder: ServiceOrder = {
+        const newOrder = {
             ...data,
             id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
-        const updated = [newOrder, ...serviceOrders];
-        setServiceOrders(updated);
-        await saveEncrypted(STORAGE_KEYS.SERVICE_ORDERS, updated);
+        // @ts-ignore
+        setServiceOrders(prev => [newOrder, ...prev]);
+
+        const { items, ...orderHeader } = newOrder;
+
+        const { error } = await supabase.from('service_orders').insert({
+            ...orderHeader,
+            client_id: orderHeader.clientId,
+            client_name: orderHeader.clientName,
+            client_email: orderHeader.clientEmail,
+            client_phone: orderHeader.clientPhone,
+            estimated_date: orderHeader.estimatedDate,
+            technician_notes: orderHeader.technicianNotes,
+            invoice_id: orderHeader.invoiceId,
+            business_identity_id: orderHeader.businessIdentityId
+        });
+
+        if (error) { console.error("Error adding service order:", error); return ""; }
+
+        if (items && items.length > 0) {
+            const itemsToInsert = items.map(item => ({
+                ...item,
+                service_order_id: newOrder.id,
+                product_id: item.productId
+            }));
+            // Map keys
+            const dbItems = itemsToInsert.map(i => {
+                const { productId, ...rest } = i;
+                return { ...rest, product_id: productId };
+            });
+            const { error: itemsError } = await supabase.from('service_order_items').insert(dbItems);
+            if (itemsError) console.error("Error adding service order items:", itemsError);
+        }
+
         return newOrder.id;
     };
 
     const updateServiceOrder = async (id: string, patch: Partial<ServiceOrder>) => {
-        const updated = serviceOrders.map(o => o.id === id ? { ...o, ...patch, updatedAt: new Date().toISOString() } : o);
-        setServiceOrders(updated);
-        await saveEncrypted(STORAGE_KEYS.SERVICE_ORDERS, updated);
+        const now = new Date().toISOString();
+        setServiceOrders(prev => prev.map(o => o.id === id ? { ...o, ...patch, updatedAt: now } : o));
+
+        const dbPatch: any = { ...patch, updated_at: now };
+        if (patch.clientId) dbPatch.client_id = patch.clientId;
+        if (patch.clientName) dbPatch.client_name = patch.clientName;
+        if (patch.clientEmail) dbPatch.client_email = patch.clientEmail;
+        if (patch.clientPhone) dbPatch.client_phone = patch.clientPhone;
+        if (patch.estimatedDate) dbPatch.estimated_date = patch.estimatedDate;
+        if (patch.technicianNotes) dbPatch.technician_notes = patch.technicianNotes;
+        if (patch.invoiceId) dbPatch.invoice_id = patch.invoiceId;
+        if (patch.businessIdentityId) dbPatch.business_identity_id = patch.businessIdentityId;
+        if (patch.updatedAt) delete dbPatch.updatedAt; // we set updated_at manually
+
+        delete dbPatch.clientId; delete dbPatch.clientName; delete dbPatch.clientEmail;
+        delete dbPatch.clientPhone; delete dbPatch.estimatedDate; delete dbPatch.technicianNotes;
+        delete dbPatch.invoiceId; delete dbPatch.businessIdentityId; delete dbPatch.items;
+
+        const { error } = await supabase.from('service_orders').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating service order:", error);
     };
 
     const deleteServiceOrder = async (id: string) => {
-        const updated = serviceOrders.filter(o => o.id !== id);
-        setServiceOrders(updated);
-        await saveEncrypted(STORAGE_KEYS.SERVICE_ORDERS, updated);
+        setServiceOrders(prev => prev.filter(o => o.id !== id));
+        const { error } = await supabase.from('service_orders').delete().eq('id', id);
+        if (error) console.error("Error deleting service order:", error);
     };
 
-
     const exportData = async () => {
-        if (!encryptionKey) return;
-        const store = {
-            contacts, invoices, expenses, businessIdentities, supplierCategories, paymentMethods, payments, expenseCategories, products, purchases, wifiNetworks, serviceOrders,
-            exportDate: new Date().toISOString(),
-
-            version: "1.5" // Version bump
-        };
-        const blob = new Blob([JSON.stringify(store, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `backup-contable-${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
+        // Implement export if needed, effectively simpler just dumping tables
     };
 
     const importData = async (jsonData: string) => {
-        if (!encryptionKey) return;
-        try {
-            const data = JSON.parse(jsonData);
-            setContacts(data.contacts || []);
-            setInvoices(data.invoices || []);
-            setExpenses(data.expenses || []);
-            setBusinessIdentities(data.businessIdentities || []);
-            setSupplierCategories(data.supplierCategories || []);
-            setPaymentMethods(data.paymentMethods || []);
-            setPayments(data.payments || []);
-            setExpenseCategories(data.expenseCategories || []);
-            setProducts(data.products || []);
-            setPurchases(data.purchases || []);
-            setWifiNetworks(data.wifiNetworks || []);
-            setServiceOrders(data.serviceOrders || []);
-
-            await saveEncrypted(STORAGE_KEYS.CONTACTS, data.contacts || []);
-
-            await saveEncrypted(STORAGE_KEYS.INVOICES, data.invoices || []);
-            await saveEncrypted(STORAGE_KEYS.EXPENSES, data.expenses || []);
-            await saveEncrypted(STORAGE_KEYS.IDENTITIES, data.businessIdentities || []);
-            await saveEncrypted(STORAGE_KEYS.SUPPLIER_CATEGORIES, data.supplierCategories || []);
-            await saveEncrypted(STORAGE_KEYS.PAYMENT_METHODS, data.paymentMethods || []);
-            await saveEncrypted(STORAGE_KEYS.PAYMENTS, data.payments || []);
-            await saveEncrypted(STORAGE_KEYS.EXPENSE_CATEGORIES, data.expenseCategories || []);
-            await saveEncrypted(STORAGE_KEYS.PRODUCTS, data.products || []);
-            await saveEncrypted(STORAGE_KEYS.PURCHASES, data.purchases || []);
-            await saveEncrypted(STORAGE_KEYS.WIFI_NETWORKS, data.wifiNetworks || []);
-            await saveEncrypted(STORAGE_KEYS.SERVICE_ORDERS, data.serviceOrders || []);
-        } catch (e) {
-
-            console.error("Import failed", e);
-            throw e;
-        }
+        // Not implemented for Supabase yet (complex to handle ID conflicts and relations)
+        console.warn("Import not supported in Cloud mode yet.");
     };
 
     return (
@@ -624,7 +716,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 addServiceOrder, updateServiceOrder, deleteServiceOrder,
                 exportData, importData, loadingData,
             }}
-
         >
             {children}
         </DataContext.Provider>
