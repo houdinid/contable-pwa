@@ -155,9 +155,12 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
             let systemId = initialData?.id;
 
             if (isEditing && systemId) {
-                await supabase.from('cctv_systems').update(systemData).eq('id', systemId);
+                const { error: updateError } = await supabase.from('cctv_systems').update(systemData).eq('id', systemId);
+                if (updateError) throw updateError;
+
                 // For users, simple approach: delete all and recreate (easiest for now)
-                await supabase.from('cctv_users').delete().eq('cctv_system_id', systemId);
+                const { error: deleteError } = await supabase.from('cctv_users').delete().eq('cctv_system_id', systemId);
+                if (deleteError) throw deleteError;
             } else {
                 // Generate ID client-side since DB doesn't have default
                 systemId = crypto.randomUUID();
@@ -181,7 +184,8 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
                     }));
 
                 if (usersToSave.length > 0) {
-                    await supabase.from('cctv_users').insert(usersToSave);
+                    const { error: usersError } = await supabase.from('cctv_users').insert(usersToSave);
+                    if (usersError) throw usersError;
                 }
             }
 
