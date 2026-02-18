@@ -173,6 +173,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
                 const usersToSave = formData.users
                     .filter(u => u.username) // Only save if username exists
                     .map(u => ({
+                        id: crypto.randomUUID(),
                         cctv_system_id: systemId,
                         username: u.username,
                         password: u.password,
