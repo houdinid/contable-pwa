@@ -743,12 +743,85 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
 
     const exportData = async () => {
-        // Implement export if needed, effectively simpler just dumping tables
+        try {
+            setLoadingData(true);
+            const tables = [
+                'contacts', 'business_identities', 'supplier_categories', 'expense_categories',
+                'products', 'payment_methods', 'wifi_networks',
+                'invoices', 'invoice_items',
+                'expenses',
+                'purchases', 'purchase_items',
+                'service_orders', 'service_order_items', 'payments'
+            ];
+
+            const backupData: any = {};
+
+            // Fetch all data in parallel
+            await Promise.all(tables.map(async (table) => {
+                const { data, error } = await supabase.from(table).select('*');
+                if (error) throw error;
+                backupData[table] = data;
+            }));
+
+            // Create and download file
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_contable_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("Export failed:", error);
+            alert("Error al exportar datos. Revisa la consola.");
+            throw error;
+        } finally {
+            setLoadingData(false);
+        }
     };
 
     const importData = async (jsonData: string) => {
-        // Not implemented for Supabase yet (complex to handle ID conflicts and relations)
-        console.warn("Import not supported in Cloud mode yet.");
+        if (!confirm("⚠️ ADVERTENCIA: Esta acción intentará fusionar/actualizar los datos existentes. Se recomienda tener una copia de seguridad previa. ¿Continuar?")) {
+            return;
+        }
+
+        try {
+            setLoadingData(true);
+            const data = JSON.parse(jsonData);
+
+            // Import Order Matters due to Foreign Keys
+            const tableOrder = [
+                'contacts', 'business_identities', 'supplier_categories', 'expense_categories',
+                'products', 'payment_methods', 'wifi_networks',
+                'invoices', 'invoice_items',
+                'expenses',
+                'purchases', 'purchase_items',
+                'service_orders', 'service_order_items', 'payments'
+            ];
+
+            for (const table of tableOrder) {
+                if (data[table] && Array.isArray(data[table]) && data[table].length > 0) {
+                    console.log(`Importing ${table}...`);
+                    const { error } = await supabase.from(table).upsert(data[table], { onConflict: 'id' }); // Upsert by ID
+                    if (error) {
+                        console.error(`Error importing table ${table}:`, error);
+                        // Don't break completely, try next table, but warn
+                        alert(`Error importando ${table}. Revisa la consola.`);
+                    }
+                }
+            }
+            // Reload data to reflect changes
+            window.location.reload();
+
+        } catch (error) {
+            console.error("Import failed:", error);
+            alert("Error al importar el archivo JSON. Verifica el formato.");
+        } finally {
+            setLoadingData(false);
+        }
     };
 
     return (
