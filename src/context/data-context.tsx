@@ -215,14 +215,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setContacts(prev => [...prev, newContact]);
 
         const { error } = await supabase.from('contacts').insert({
-            ...newContact,
-            bank_accounts: newContact.bankAccounts, // Map CamelCase to SnakeCase
+            id: newContact.id,
+            name: newContact.name,
+            email: newContact.email,
+            phone: newContact.phone,
+            address: newContact.address,
+            type: newContact.type,
             contact_person: newContact.contactPerson,
             tax_id: newContact.taxId,
             specialty_id: newContact.specialtyId,
             default_expense_category_id: newContact.defaultExpenseCategoryId,
             google_maps_url: newContact.googleMapsUrl,
-            credit_balance: newContact.creditBalance
+            credit_balance: newContact.creditBalance,
+            bank_accounts: newContact.bankAccounts
         });
 
         if (error) {
@@ -273,7 +278,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const { items, ...invoiceHeader } = newInvoice;
 
         const { error: invoiceError } = await supabase.from('invoices').insert({
-            ...invoiceHeader,
+            id: invoiceHeader.id,
+            number: invoiceHeader.number,
+            date: invoiceHeader.date,
+            subtotal: invoiceHeader.subtotal,
+            tax: invoiceHeader.tax,
+            total: invoiceHeader.total,
+            status: invoiceHeader.status,
+            type: invoiceHeader.type,
+            notes: invoiceHeader.notes,
             issuer_id: invoiceHeader.issuerId,
             due_date: invoiceHeader.dueDate,
             credit_days: invoiceHeader.creditDays,
@@ -323,7 +336,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setExpenses(prev => [newExpense, ...prev]);
 
         const { error } = await supabase.from('expenses').insert({
-            ...newExpense,
+            id: newExpense.id,
+            description: newExpense.description,
+            amount: newExpense.amount,
+            date: newExpense.date,
+            status: newExpense.status,
             category_id: newExpense.categoryId,
             supplier_id: newExpense.supplierId,
             business_identity_id: newExpense.businessIdentityId,
@@ -369,8 +386,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
 
         const { error } = await supabase.from('business_identities').insert({
-            ...newIdentity,
+            id: newIdentity.id,
+            name: newIdentity.name,
             tax_id: newIdentity.taxId,
+            address: newIdentity.address,
+            city: newIdentity.city,
+            email: newIdentity.email,
             logo_url: newIdentity.logoUrl,
             is_default: newIdentity.isDefault,
             is_tax_payer: newIdentity.isTaxPayer,
@@ -436,7 +457,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setPayments(prev => [...prev, newPayment]);
 
         const { error } = await supabase.from('payments').insert({
-            ...newPayment,
+            id: newPayment.id,
+            amount: newPayment.amount,
+            date: newPayment.date,
+            reference: newPayment.reference,
+            notes: newPayment.notes,
             invoice_id: newPayment.invoiceId,
             method_id: newPayment.methodId,
             destination_account_id: newPayment.destinationAccountId
@@ -472,7 +497,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const newItem = { ...data, id: data.name.toLowerCase().replace(/\s+/g, '_') }; // Use similar ID logic or uuid
         setExpenseCategories(prev => [...prev, newItem]);
         const { error } = await supabase.from('expense_categories').insert({
-            ...newItem,
+            id: newItem.id,
+            name: newItem.name,
+            color: newItem.color,
             parent_id: newItem.parentId
         });
         if (error) console.error("Error adding expense cat:", error);
@@ -497,7 +524,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const newItem = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
         setProducts(prev => [...prev, newItem]);
         const { error } = await supabase.from('products').insert({
-            ...newItem,
+            id: newItem.id,
+            name: newItem.name,
+            sku: newItem.sku,
+            description: newItem.description,
+            price: newItem.price,
+            cost: newItem.cost,
+            stock: newItem.stock,
             min_stock: newItem.minStock,
             category_id: newItem.categoryId
         });
@@ -531,7 +564,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         // Insert Purchase
         const { items, ...purchaseHeader } = newPurchase;
         const { error } = await supabase.from('purchases').insert({
-            ...purchaseHeader,
+            id: purchaseHeader.id,
+            date: purchaseHeader.date,
+            number: purchaseHeader.number,
+            total: purchaseHeader.total,
+            status: purchaseHeader.status,
+            notes: purchaseHeader.notes,
             supplier_id: purchaseHeader.supplierId,
             supplier_name: purchaseHeader.supplierName,
             business_identity_id: purchaseHeader.businessIdentityId,
@@ -580,7 +618,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const newItem = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
         setWifiNetworks(prev => [...prev, newItem]);
         const { error } = await supabase.from('wifi_networks').insert({
-            ...newItem,
+            id: newItem.id,
+            ssid: newItem.ssid,
+            password: newItem.password,
+            encryption: newItem.encryption,
+            model: newItem.model,
+            area: newItem.area,
+            gateway: newItem.gateway,
+            dns: newItem.dns,
+            notes: newItem.notes,
             is_hidden: newItem.isHidden,
             device_type: newItem.deviceType,
             device_brand: newItem.deviceBrand,
@@ -629,7 +675,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const { items, ...orderHeader } = newOrder;
 
         const { error } = await supabase.from('service_orders').insert({
-            ...orderHeader,
+            id: orderHeader.id,
+            number: orderHeader.number,
+            date: orderHeader.date,
+            status: orderHeader.status,
+            subtotal: orderHeader.subtotal,
+            tax: orderHeader.tax,
+            total: orderHeader.total,
+            notes: orderHeader.notes,
             client_id: orderHeader.clientId,
             client_name: orderHeader.clientName,
             client_email: orderHeader.clientEmail,
