@@ -54,8 +54,8 @@ export default function SettingsPage() {
         if (identity) {
             setIdentityForm({
                 name: identity.name,
-                taxId: identity.taxId,
-                address: identity.address,
+                taxId: identity.taxId || "",
+                address: identity.address || "",
                 city: identity.city || "",
                 email: identity.email || "",
                 logoUrl: identity.logoUrl || "",
