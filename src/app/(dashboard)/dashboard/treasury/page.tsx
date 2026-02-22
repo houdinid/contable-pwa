@@ -36,7 +36,7 @@ export default function TreasuryPage() {
                 {accounts.map(acc => {
                     const { income, outcome, balance } = calculateBalance(acc.id);
                     return (
-                        <div key={acc.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                        <div key={acc.id} className="bg-card rounded-xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow">
                             <div className="p-6">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
@@ -70,7 +70,7 @@ export default function TreasuryPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-between items-center">
+                            <div className="bg-muted/50 px-6 py-3 border-t border-border flex justify-between items-center">
                                 <span className="text-xs text-gray-500 uppercase font-medium">{acc.accountType === 'savings' ? 'Ahorros' : 'Corriente'}</span>
                                 <a
                                     href={`/dashboard/treasury/${acc.id}`}
@@ -84,7 +84,7 @@ export default function TreasuryPage() {
                 })}
 
                 {accounts.length === 0 && (
-                    <div className="col-span-full text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                    <div className="col-span-full text-center py-12 bg-card rounded-xl border border-dashed border-border text-muted-foreground">
                         <Wallet className="mx-auto h-12 w-12 text-gray-400 mb-3" />
                         <h3 className="text-lg font-medium text-gray-900">No tienes cuentas registradas</h3>
                         <p className="text-gray-500 mt-1">Ve a Configuración &rarr; Mis Razones Sociales para agregar cuentas bancarias.</p>

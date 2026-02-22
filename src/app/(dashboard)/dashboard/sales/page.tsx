@@ -30,7 +30,7 @@ export default function SalesPage() {
             {/* Desktop Table View */}
             <div className="hidden md:block bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                 <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 font-medium border-b border-border">
+                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-muted-foreground font-medium border-b border-border">
                         <tr>
                             <th className="px-6 py-4">Documento</th>
                             <th className="px-6 py-4">Cliente</th>
@@ -77,12 +77,12 @@ export default function SalesPage() {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
                 {invoices.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500 bg-white rounded-lg border border-gray-200">
+                    <div className="p-8 text-center text-muted-foreground bg-card rounded-lg border border-border">
                         No hay documentos registrados.
                     </div>
                 ) : (
                     invoices.map((inv) => (
-                        <div key={inv.id} className="bg-white dark:bg-card p-4 rounded-lg shadow-sm border border-gray-200 dark:border-border space-y-3">
+                        <div key={inv.id} className="bg-card p-4 rounded-lg shadow-sm border border-border space-y-3">
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-2">
                                     <FileText size={20} className={inv.type === 'quote' ? 'text-orange-500' : 'text-blue-500'} />

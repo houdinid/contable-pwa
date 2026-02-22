@@ -2,6 +2,7 @@
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant red (&:where(.red, .red *));
 
 :root {
   --background: #ffffff;
@@ -38,17 +39,44 @@
   /* gray-800 */
 }
 
-/* Warm/Reading Mode */
-.warm {
-  --background: #fff0eb;
-  /* More distinct warm/reddish white */
-  --foreground: #451a03;
-  /* Dark earthy brown */
-  --card: #fff6f3;
-  /* Slightly lighter warm card */
-  --card-foreground: #451a03;
-  --border: #fecdd3;
-  /* Soft red border */
+/* Red / Eye-Rest Mode */
+.red {
+  --background: #000000;
+  /* Pure black */
+  --foreground: #ff6b6b;
+  /* Brighter soft red/salmon for general text */
+  --card: #150000;
+  /* Very dark red */
+  --card-foreground: #ff8787;
+  --border: #4a0000;
+  /* Dark red border */
+
+  /* Overriding standard neutral/gray scales to red tones to automatically inherit eye-rest */
+  --color-gray-50: #2b0000;
+  --color-gray-100: #3b0000;
+  --color-gray-200: #4a0000;
+  --color-gray-300: #660000;
+  --color-gray-400: #cc3333;
+  --color-gray-500: #e64d4d;
+  --color-gray-600: #ff6b6b;
+  --color-gray-700: #ff8787;
+  --color-gray-800: #ff9999;
+  --color-gray-900: #ffb3b3;
+  /* Brightest for headers previously using gray-900 */
+  --color-gray-950: #ffcccc;
+
+  /* Accent mapping (Indigos & Blues mapped to Reds) */
+  --color-indigo-50: #2b0000;
+  --color-indigo-100: #3b0000;
+  --color-indigo-500: #ff6b6b;
+  --color-indigo-600: #ff4d4d;
+  --color-indigo-700: #ff3333;
+
+  --color-blue-50: #2b0000;
+  --color-blue-100: #3b0000;
+  --color-blue-500: #ff6b6b;
+  --color-blue-600: #ff4d4d;
+  --color-blue-700: #ff3333;
 }
 
 body {

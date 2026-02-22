@@ -255,7 +255,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                         <select
                             value={issuerId}
                             onChange={(e) => setIssuerId(e.target.value)}
-                            className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-500 w-full md:w-auto"
+                            className="bg-background border border-border text-foreground rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-500 w-full md:w-auto"
                         >
                             <option value="" disabled>-- Seleccionar Emisor --</option>
                             {businessIdentities.map(b => (
@@ -266,7 +266,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                     <select
                         value={type}
                         onChange={(e) => setType(e.target.value as any)}
-                        className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-500 w-full md:w-auto"
+                        className="bg-background border border-border text-foreground rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-500 w-full md:w-auto"
                     >
                         <option value="invoice">Factura de Venta</option>
                         <option value="quote">Cotización</option>
@@ -276,7 +276,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Header Section */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-card p-6 rounded-xl shadow-sm border border-border grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="relative">
                         <div className="flex justify-between mb-1">
                             <label className="block text-sm font-medium text-gray-700">Cliente</label>
@@ -301,14 +301,14 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                         />
                         {/* Dropdown Results */}
                         {showContactDropdown && (
-                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                 {filteredContacts.length > 0 ? (
                                     filteredContacts.map(c => (
                                         <button
                                             key={c.id}
                                             type="button"
                                             onClick={() => selectContact(c)}
-                                            className="w-full text-left px-4 py-2 hover:bg-gray-50 flex flex-col"
+                                            className="w-full text-left px-4 py-2 hover:bg-muted/50 flex flex-col"
                                         >
                                             <span className="font-medium text-gray-900">{c.name}</span>
                                             {c.taxId && <span className="text-xs text-gray-500">NIT: {c.taxId}</span>}
@@ -386,7 +386,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                 </div>
 
                 {/* Items Section */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
                     <h2 className="text-lg font-semibold text-gray-800 mb-4">Items</h2>
 
                     {/* Items Header - Hidden on mobile */}
@@ -438,7 +438,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                                     />
                                     {/* Custom Autocomplete Dropdown */}
                                     {productSuggestions && productSuggestions.itemId === item.id && (
-                                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                        <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                                             {productSuggestions.products.map(p => (
                                                 <button
                                                     key={p.id}
@@ -448,7 +448,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                                                         handleItemChange(item.id, 'price', p.price);
                                                         setProductSuggestions(null);
                                                     }}
-                                                    className="w-full text-left px-4 py-2 hover:bg-gray-50 flex justify-between items-center"
+                                                    className="w-full text-left px-4 py-2 hover:bg-muted/50 flex justify-between items-center"
                                                 >
                                                     <span className="font-medium text-gray-900 truncate mr-2">{p.name}</span>
                                                     <span className="text-xs text-gray-500 whitespace-nowrap">
@@ -507,7 +507,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
 
                 {/* Totals Section */}
                 <div className="flex justify-end">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 w-full max-w-sm space-y-3">
+                    <div className="bg-card p-6 rounded-xl shadow-sm border border-border w-full max-w-sm space-y-3">
                         <div className="flex justify-between text-gray-600">
                             <span>Subtotal</span>
                             <span>${subtotal.toLocaleString()}</span>
@@ -530,7 +530,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                     <button
                         type="button"
                         onClick={() => router.back()}
-                        className="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                        className="px-6 py-2 border border-border text-foreground font-medium rounded-lg hover:bg-muted/50 transition-colors"
                     >
                         Cancelar
                     </button>

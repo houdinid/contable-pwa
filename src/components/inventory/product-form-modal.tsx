@@ -105,7 +105,7 @@ export function ProductFormModal({ isOpen, onClose, product, initialData, onSucc
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+            <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-lg">
                 <div className="flex justify-between items-center p-6 border-b border-gray-100">
                     <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                         <Package className="text-indigo-600" />

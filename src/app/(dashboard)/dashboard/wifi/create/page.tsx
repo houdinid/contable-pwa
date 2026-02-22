@@ -106,7 +106,7 @@ export default function CreateWifiPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* 1. Ubicación y Cliente */}
                 <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900/30 border-b border-border flex items-center gap-2">
+                    <div className="p-4 bg-muted/50 border-b border-border flex items-center gap-2">
                         <MapPin className="text-green-500" size={20} />
                         <h2 className="font-semibold text-foreground">Ubicación y Cliente</h2>
                     </div>
@@ -149,7 +149,7 @@ export default function CreateWifiPage() {
 
                 {/* 2. Información de Red */}
                 <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900/30 border-b border-border flex items-center gap-2">
+                    <div className="p-4 bg-muted/50 border-b border-border flex items-center gap-2">
                         <Wifi className="text-indigo-500" size={20} />
                         <h2 className="font-semibold text-foreground">Información de Red & Seguridad</h2>
                     </div>
@@ -208,7 +208,7 @@ export default function CreateWifiPage() {
 
                 {/* 3. Configuración IP */}
                 <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900/30 border-b border-border flex items-center gap-2">
+                    <div className="p-4 bg-muted/50 border-b border-border flex items-center gap-2">
                         <Server className="text-blue-500" size={20} />
                         <h2 className="font-semibold text-foreground">Configuración IP (LAN)</h2>
                     </div>
@@ -260,7 +260,7 @@ export default function CreateWifiPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Hardware Info */}
                     <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-                        <div className="p-4 bg-gray-50 dark:bg-gray-900/30 border-b border-border flex items-center gap-2">
+                        <div className="p-4 bg-muted/50 border-b border-border flex items-center gap-2">
                             <Smartphone className="text-orange-500" size={20} />
                             <h2 className="font-semibold text-foreground">Hardware del Dispositivo</h2>
                         </div>
@@ -316,12 +316,12 @@ export default function CreateWifiPage() {
 
                     {/* Photo Upload */}
                     <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-                        <div className="p-4 bg-gray-50 dark:bg-gray-900/30 border-b border-border flex items-center gap-2">
+                        <div className="p-4 bg-muted/50 border-b border-border flex items-center gap-2">
                             <Upload className="text-purple-500" size={20} />
                             <h2 className="font-semibold text-foreground">Foto del Equipo</h2>
                         </div>
                         <div className="p-6">
-                            <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors relative min-h-[200px]">
+                            <div className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors relative min-h-[200px]">
                                 {previewUrl ? (
                                     <>
                                         <img src={previewUrl} alt="Preview" className="w-full h-40 object-contain rounded-lg mb-2" />
@@ -361,7 +361,7 @@ export default function CreateWifiPage() {
 
                 {/* Notes */}
                 <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900/30 border-b border-border">
+                    <div className="p-4 bg-muted/50 border-b border-border">
                         <h2 className="font-semibold text-foreground">Notas Adicionales</h2>
                     </div>
                     <div className="p-6">
@@ -379,7 +379,7 @@ export default function CreateWifiPage() {
                 <div className="flex justify-end gap-4 pt-4">
                     <Link
                         href="/dashboard/wifi"
-                        className="px-6 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium"
+                        className="px-6 py-2 border border-border text-foreground rounded-xl hover:bg-muted/50 transition-colors font-medium"
                     >
                         Cancelar
                     </Link>

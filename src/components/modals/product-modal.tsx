@@ -73,7 +73,7 @@ export default function ProductModal({ isOpen, onClose, productToEdit }: Product
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
+            <div className="bg-card border border-border rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
                 <div className="flex justify-between items-center p-6 border-b border-gray-100">
                     <h2 className="text-xl font-bold text-gray-800">
                         {productToEdit ? 'Editar Producto' : 'Nuevo Producto'}
@@ -168,7 +168,7 @@ export default function ProductModal({ isOpen, onClose, productToEdit }: Product
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                            className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted/50 font-medium transition-colors"
                         >
                             Cancelar
                         </button>

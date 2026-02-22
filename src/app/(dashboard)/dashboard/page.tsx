@@ -54,17 +54,17 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors">
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 transition-colors">Actividad Reciente</h2>
+                <div className="bg-card text-card-foreground p-6 rounded-xl shadow-sm border border-border transition-colors">
+                    <h2 className="text-lg font-semibold mb-4 transition-colors">Actividad Reciente</h2>
                     {recentInvoices.length === 0 ? (
-                        <p className="text-gray-400 dark:text-gray-500 text-sm">No hay actividad registrada.</p>
+                        <p className="text-muted-foreground text-sm">No hay actividad registrada.</p>
                     ) : (
                         <div className="space-y-4">
                             {recentInvoices.map(inv => (
-                                <div key={inv.id} className="flex justify-between items-center border-b border-gray-50 dark:border-gray-800 pb-2 last:border-0 last:pb-0">
+                                <div key={inv.id} className="flex justify-between items-center border-b border-border pb-2 last:border-0 last:pb-0">
                                     <div>
-                                        <p className="font-medium text-gray-800 dark:text-gray-200">{inv.contactName}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                                        <p className="font-medium text-card-foreground">{inv.contactName}</p>
+                                        <p className="text-xs text-muted-foreground">
                                             {inv.type === 'quote' ? 'Cotización' : 'Factura'} #{inv.number}
                                         </p>
                                     </div>
@@ -76,7 +76,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Placeholder for Expenses breakdown or Chart */}
-                <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm transition-colors">
+                <div className="bg-card text-muted-foreground p-6 rounded-xl shadow-sm border border-border flex items-center justify-center text-sm transition-colors">
                     Gráfico de Ingresos vs Gastos (Próximamente)
                 </div>
             </div>
@@ -84,15 +84,16 @@ export default function DashboardPage() {
     );
 }
 
+// Replace `StatCard` usage of bg-white as well
 function StatCard({ title, value, formatter, trend, highlight }: any) {
     const isPositive = trend === "up" || trend === "neutral"; // simple logic
     return (
-        <div className={`bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:shadow-md`}>
-            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium transition-colors">{title}</p>
+        <div className={`bg-card text-card-foreground p-6 rounded-xl shadow-sm border border-border transition-all hover:shadow-md`}>
+            <p className="text-muted-foreground text-sm font-medium transition-colors">{title}</p>
             <div className="mt-2 flex items-baseline gap-2">
                 <p className={`text-3xl font-bold transition-colors ${highlight
                     ? (value >= 0 ? "text-indigo-600 dark:text-indigo-400" : "text-red-600 dark:text-red-400")
-                    : "text-gray-900 dark:text-white"
+                    : "text-card-foreground"
                     }`}>
                     {formatter(value)}
                 </p>

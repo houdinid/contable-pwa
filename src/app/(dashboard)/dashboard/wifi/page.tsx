@@ -67,14 +67,14 @@ export default function WifiListPage() {
                     placeholder="Buscar por SSID, Cliente, IP..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-white dark:bg-card border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                 />
             </div>
 
             {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredNetworks.length === 0 ? (
-                    <div className="col-span-full text-center py-12 text-gray-500 bg-white dark:bg-card rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+                    <div className="col-span-full text-center py-12 text-muted-foreground bg-card rounded-xl border border-dashed border-border">
                         <Wifi size={48} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
                         <p>No se encontraron redes WiFi.</p>
                     </div>
@@ -191,7 +191,7 @@ export default function WifiListPage() {
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                                         <Link
                                             href={`/dashboard/wifi/${network.id}/edit`}
-                                            className="px-3 py-1 bg-white/90 text-gray-900 text-xs rounded-full shadow-sm font-medium"
+                                            className="px-3 py-1 bg-background/90 text-foreground text-xs rounded-full shadow-sm font-medium"
                                         >
                                             Ver Detalles
                                         </Link>

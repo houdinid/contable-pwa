@@ -241,7 +241,7 @@ export default function ContactsPage() {
                         const categoryName = contact.specialtyId ? supplierCategories.find(c => c.id === contact.specialtyId)?.name : null;
 
                         return (
-                            <div key={contact.id} className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
+                            <div key={contact.id} className="bg-card text-card-foreground p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${contact.type === 'client'
@@ -251,36 +251,36 @@ export default function ContactsPage() {
                                             {contact.type === 'client' ? <User size={20} /> : <Building2 size={20} />}
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-foreground">{contact.name}</h3>
-                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                <span className={`text-xs px-2 py-0.5 rounded-full ${contact.type === 'client'
+                                            <h3 className="font-semibold text-lg text-foreground">{contact.name}</h3>
+                                            <div className="flex gap-2 text-xs font-medium mt-1">
+                                                <span className={`px-2 py-0.5 rounded-full ${contact.type === 'client'
                                                     ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                                                     : 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300'
                                                     }`}>
                                                     {contact.type === 'client' ? 'Cliente' : 'Proveedor'}
                                                 </span>
                                                 {categoryName && (
-                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                                                    <span className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
                                                         {categoryName}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-1">
+                                    <div className="flex flex-col gap-2">
                                         <button
-                                            onClick={() => handleEdit(contact)}
-                                            className="p-2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors"
-                                            title="Editar"
+                                            onClick={() => setEditingContact(contact)}
+                                            className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors bg-background rounded-md border border-border"
+                                            title="Editar contacto"
                                         >
-                                            <Edit size={18} />
+                                            <Edit size={16} />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(contact)}
-                                            className="p-2 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 transition-colors"
-                                            title="Eliminar"
+                                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors bg-background rounded-md border border-border"
+                                            title="Eliminar contacto"
                                         >
-                                            <Trash2 size={18} />
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </div>
@@ -292,47 +292,42 @@ export default function ContactsPage() {
                                             <span>{contact.contactPerson}</span>
                                         </div>
                                     )}
-                                    {contact.email && (
-                                        <div className="flex items-center gap-2">
-                                            <Mail size={16} className="text-gray-400 dark:text-gray-500" />
-                                            <a href={`mailto:${contact.email}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 truncate">{contact.email}</a>
-                                        </div>
-                                    )}
-                                    {contact.website && (
-                                        <div className="flex items-center gap-2">
-                                            <Globe size={16} className="text-gray-400 dark:text-gray-500" />
-                                            <a href={contact.website.startsWith('http') ? contact.website : `https://${contact.website}`} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-indigo-400 truncate flex-1">
-                                                {contact.website.replace(/^https?:\/\//, '')}
-                                            </a>
-                                        </div>
-                                    )}
-                                    {contact.phone && (
-                                        <div className="flex items-center gap-2">
-                                            <Phone size={16} className="text-gray-400 dark:text-gray-500" />
-                                            <a href={`tel:${contact.phone}`} className="hover:text-indigo-600 dark:hover:text-indigo-400">{contact.phone}</a>
-                                        </div>
-                                    )}
-                                    {contact.address && (
-                                        <div className="flex items-center gap-2">
-                                            <MapPin size={16} className="text-gray-400 dark:text-gray-500" />
-                                            <span>{contact.address}</span>
-                                        </div>
-                                    )}
-                                    {contact.googleMapsUrl && (
-                                        <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium pt-1">
-                                            <MapIcon size={16} />
-                                            <a href={contact.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="hover:underline flex-1 truncate">
-                                                Ver Ubicación
-                                            </a>
-                                            <button
-                                                onClick={() => navigator.clipboard.writeText(contact.googleMapsUrl || "")}
-                                                title="Copiar enlace"
-                                                className="ml-auto text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                                            >
-                                                <Copy size={14} />
-                                            </button>
-                                        </div>
-                                    )}
+                                    <div className="space-y-3 text-sm">
+                                        {contact.email && (
+                                            <div className="flex items-center gap-3 text-card-foreground">
+                                                <Mail size={16} className="text-muted-foreground flex-shrink-0" />
+                                                <a href={`mailto:${contact.email}`} className="truncate hover:underline">{contact.email}</a>
+                                            </div>
+                                        )}
+                                        {contact.phone && (
+                                            <div className="flex items-center gap-3 text-card-foreground">
+                                                <Phone size={16} className="text-muted-foreground flex-shrink-0" />
+                                                <a href={`tel:${contact.phone}`} className="hover:underline">{contact.phone}</a>
+                                            </div>
+                                        )}
+                                        {contact.address && (
+                                            <div className="flex items-start gap-3 text-card-foreground">
+                                                <MapPin size={16} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                                                <span className="line-clamp-2" title={contact.address}>{contact.address}</span>
+                                            </div>
+                                        )}
+                                        {contact.website && (
+                                            <div className="flex items-center gap-2">
+                                                <Globe size={16} className="text-gray-400 dark:text-gray-500" />
+                                                <a href={contact.website.startsWith('http') ? contact.website : `https://${contact.website}`} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-indigo-400 truncate flex-1">
+                                                    {contact.website.replace(/^https?:\/\//, '')}
+                                                </a>
+                                            </div>
+                                        )}
+                                        {contact.googleMapsUrl && (
+                                            <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium pt-1">
+                                                <MapIcon size={16} />
+                                                <a href={contact.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="hover:underline flex-1 truncate">
+                                                    Ver Ubicación
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
                                     {contact.bankAccounts && contact.bankAccounts.length > 0 && (
                                         <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
                                             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium mb-2 text-xs">
@@ -383,6 +378,6 @@ export default function ContactsPage() {
                 initialData={editingContact}
                 isEditing={!!editingContact}
             />
-        </div >
+        </div>
     );
 }

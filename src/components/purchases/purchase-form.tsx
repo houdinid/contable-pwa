@@ -371,7 +371,7 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                     {/* Pending: XML Import Button Here */}
 
                     {/* Items Section */}
-                    <div className="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl border border-border">
+                    <div className="bg-muted/50 p-4 rounded-xl border border-border">
                         <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Agregar Productos</h3>
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                             <div className="md:col-span-5">
@@ -420,7 +420,7 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                     {/* Items Table */}
                     <div className="border border-border rounded-lg overflow-hidden bg-card">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 dark:bg-gray-900/60 text-gray-500 dark:text-gray-400 font-medium">
+                            <thead className="bg-muted/50 text-muted-foreground font-medium">
                                 <tr>
                                     <th className="px-4 py-2">Producto</th>
                                     <th className="px-4 py-2 text-right">Cant.</th>
@@ -440,7 +440,7 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                                     items.map((item, index) => {
                                         const isUnlinked = item.productId === 'unknown';
                                         return (
-                                            <tr key={index} className={isUnlinked ? "bg-yellow-50 dark:bg-yellow-900/10" : "hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"}>
+                                            <tr key={index} className={isUnlinked ? "bg-yellow-50 dark:bg-yellow-900/10" : "hover:bg-muted/50 transition-colors"}>
                                                 <td className="px-4 py-2">
                                                     <div className="flex items-center gap-2" title={isUnlinked ? "Producto no vinculado" : ""}>
                                                         {isUnlinked && (
@@ -474,7 +474,7 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                                     })
                                 )}
                             </tbody>
-                            <tfoot className="bg-gray-50 dark:bg-gray-900/60 font-bold">
+                            <tfoot className="bg-muted/50 font-bold">
                                 <tr>
                                     <td colSpan={3} className="px-4 py-3 text-right text-gray-900 dark:text-gray-200">Total Compra:</td>
                                     <td className="px-4 py-3 text-right text-indigo-600 dark:text-indigo-400">${totalAmount.toLocaleString()}</td>
@@ -517,7 +517,7 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                                 <button
                                     type="button"
                                     onClick={() => imageInputRef.current?.click()}
-                                    className="w-full h-20 flex flex-col items-center justify-center gap-1 border border-dashed border-border rounded-lg text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-gray-400 transition-colors"
+                                    className="w-full h-20 flex flex-col items-center justify-center gap-1 border border-dashed border-border rounded-lg text-muted-foreground hover:bg-muted/50 hover:border-gray-400 transition-colors"
                                 >
                                     <Camera size={20} />
                                     <span className="text-xs">Tomar Foto / Subir</span>

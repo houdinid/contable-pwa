@@ -51,7 +51,7 @@ export default function CreateContactPage() {
                 </h1>
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 space-y-6">
+            <form onSubmit={handleSubmit} className="bg-card p-8 rounded-xl shadow-sm border border-border space-y-6">
                 {/* Type Selection */}
                 <div className="grid grid-cols-2 gap-4">
                     <label className={`

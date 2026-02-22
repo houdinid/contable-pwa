@@ -22,7 +22,7 @@ export default function DashboardLayout({
     }, [isLoading, isAuthenticated, router]);
 
     if (isLoading) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-background transition-colors">Cargando...</div>;
+        return <div className="min-h-screen flex items-center justify-center bg-background transition-colors">Cargando...</div>;
     }
 
     if (!isAuthenticated) {

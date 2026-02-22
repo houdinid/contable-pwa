@@ -77,7 +77,7 @@ export function ExpenseCategoriesManager() {
     const getChildren = (parentId: string) => expenseCategories.filter(exc => exc.parentId === parentId);
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <FolderTree className="text-indigo-600" size={24} />
@@ -95,10 +95,10 @@ export function ExpenseCategoriesManager() {
                 </button>
             </div>
 
-            <div className="p-6 bg-gray-50 min-h-[300px]">
+            <div className="p-6 bg-muted/50 min-h-[300px]">
                 {/* Main Add Form */}
                 {isAdding && (
-                    <div className="mb-4 bg-white p-4 rounded-lg border border-indigo-100 shadow-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="mb-4 bg-card p-4 rounded-lg border border-border shadow-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                         <Folder size={20} className="text-indigo-400" />
                         <input
                             autoFocus
@@ -180,7 +180,7 @@ function CategoryItem({
     return (
         <div className="space-y-1">
             <div
-                className={`group flex items-center justify-between p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 hover:shadow-sm transition-all ${isEditing ? 'bg-white border-indigo-200' : ''}`}
+                className={`group flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 border border-transparent hover:border-gray-200 hover:shadow-sm transition-all ${isEditing ? 'bg-card border-border' : ''}`}
                 style={{ marginLeft: `${level * 24}px` }}
             >
                 <div className="flex items-center gap-2 flex-1">
@@ -227,7 +227,7 @@ function CategoryItem({
                             <button onClick={() => onAddSub(category.id)} className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded" title="Agregar Subcategoría">
                                 <Plus size={14} />
                             </button>
-                            <button onClick={() => onEdit(category)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded">
+                            <button onClick={() => onEdit(category)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-muted/50 rounded">
                                 <Edit2 size={14} />
                             </button>
                             <button onClick={() => onDelete(category.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded">
@@ -240,7 +240,7 @@ function CategoryItem({
 
             {/* Add Subcategory Form */}
             {isAddingChild && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-indigo-100 ml-8 animate-in fade-in slide-in-from-top-1">
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border ml-8 animate-in fade-in slide-in-from-top-1">
                     <Tag size={16} className="text-indigo-400" />
                     <input
                         autoFocus

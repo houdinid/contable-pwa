@@ -34,7 +34,7 @@ export default function PurchasesPage() {
 
             {/* List */}
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden transition-colors">
-                <div className="p-4 border-b border-border flex items-center gap-4 bg-gray-50 dark:bg-gray-900/50 transition-colors">
+                <div className="p-4 border-b border-border flex items-center gap-4 bg-muted/50 transition-colors">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
@@ -49,7 +49,7 @@ export default function PurchasesPage() {
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 font-medium transition-colors">
+                        <thead className="bg-muted/50 text-muted-foreground font-medium transition-colors">
                             <tr>
                                 <th className="px-6 py-3">Fecha</th>
                                 <th className="px-6 py-3">Proveedor</th>
@@ -69,7 +69,7 @@ export default function PurchasesPage() {
                                 </tr>
                             ) : (
                                 filteredPurchases.map(purchase => (
-                                    <tr key={purchase.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                    <tr key={purchase.id} className="hover:bg-muted/50 transition-colors">
                                         <td className="px-6 py-4 text-gray-600 dark:text-gray-400 flex items-center gap-2">
                                             <Calendar size={14} className="text-gray-400" />
                                             {purchase.date}

@@ -48,7 +48,7 @@ export default function ExpensesPage() {
             </div>
 
             {/* Summary Card */}
-            <div className="bg-gradient-to-br from-red-50 to-white dark:from-red-900/10 dark:to-card p-6 rounded-xl border border-red-100 dark:border-red-900/30 shadow-sm flex items-center justify-between transition-colors">
+            <div className="bg-card p-6 rounded-xl border border-border shadow-sm flex items-center justify-between transition-colors">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
                         <TrendingDown size={24} />
@@ -63,7 +63,7 @@ export default function ExpensesPage() {
             {/* Expenses List */}
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-x-auto transition-colors">
                 <table className="w-full text-left text-sm min-w-[800px]">
-                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 font-medium border-b border-border transition-colors">
+                    <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border transition-colors">
                         <tr>
                             <th className="px-6 py-4">Descripción</th>
                             <th className="px-6 py-4">Empresa</th>
@@ -83,7 +83,7 @@ export default function ExpensesPage() {
                             </tr>
                         ) : (
                             expenses.map((exp) => (
-                                <tr key={exp.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                <tr key={exp.id} className="hover:bg-muted/50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-foreground">
                                         {exp.description}
                                     </td>

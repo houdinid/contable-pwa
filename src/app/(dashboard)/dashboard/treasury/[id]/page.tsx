@@ -94,7 +94,7 @@ export default function TreasuryAccountPage() {
                 Volver a Tesorería
             </button>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div className="bg-card p-8 rounded-xl shadow-sm border border-border">
                 <div className="flex justify-between items-start">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -130,7 +130,7 @@ export default function TreasuryAccountPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100">
                     <h3 className="font-semibold text-gray-900">Historial de Movimientos</h3>
                 </div>
@@ -142,7 +142,7 @@ export default function TreasuryAccountPage() {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="bg-gray-50 text-gray-700 font-medium text-sm">
+                            <thead className="bg-muted/50 text-muted-foreground font-medium text-sm">
                                 <tr>
                                     <th className="px-6 py-3">Fecha</th>
                                     <th className="px-6 py-3">Descripción</th>
@@ -152,7 +152,7 @@ export default function TreasuryAccountPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {movements.map((move) => (
-                                    <tr key={`${move.type}-${move.id}`} className="hover:bg-gray-50">
+                                    <tr key={`${move.type}-${move.id}`} className="hover:bg-muted/50 transition-colors">
                                         <td className="px-6 py-3 text-sm text-gray-600 whitespace-nowrap">{move.date}</td>
                                         <td className="px-6 py-3 text-sm text-gray-900">
                                             {move.description}

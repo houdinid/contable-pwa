@@ -287,14 +287,14 @@ export default function InvoiceDetailPage() {
                     <button
                         onClick={handleDownloadPDF}
                         disabled={isGenerating}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm w-full sm:w-auto disabled:opacity-50"
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-card border border-border text-foreground rounded-lg hover:bg-muted transition-colors shadow-sm w-full sm:w-auto disabled:opacity-50"
                     >
                         <FileText size={18} />
                         {isGenerating ? '...' : 'PDF'}
                     </button>
                     <button
                         onClick={handlePrint}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm w-full sm:w-auto"
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-card border border-border text-foreground rounded-lg hover:bg-muted transition-colors shadow-sm w-full sm:w-auto"
                     >
                         <Printer size={18} />
                         Imprimir
@@ -312,7 +312,7 @@ export default function InvoiceDetailPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Invoice Document */}
-                <div id="invoice-content" className="lg:col-span-2 bg-white rounded-none shadow-none print:shadow-none print:border-0 print:p-0 overflow-hidden" style={{ minHeight: '297mm', padding: '20px' }}>
+                <div id="invoice-content" className="lg:col-span-2 bg-card rounded-none shadow-none print:shadow-none print:border-0 print:p-0 overflow-hidden" style={{ minHeight: '297mm', padding: '20px' }}>
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start mb-6 border-b pb-4 gap-4 sm:gap-0">
                         <div>
@@ -429,7 +429,7 @@ export default function InvoiceDetailPage() {
                 {/* Sidebar: Payments & Status (Hidden on Print) */}
                 <div className="space-y-6 print:hidden">
                     {/* Payment Status Card */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
                         <h3 className="font-semibold text-gray-900 mb-4">Estado del Pago</h3>
 
                         <div className="space-y-4">
@@ -459,7 +459,7 @@ export default function InvoiceDetailPage() {
 
                     {/* Payment History */}
                     {invoice.type === 'invoice' && (
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
                             <h3 className="font-semibold text-gray-900 mb-4">Historial de Pagos</h3>
                             {relatedPayments.length === 0 ? (
                                 <p className="text-sm text-gray-500 text-center py-4">No hay pagos registrados</p>
@@ -468,7 +468,7 @@ export default function InvoiceDetailPage() {
                                     {relatedPayments.map(payment => {
                                         const method = paymentMethods.find(m => m.id === payment.methodId);
                                         return (
-                                            <div key={payment.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                            <div key={payment.id} className="p-3 bg-card rounded-lg border border-border">
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className="font-medium text-gray-900">${payment.amount.toLocaleString()}</span>
                                                     <span className="text-xs text-gray-500">{payment.date}</span>
@@ -496,12 +496,12 @@ export default function InvoiceDetailPage() {
             {
                 showPaymentModal && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                        <div className="bg-card rounded-xl shadow-xl max-w-md w-full p-6 border border-border">
                             <h3 className="text-lg font-bold text-gray-900 mb-4">Registrar Nuevo Pago</h3>
 
                             {/* OCR Upload Button */}
                             <div className="mb-6">
-                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-border border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted transition-colors">
                                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                         {isScanning ? (
                                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>

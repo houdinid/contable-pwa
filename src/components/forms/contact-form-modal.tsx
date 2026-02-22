@@ -149,8 +149,8 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
-                <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div className="bg-card rounded-xl shadow-xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto border border-border">
+                <div className="p-4 border-b border-border flex justify-between items-center bg-muted/50">
                     <h3 className="font-bold text-gray-900">{isEditing ? 'Editar Contacto' : 'Nuevo Contacto'}</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                         <X size={20} />
@@ -163,7 +163,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                         <button
                             type="button"
                             onClick={() => setType('client')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${type === 'client' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${type === 'client' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                         >
                             <User size={16} />
                             Cliente
@@ -171,7 +171,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                         <button
                             type="button"
                             onClick={() => setType('supplier')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${type === 'supplier' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${type === 'supplier' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                         >
                             <Building2 size={16} />
                             Proveedor
@@ -237,7 +237,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                     </div>
 
                     {/* Bank Accounts Section (Available for all contacts) */}
-                    <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border">
                         <h4 className="font-medium text-gray-900 border-b border-gray-200 pb-2 mb-3 flex items-center gap-2">
                             <CreditCard size={16} className="text-indigo-600" /> Cuentas Bancarias
                         </h4>
@@ -247,7 +247,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                         ) : (
                             <div className="space-y-3">
                                 {bankAccounts.map((account) => (
-                                    <div key={account.id} className="bg-white p-3 rounded-md border border-gray-200 relative">
+                                    <div key={account.id} className="bg-background p-3 rounded-md border border-border relative">
                                         <button
                                             type="button"
                                             onClick={() => removeAccount(account.id)}
@@ -259,7 +259,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                                         <div className="grid grid-cols-2 gap-2 text-sm pr-6">
                                             <div><span className="font-bold text-gray-900">{account.bankName}</span></div>
                                             <div className="text-right text-gray-500">{account.accountType === 'savings' ? 'Ahorros' : 'Corriente'}</div>
-                                            <div className="col-span-2 font-mono text-indigo-700 bg-gray-50 px-2 py-1 rounded border border-gray-100 mt-1 flex justify-between items-center">
+                                            <div className="col-span-2 font-mono text-indigo-500 bg-muted/50 px-2 py-1 rounded border border-border mt-1 flex justify-between items-center">
                                                 <span>{account.accountNumber}</span>
                                             </div>
                                         </div>
@@ -286,7 +286,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                                                 else if (method.type === 'check') setNewAccountType('checking');
                                             }
                                         }}
-                                        className="w-full px-2 py-1.5 text-sm border rounded focus:ring-1 focus:ring-indigo-500 bg-white"
+                                        className="w-full px-2 py-1.5 text-sm border border-border rounded focus:ring-1 focus:ring-indigo-500 bg-background text-foreground"
                                     >
                                         <option value="">-- Seleccionar --</option>
                                         {paymentMethods.filter(p => ['bank', 'other', 'crypto', 'cash'].includes(p.type)).map(method => (
@@ -309,7 +309,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                                         <select
                                             value={newAccountType}
                                             onChange={(e) => setNewAccountType(e.target.value as any)}
-                                            className="w-full px-2 py-1.5 text-sm border rounded focus:ring-1 focus:ring-indigo-500 bg-white"
+                                            className="w-full px-2 py-1.5 text-sm border border-border rounded focus:ring-1 focus:ring-indigo-500 bg-background text-foreground"
                                         >
                                             <option value="">-- Seleccionar --</option>
                                             <option value="savings">Ahorros</option>
@@ -346,7 +346,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                                 <select
                                     value={specialtyId}
                                     onChange={(e) => setSpecialtyId(e.target.value)}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-background text-foreground"
                                 >
                                     <option value="">-- Sin especificar --</option>
                                     {supplierCategories.map(cat => (
@@ -362,7 +362,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                                 <select
                                     value={defaultExpenseCategoryId}
                                     onChange={(e) => setDefaultExpenseCategoryId(e.target.value)}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-background text-foreground"
                                 >
                                     <option value="">-- Seleccionar Categoría --</option>
                                     {getCategoryOptions()}

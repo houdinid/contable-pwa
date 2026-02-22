@@ -332,7 +332,7 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
                 )}
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 space-y-6">
+            <form onSubmit={handleSubmit} className="bg-card p-8 rounded-xl shadow-sm border border-border space-y-6">
 
                 {/* Description */}
                 <div>
@@ -390,7 +390,7 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
                                     sourceAccountId: "" // Reset source account on identity change
                                 }));
                             }}
-                            className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                            className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-background text-foreground"
                         >
                             <option value="">-- Seleccionar --</option>
                             {businessIdentities.map(b => (
@@ -406,7 +406,7 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
                             <select
                                 value={formData.status}
                                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
-                                className="px-2 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium"
+                                className="px-2 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-background text-foreground font-medium"
                             >
                                 <option value="paid">Pagado</option>
                                 <option value="pending">Pendiente</option>
@@ -416,7 +416,7 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
                                 <select
                                     value={formData.sourceAccountId || ""}
                                     onChange={(e) => setFormData(prev => ({ ...prev, sourceAccountId: e.target.value }))}
-                                    className="px-2 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                                    className="px-2 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-background text-foreground"
                                 >
                                     <option value="">-- Cuenta --</option>
                                     {businessIdentities.find(b => b.id === formData.businessIdentityId)?.bankAccounts?.map(acc => (
@@ -442,7 +442,7 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
                             <select
                                 value={formData.supplierId || ""}
                                 onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
-                                className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                                className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-background text-foreground"
                             >
                                 <option value="">-- Seleccionar --</option>
                                 {suppliers.map(sup => (
@@ -471,7 +471,7 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
                         <select
                             value={formData.categoryId}
                             onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                            className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-background text-foreground"
                             required
                         >
                             <option value="">-- Seleccionar Categoría --</option>
@@ -498,7 +498,7 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
                             <button
                                 type="button"
                                 onClick={() => imageInputRef.current?.click()}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg text-muted-foreground hover:bg-muted/50 hover:border-gray-400 transition-colors"
                             >
                                 <Camera size={18} />
                                 Tomar Foto / Subir
@@ -528,7 +528,7 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
                     <button
                         type="button"
                         onClick={() => router.back()}
-                        className="mr-4 px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                        className="mr-4 px-6 py-2 border border-border text-foreground font-medium rounded-lg hover:bg-muted/50 transition-colors"
                     >
                         Cancelar
                     </button>

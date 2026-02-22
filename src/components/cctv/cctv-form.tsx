@@ -209,7 +209,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
             </div>
 
             {/* Datos del Cliente */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+            <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Datos del Cliente</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -240,7 +240,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
             </div>
 
             {/* Datos Técnicos */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+            <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Especificaciones Técnicas</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -302,7 +302,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
             </div>
 
             {/* Configuración de Red */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+            <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Red y Conectividad</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -344,7 +344,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
             </div>
 
             {/* Usuarios */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+            <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
                     <h3 className="text-lg font-semibold text-gray-800">Usuarios y Accesos</h3>
                     <button
@@ -358,7 +358,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
 
                 <div className="space-y-3">
                     {formData.users.map((user, index) => (
-                        <div key={index} className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg">
+                        <div key={index} className="flex gap-2 items-start p-3 bg-muted/50 rounded-lg">
                             <div className="flex-1">
                                 <span className="text-xs text-gray-500 mb-1 block">Usuario</span>
                                 <input
@@ -400,13 +400,13 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
             </div>
 
             {/* Imágenes */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+            <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Imágenes (Opcional)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* QR Code */}
                     <div>
                         <label className="block text-sm font-medium mb-2">Código QR App</label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center min-h-[150px] relative bg-gray-50 text-center">
+                        <div className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center min-h-[150px] relative bg-muted/50 text-center">
                             {previews.qr ? (
                                 <div className="relative w-full h-full flex flex-col items-center">
                                     <img src={previews.qr} alt="QR" className="h-40 object-contain mb-2" />
@@ -439,7 +439,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
                     {/* Photo */}
                     <div>
                         <label className="block text-sm font-medium mb-2">Foto del Equipo/Montaje</label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center min-h-[150px] relative bg-gray-50 text-center">
+                        <div className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center min-h-[150px] relative bg-muted/50 text-center">
                             {previews.photo ? (
                                 <div className="relative w-full h-full flex flex-col items-center">
                                     <img src={previews.photo} alt="Foto" className="h-40 object-contain mb-2" />
@@ -472,7 +472,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
             </div>
 
             {/* Observaciones */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+            <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
                 <label className="block text-sm font-medium mb-1">Observaciones / Notas Adicionales</label>
                 <textarea
                     rows={3}
@@ -487,7 +487,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
                 <button
                     type="button"
                     onClick={() => router.back()}
-                    className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+                    className="px-6 py-2 border border-border text-foreground rounded-lg hover:bg-muted/50"
                 >
                     Cancelar
                 </button>

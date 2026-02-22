@@ -199,7 +199,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-                <div className="p-4 sm:p-6 border-b border-border bg-gray-50 dark:bg-gray-800/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="p-4 sm:p-6 border-b border-border bg-muted/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                             <Building2 size={20} className="text-indigo-600 dark:text-indigo-400" />
@@ -431,7 +431,7 @@ export default function SettingsPage() {
 
                                 <div className="space-y-2 mb-3">
                                     {identityForm.bankAccounts?.map((acc, idx) => (
-                                        <div key={idx} className="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm border border-border">
+                                        <div key={idx} className="flex justify-between items-center bg-muted/50 p-2 rounded text-sm border border-border">
                                             <span>{acc.bankName} - {acc.accountNumber} ({acc.accountType === 'savings' ? 'Ahorros' : 'Corriente'})</span>
                                             <button
                                                 type="button"
@@ -503,7 +503,7 @@ export default function SettingsPage() {
 
             {/* Supplier Categories Section */}
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-                <div className="p-6 border-b border-border bg-gray-50 dark:bg-gray-800/50">
+                <div className="p-6 border-b border-border bg-muted/50">
                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                         <CheckCircle size={20} className="text-indigo-600 dark:text-indigo-400" />
                         Especialidades / Productos Competitivos
@@ -520,7 +520,7 @@ export default function SettingsPage() {
 
             {/* Backup Section */}
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-                <div className="p-6 border-b border-border bg-gray-50 dark:bg-gray-800/50">
+                <div className="p-6 border-b border-border bg-muted/50">
                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                         <Download size={20} className="text-indigo-600 dark:text-indigo-400" />
                         Copias de Seguridad (Backup)
@@ -590,7 +590,7 @@ export default function SettingsPage() {
 
             {/* Payment Methods Section */}
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-                <div className="p-6 border-b border-border bg-gray-50 dark:bg-gray-800/50">
+                <div className="p-6 border-b border-border bg-muted/50">
                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                         <CreditCard size={20} className="text-indigo-600 dark:text-indigo-400" />
                         Métodos de Pago
@@ -650,7 +650,7 @@ function SupplierCategoriesManager() {
             {/* List Table */}
             <div className="border border-border rounded-lg overflow-hidden">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 font-medium">
+                    <thead className="bg-muted/50 text-muted-foreground font-medium">
                         <tr>
                             <th className="px-4 py-3">Nombre</th>
                             <th className="px-4 py-3 text-right" style={{ width: '100px' }}>Acciones</th>
@@ -665,7 +665,7 @@ function SupplierCategoriesManager() {
                             </tr>
                         ) : (
                             supplierCategories.map((cat) => (
-                                <tr key={cat.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                                <tr key={cat.id} className="hover:bg-muted/50">
                                     <td className="px-4 py-3 text-foreground font-medium">{cat.name}</td>
                                     <td className="px-4 py-3 text-right">
                                         <button

@@ -17,7 +17,7 @@ export function PinForm() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-background transition-colors">
+            <div className="flex items-center justify-center min-h-screen bg-background transition-colors">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
             </div>
         );
@@ -58,7 +58,7 @@ export function PinForm() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-background p-4 transition-colors">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 transition-colors">
             <div className="w-full max-w-md bg-card rounded-xl shadow-lg p-8 border border-border">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -76,7 +76,7 @@ export function PinForm() {
                             type="password"
                             value={pin}
                             onChange={(e) => setPin(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg text-foreground focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+                            className="w-full px-4 py-2 border border-border bg-background rounded-lg text-foreground focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
                             placeholder="****"
                             inputMode="numeric"
                         />
@@ -89,7 +89,7 @@ export function PinForm() {
                                 type="password"
                                 value={confirmPin}
                                 onChange={(e) => setConfirmPin(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg text-foreground focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+                                className="w-full px-4 py-2 border border-border bg-background rounded-lg text-foreground focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
                                 placeholder="****"
                                 inputMode="numeric"
                             />

@@ -6,7 +6,7 @@ import { DataProvider } from "@/context/data-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem themes={['light', 'dark', 'warm']}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem themes={['light', 'dark', 'red']}>
             <AuthProvider>
                 <DataProvider>
                     {children}

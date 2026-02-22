@@ -1,0 +1,3 @@
+Tipo(Cliente/Proveedor);Razon Social;NIT;Telefono;Correo;Direccion;Persona Contacto;Pagina Web
+Cliente;Empresa Falsa 123;900111222;3005554433;ventas@falsa.com;Calle 10 20-30;Pedro Pablo;https://test.com
+Proveedor;Distribuidora ABC;800222333;3201112233;abc@dist.com;Avenida 5 10-15;Maria Rodriguez;https://abc.com
