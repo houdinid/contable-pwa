@@ -1,4 +1,4 @@
-export type ContactType = 'client' | 'supplier';
+﻿export type ContactType = 'client' | 'supplier';
 
 export interface BankAccount {
   id: string;
@@ -227,3 +227,5 @@ export interface ServiceOrder {
   createdAt: string;
   updatedAt: string;
 }
+
+export * from "./infrastructure";

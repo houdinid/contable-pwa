@@ -15,23 +15,48 @@ import {
     Wifi,
     Wallet,
     FileText,
-    Camera
+    Camera,
+    MonitorSmartphone,
+    Shield,
+    Mail,
+    Key,
+    Landmark
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-const menuItems = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Inventario", href: "/dashboard/inventory", icon: Package },
-    { name: "Compras", href: "/dashboard/purchases", icon: ShoppingCart },
-    { name: "Ordenes de Servicio", href: "/dashboard/service-orders", icon: FileText },
-    { name: "Contactos", href: "/dashboard/contacts", icon: Users },
-    { name: "Ingresos", href: "/dashboard/sales", icon: ShoppingCart },
-    { name: "Gastos", href: "/dashboard/expenses", icon: Receipt },
-    { name: "Tesorería", href: "/dashboard/treasury", icon: Wallet },
-    { name: "Redes WiFi", href: "/dashboard/wifi", icon: Wifi },
-    { name: "CCTV", href: "/dashboard/cctv", icon: Camera },
-    { name: "Reportes", href: "/dashboard/reports", icon: BarChart3 },
-    { name: "Configuración", href: "/dashboard/settings", icon: Settings },
+const menuGroups = [
+    {
+        title: "Principal",
+        items: [
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Inventario", href: "/dashboard/inventory", icon: Package },
+            { name: "Compras", href: "/dashboard/purchases", icon: ShoppingCart },
+            { name: "Ordenes de Servicio", href: "/dashboard/service-orders", icon: FileText },
+            { name: "Contactos", href: "/dashboard/contacts", icon: Users },
+            { name: "Ingresos", href: "/dashboard/sales", icon: ShoppingCart },
+            { name: "Gastos", href: "/dashboard/expenses", icon: Receipt },
+            { name: "Tesorería", href: "/dashboard/treasury", icon: Wallet },
+            { name: "Reportes", href: "/dashboard/reports", icon: BarChart3 },
+            { name: "Configuración", href: "/dashboard/settings", icon: Settings },
+        ]
+    },
+    {
+        title: "Infraestructura y Soporte",
+        items: [
+            { name: "Redes WiFi", href: "/dashboard/wifi", icon: Wifi },
+            { name: "CCTV", href: "/dashboard/cctv", icon: Camera },
+            { name: "Acceso Remoto", href: "/dashboard/remote-access", icon: MonitorSmartphone },
+            { name: "Antivirus", href: "/dashboard/antivirus", icon: Shield },
+            { name: "Cuentas Correo", href: "/dashboard/corporate-emails", icon: Mail },
+            { name: "Lic. Software", href: "/dashboard/software-licenses", icon: Key },
+        ]
+    },
+    {
+        title: "Gestión Administrativa",
+        items: [
+            { name: "Obligaciones", href: "/dashboard/tax-deadlines", icon: Landmark },
+        ]
+    }
 ];
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
@@ -59,25 +84,34 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                 <h1 className="text-lg font-bold text-indigo-600 dark:text-indigo-400">LG Ingenieros</h1>
             </div>
 
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                {menuItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={onClose} // Auto-close on mobile click
-                            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive
-                                ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300"
-                                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
-                                }`}
-                        >
-                            <Icon size={20} />
-                            {item.name}
-                        </Link>
-                    );
-                })}
+            <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+                {menuGroups.map((group, idx) => (
+                    <div key={idx}>
+                        <h3 className="px-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                            {group.title}
+                        </h3>
+                        <div className="space-y-1">
+                            {group.items.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        onClick={onClose} // Auto-close on mobile click
+                                        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive
+                                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300"
+                                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                                            }`}
+                                    >
+                                        <Icon size={20} />
+                                        {item.name}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
             </nav>
 
             <div className="p-4 border-t border-border bg-gray-50/30 dark:bg-gray-900/30">

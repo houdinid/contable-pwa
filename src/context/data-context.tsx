@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Contact, Invoice, Expense, BusinessIdentity, SupplierCategory, Payment, PaymentMethod, ExpenseCategoryItem, Product, Purchase, WifiNetwork, ServiceOrder } from "@/types";
+import { encryptDataSync, decryptDataSync } from "@/lib/encryption";
+import type { Contact, Invoice, Expense, BusinessIdentity, SupplierCategory, Payment, PaymentMethod, ExpenseCategoryItem, Product, Purchase, WifiNetwork, ServiceOrder, RemoteAccess, AntivirusLicense, CorporateEmail, SoftwareLicense, TaxDeadline } from "@/types";
 
 interface DataContextType {
     contacts: Contact[];
@@ -18,6 +19,33 @@ interface DataContextType {
 
     wifiNetworks: WifiNetwork[];
     serviceOrders: ServiceOrder[];
+
+    // --- Nuevos Módulos de Infraestructura ---
+    remoteAccesses: RemoteAccess[];
+    antivirusLicenses: AntivirusLicense[];
+    corporateEmails: CorporateEmail[];
+    softwareLicenses: SoftwareLicense[];
+    taxDeadlines: TaxDeadline[];
+
+    addRemoteAccess: (data: Omit<RemoteAccess, "id" | "createdAt">) => Promise<void>;
+    updateRemoteAccess: (id: string, data: Partial<RemoteAccess>) => Promise<void>;
+    deleteRemoteAccess: (id: string) => Promise<void>;
+
+    addAntivirusLicense: (data: Omit<AntivirusLicense, "id" | "createdAt" | "supplierName">) => Promise<void>;
+    updateAntivirusLicense: (id: string, data: Partial<AntivirusLicense>) => Promise<void>;
+    deleteAntivirusLicense: (id: string) => Promise<void>;
+
+    addCorporateEmail: (data: Omit<CorporateEmail, "id" | "createdAt" | "clientName">) => Promise<void>;
+    updateCorporateEmail: (id: string, data: Partial<CorporateEmail>) => Promise<void>;
+    deleteCorporateEmail: (id: string) => Promise<void>;
+
+    addSoftwareLicense: (data: Omit<SoftwareLicense, "id" | "createdAt" | "clientName">) => Promise<void>;
+    updateSoftwareLicense: (id: string, data: Partial<SoftwareLicense>) => Promise<void>;
+    deleteSoftwareLicense: (id: string) => Promise<void>;
+
+    addTaxDeadline: (data: Omit<TaxDeadline, "id" | "createdAt">) => Promise<void>;
+    updateTaxDeadline: (id: string, data: Partial<TaxDeadline>) => Promise<void>;
+    deleteTaxDeadline: (id: string) => Promise<void>;
 
     addServiceOrder: (order: Omit<ServiceOrder, "id" | "createdAt" | "updatedAt">) => Promise<string>;
     updateServiceOrder: (id: string, order: Partial<ServiceOrder>) => Promise<void>;
@@ -85,6 +113,32 @@ const DataContext = createContext<DataContextType>({
     wifiNetworks: [],
     serviceOrders: [],
 
+    remoteAccesses: [],
+    antivirusLicenses: [],
+    corporateEmails: [],
+    softwareLicenses: [],
+    taxDeadlines: [],
+
+    addRemoteAccess: async () => { },
+    updateRemoteAccess: async () => { },
+    deleteRemoteAccess: async () => { },
+
+    addAntivirusLicense: async () => { },
+    updateAntivirusLicense: async () => { },
+    deleteAntivirusLicense: async () => { },
+
+    addCorporateEmail: async () => { },
+    updateCorporateEmail: async () => { },
+    deleteCorporateEmail: async () => { },
+
+    addSoftwareLicense: async () => { },
+    updateSoftwareLicense: async () => { },
+    deleteSoftwareLicense: async () => { },
+
+    addTaxDeadline: async () => { },
+    updateTaxDeadline: async () => { },
+    deleteTaxDeadline: async () => { },
+
     addServiceOrder: async () => "",
     updateServiceOrder: async () => { },
     deleteServiceOrder: async () => { },
@@ -139,6 +193,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const [wifiNetworks, setWifiNetworks] = useState<WifiNetwork[]>([]);
     const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
+
+    const [remoteAccesses, setRemoteAccesses] = useState<RemoteAccess[]>([]);
+    const [antivirusLicenses, setAntivirusLicenses] = useState<AntivirusLicense[]>([]);
+    const [corporateEmails, setCorporateEmails] = useState<CorporateEmail[]>([]);
+    const [softwareLicenses, setSoftwareLicenses] = useState<SoftwareLicense[]>([]);
+    const [taxDeadlines, setTaxDeadlines] = useState<TaxDeadline[]>([]);
+
     const [loadingData, setLoadingData] = useState(true);
 
     // Initial Data Load from Supabase
@@ -158,7 +219,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     { data: productsData },
                     { data: purchasesData },
                     { data: wifiData },
-                    { data: serviceOrdersData }
+                    { data: serviceOrdersData },
+                    { data: remoteAccessData },
+                    { data: antivirusLicensesData },
+                    { data: corporateEmailsData },
+                    { data: softwareLicensesData },
+                    { data: taxDeadlinesData }
                 ] = await Promise.all([
                     supabase.from('contacts').select('*'),
                     supabase.from('invoices').select('*, items:invoice_items(*)'),
@@ -171,7 +237,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     supabase.from('products').select('*'),
                     supabase.from('purchases').select('*, items:purchase_items(*)'),
                     supabase.from('wifi_networks').select('*'),
-                    supabase.from('service_orders').select('*, items:service_order_items(*)')
+                    supabase.from('service_orders').select('*, items:service_order_items(*)'),
+                    supabase.from('remote_access').select('*, client:contacts(name)'),
+                    supabase.from('antivirus_licenses').select('*, devices:antivirus_devices(*), supplier:contacts(name)'),
+                    supabase.from('corporate_emails').select('*, client:contacts(name)'),
+                    supabase.from('software_licenses').select('*, client:contacts(name)'),
+                    supabase.from('tax_deadlines').select('*')
                 ]);
 
                 // Mapping from snake_case to camelCase
@@ -281,6 +352,65 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                         ...item,
                         productId: item.product_id
                     }))
+                })));
+
+                // Mapping new infrastructure modules
+                setRemoteAccesses((remoteAccessData || []).map((r: any) => ({
+                    ...r,
+                    clientId: r.client_id,
+                    softwareType: r.software_type,
+                    connectionCode: r.connection_code,
+                    clientName: r.client?.name,
+                    password: decryptDataSync(r.password),
+                    createdAt: r.created_at
+                })));
+
+                setAntivirusLicenses((antivirusLicensesData || []).map((a: any) => ({
+                    ...a,
+                    supplierId: a.supplier_id,
+                    licenseName: a.license_name,
+                    productKey: a.product_key,
+                    startDate: a.start_date,
+                    expirationDate: a.expiration_date,
+                    deviceLimit: a.device_limit,
+                    supplierName: a.supplier?.name,
+                    createdAt: a.created_at,
+                    devices: (a.devices || []).map((d: any) => ({
+                        ...d,
+                        licenseId: d.license_id,
+                        createdAt: d.created_at
+                    }))
+                })));
+
+                setCorporateEmails((corporateEmailsData || []).map((e: any) => ({
+                    ...e,
+                    emailAddress: e.email_address,
+                    assignedTo: e.assigned_to,
+                    recoveryPhone: e.recovery_phone,
+                    recoveryEmail: e.recovery_email,
+                    clientId: e.client_id,
+                    clientName: e.client?.name,
+                    createdAt: e.created_at
+                })));
+
+                setSoftwareLicenses((softwareLicensesData || []).map((s: any) => ({
+                    ...s,
+                    softwareType: s.software_type,
+                    productKey: s.product_key,
+                    purchaseDate: s.purchase_date,
+                    assignedTo: s.assigned_to,
+                    clientId: s.client_id,
+                    clientName: s.client?.name,
+                    createdAt: s.created_at
+                })));
+
+                setTaxDeadlines((taxDeadlinesData || []).map((t: any) => ({
+                    ...t,
+                    businessName: t.business_name,
+                    taxId: t.tax_id,
+                    taxType: t.tax_type,
+                    expirationDate: t.expiration_date,
+                    createdAt: t.created_at
                 })));
 
                 // Initialize defaults if empty (Optional, strictly speaking Supabase SQL could handle this or we do it once)
@@ -896,6 +1026,222 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (error) console.error("Error deleting service order:", error);
     };
 
+    const addRemoteAccess = async (data: Omit<RemoteAccess, "id" | "createdAt">) => {
+        const newRecord = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        setRemoteAccesses(prev => [...prev, newRecord]);
+
+        const { error } = await supabase.from('remote_access').insert({
+            id: newRecord.id,
+            client_id: newRecord.clientId,
+            software_type: newRecord.softwareType,
+            connection_code: newRecord.connectionCode,
+            password: encryptDataSync(newRecord.password || ""),
+            hostname: newRecord.hostname
+        });
+        if (error) console.error("Error adding remote access:", error);
+    };
+
+    const updateRemoteAccess = async (id: string, patch: Partial<RemoteAccess>) => {
+        setRemoteAccesses(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
+
+        const dbPatch: any = {};
+        if (patch.clientId !== undefined) dbPatch.client_id = patch.clientId;
+        if (patch.softwareType !== undefined) dbPatch.software_type = patch.softwareType;
+        if (patch.connectionCode !== undefined) dbPatch.connection_code = patch.connectionCode;
+        if (patch.password !== undefined) dbPatch.password = encryptDataSync(patch.password);
+        if (patch.hostname !== undefined) dbPatch.hostname = patch.hostname;
+
+        const { error } = await supabase.from('remote_access').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating remote access:", error);
+    };
+
+    const deleteRemoteAccess = async (id: string) => {
+        setRemoteAccesses(prev => prev.filter(r => r.id !== id));
+        const { error } = await supabase.from('remote_access').delete().eq('id', id);
+        if (error) console.error("Error deleting remote access:", error);
+    };
+
+    const addAntivirusLicense = async (data: Omit<AntivirusLicense, "id" | "createdAt" | "supplierName">) => {
+        const newRecord = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+
+        const dbLicense = {
+            id: newRecord.id,
+            supplier_id: newRecord.supplierId,
+            license_name: newRecord.licenseName,
+            product_key: newRecord.productKey,
+            start_date: newRecord.startDate,
+            expiration_date: newRecord.expirationDate,
+            device_limit: newRecord.deviceLimit
+        };
+
+        const { error: licenseError } = await supabase.from('antivirus_licenses').insert(dbLicense);
+        if (licenseError) console.error("Error adding antivirus license:", licenseError);
+
+        if (data.devices && data.devices.length > 0) {
+            const dbDevices = data.devices.map(d => ({
+                id: crypto.randomUUID(),
+                license_id: newRecord.id,
+                hostname: d.hostname
+            }));
+            const { error: devicesError } = await supabase.from('antivirus_devices').insert(dbDevices);
+            if (devicesError) console.error("Error adding antivirus devices:", devicesError);
+
+            newRecord.devices = dbDevices.map(d => ({ id: d.id, licenseId: d.license_id, hostname: d.hostname, createdAt: new Date().toISOString() }));
+        }
+
+        setAntivirusLicenses(prev => [...prev, newRecord as AntivirusLicense]);
+    };
+
+    const updateAntivirusLicense = async (id: string, patch: Partial<AntivirusLicense>) => {
+        setAntivirusLicenses(prev => prev.map(a => a.id === id ? { ...a, ...patch } : a));
+
+        const dbPatch: any = {};
+        if (patch.supplierId !== undefined) dbPatch.supplier_id = patch.supplierId;
+        if (patch.licenseName !== undefined) dbPatch.license_name = patch.licenseName;
+        if (patch.productKey !== undefined) dbPatch.product_key = patch.productKey;
+        if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate;
+        if (patch.expirationDate !== undefined) dbPatch.expiration_date = patch.expirationDate;
+        if (patch.deviceLimit !== undefined) dbPatch.device_limit = patch.deviceLimit;
+
+        if (Object.keys(dbPatch).length > 0) {
+            const { error } = await supabase.from('antivirus_licenses').update(dbPatch).eq('id', id);
+            if (error) console.error("Error updating antivirus license:", error);
+        }
+
+        if (patch.devices !== undefined) {
+            await supabase.from('antivirus_devices').delete().eq('license_id', id);
+            if (patch.devices.length > 0) {
+                const dbDevices = patch.devices.map(d => ({
+                    id: d.id || crypto.randomUUID(),
+                    license_id: id,
+                    hostname: d.hostname
+                }));
+                const { error: devicesError } = await supabase.from('antivirus_devices').insert(dbDevices);
+                if (devicesError) console.error("Error updating antivirus devices:", devicesError);
+            }
+        }
+    };
+
+    const deleteAntivirusLicense = async (id: string) => {
+        setAntivirusLicenses(prev => prev.filter(a => a.id !== id));
+        const { error } = await supabase.from('antivirus_licenses').delete().eq('id', id);
+        if (error) console.error("Error deleting antivirus license:", error);
+    };
+
+    const addCorporateEmail = async (data: Omit<CorporateEmail, "id" | "createdAt" | "clientName">) => {
+        const newRecord = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+
+        const dbEmail = {
+            id: newRecord.id,
+            client_id: newRecord.clientId,
+            email_address: newRecord.emailAddress,
+            password: encryptDataSync(newRecord.password || ""),
+            assigned_to: newRecord.assignedTo,
+            recovery_phone: newRecord.recoveryPhone,
+            recovery_email: newRecord.recoveryEmail
+        };
+
+        const { error } = await supabase.from('corporate_emails').insert(dbEmail);
+        if (error) console.error("Error adding corporate email:", error);
+
+        setCorporateEmails(prev => [...prev, newRecord as CorporateEmail]);
+    };
+
+    const updateCorporateEmail = async (id: string, patch: Partial<CorporateEmail>) => {
+        setCorporateEmails(prev => prev.map(e => e.id === id ? { ...e, ...patch } : e));
+
+        const dbPatch: any = {};
+        if (patch.clientId !== undefined) dbPatch.client_id = patch.clientId;
+        if (patch.emailAddress !== undefined) dbPatch.email_address = patch.emailAddress;
+        if (patch.password !== undefined) dbPatch.password = encryptDataSync(patch.password);
+        if (patch.assignedTo !== undefined) dbPatch.assigned_to = patch.assignedTo;
+        if (patch.recoveryPhone !== undefined) dbPatch.recovery_phone = patch.recoveryPhone;
+        if (patch.recoveryEmail !== undefined) dbPatch.recovery_email = patch.recoveryEmail;
+
+        const { error } = await supabase.from('corporate_emails').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating corporate email:", error);
+    };
+
+    const deleteCorporateEmail = async (id: string) => {
+        setCorporateEmails(prev => prev.filter(e => e.id !== id));
+        const { error } = await supabase.from('corporate_emails').delete().eq('id', id);
+        if (error) console.error("Error deleting corporate email:", error);
+    };
+
+    const addSoftwareLicense = async (data: Omit<SoftwareLicense, "id" | "createdAt" | "clientName">) => {
+        const newRecord = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+
+        const dbLicense = {
+            id: newRecord.id,
+            software_type: newRecord.softwareType,
+            product_key: newRecord.productKey,
+            purchase_date: newRecord.purchaseDate,
+            assigned_to: newRecord.assignedTo,
+            client_id: newRecord.clientId
+        };
+
+        const { error } = await supabase.from('software_licenses').insert(dbLicense);
+        if (error) console.error("Error adding software license:", error);
+
+        setSoftwareLicenses(prev => [...prev, newRecord as SoftwareLicense]);
+    };
+
+    const updateSoftwareLicense = async (id: string, patch: Partial<SoftwareLicense>) => {
+        setSoftwareLicenses(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
+
+        const dbPatch: any = {};
+        if (patch.softwareType !== undefined) dbPatch.software_type = patch.softwareType;
+        if (patch.productKey !== undefined) dbPatch.product_key = patch.productKey;
+        if (patch.purchaseDate !== undefined) dbPatch.purchase_date = patch.purchaseDate;
+        if (patch.assignedTo !== undefined) dbPatch.assigned_to = patch.assignedTo;
+        if (patch.clientId !== undefined) dbPatch.client_id = patch.clientId;
+
+        const { error } = await supabase.from('software_licenses').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating software license:", error);
+    };
+
+    const deleteSoftwareLicense = async (id: string) => {
+        setSoftwareLicenses(prev => prev.filter(s => s.id !== id));
+        const { error } = await supabase.from('software_licenses').delete().eq('id', id);
+        if (error) console.error("Error deleting software license:", error);
+    };
+
+    const addTaxDeadline = async (data: Omit<TaxDeadline, "id" | "createdAt">) => {
+        const newRecord = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+
+        const dbDeadline = {
+            id: newRecord.id,
+            business_name: newRecord.businessName,
+            tax_id: newRecord.taxId,
+            tax_type: newRecord.taxType,
+            expiration_date: newRecord.expirationDate
+        };
+
+        const { error } = await supabase.from('tax_deadlines').insert(dbDeadline);
+        if (error) console.error("Error adding tax deadline:", error);
+
+        setTaxDeadlines(prev => [...prev, newRecord as TaxDeadline]);
+    };
+
+    const updateTaxDeadline = async (id: string, patch: Partial<TaxDeadline>) => {
+        setTaxDeadlines(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
+
+        const dbPatch: any = {};
+        if (patch.businessName !== undefined) dbPatch.business_name = patch.businessName;
+        if (patch.taxId !== undefined) dbPatch.tax_id = patch.taxId;
+        if (patch.taxType !== undefined) dbPatch.tax_type = patch.taxType;
+        if (patch.expirationDate !== undefined) dbPatch.expiration_date = patch.expirationDate;
+
+        const { error } = await supabase.from('tax_deadlines').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating tax deadline:", error);
+    };
+
+    const deleteTaxDeadline = async (id: string) => {
+        setTaxDeadlines(prev => prev.filter(t => t.id !== id));
+        const { error } = await supabase.from('tax_deadlines').delete().eq('id', id);
+        if (error) console.error("Error deleting tax deadline:", error);
+    };
+
     const exportData = async () => {
         try {
             setLoadingData(true);
@@ -905,7 +1251,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 'invoices', 'invoice_items',
                 'expenses',
                 'purchases', 'purchase_items',
-                'service_orders', 'service_order_items', 'payments'
+                'service_orders', 'service_order_items', 'payments',
+                'remote_access', 'antivirus_licenses', 'antivirus_devices',
+                'corporate_emails', 'software_licenses', 'tax_deadlines'
             ];
 
             const backupData: any = {};
@@ -982,6 +1330,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         <DataContext.Provider
             value={{
                 contacts, invoices, expenses, businessIdentities, supplierCategories, paymentMethods, payments, expenseCategories, products, purchases, wifiNetworks, serviceOrders,
+
+                // Nuevos
+                remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines,
+
                 addContact, updateContact, deleteContact,
 
                 addInvoice, updateInvoice,
@@ -994,12 +1346,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 addPurchase,
                 addWifiNetwork, updateWifiNetwork, deleteWifiNetwork,
                 addServiceOrder, updateServiceOrder, deleteServiceOrder,
+                addRemoteAccess, updateRemoteAccess, deleteRemoteAccess,
+                addAntivirusLicense, updateAntivirusLicense, deleteAntivirusLicense,
+                addCorporateEmail, updateCorporateEmail, deleteCorporateEmail,
+                addSoftwareLicense, updateSoftwareLicense, deleteSoftwareLicense,
+                addTaxDeadline, updateTaxDeadline, deleteTaxDeadline,
                 exportData, importData, loadingData,
             }}
         >
             {children}
         </DataContext.Provider>
     );
-}
+};
 
 export const useData = () => useContext(DataContext);
