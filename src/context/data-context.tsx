@@ -321,7 +321,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             specialty_id: newContact.specialtyId || null,
             // default_expense_category_id: newContact.defaultExpenseCategoryId || null, // Descomentar cuando la columna exista en Supabase
             google_maps_url: newContact.googleMapsUrl || null,
-            website: newContact.website || null,
+            // website: newContact.website || null, // Descomentar cuando la columna exista en Supabase
             credit_balance: newContact.creditBalance || 0,
             bank_accounts: newContact.bankAccounts || []
         });
@@ -344,6 +344,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (patch.specialtyId !== undefined) dbPatch.specialty_id = patch.specialtyId;
         // if (patch.defaultExpenseCategoryId !== undefined) dbPatch.default_expense_category_id = patch.defaultExpenseCategoryId;
         if (patch.googleMapsUrl !== undefined) dbPatch.google_maps_url = patch.googleMapsUrl;
+        // if (patch.website !== undefined) dbPatch.website = patch.website;
         if (patch.creditBalance !== undefined) dbPatch.credit_balance = patch.creditBalance;
 
         // Remove camelCase keys that don't exist in DB
@@ -354,6 +355,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         delete dbPatch.defaultExpenseCategoryId;
         delete dbPatch.googleMapsUrl;
         delete dbPatch.creditBalance;
+        delete dbPatch.website;
 
         const { error } = await supabase.from('contacts').update(dbPatch).eq('id', id);
         if (error) console.error("Error updating contact:", error);
