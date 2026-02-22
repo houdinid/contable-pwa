@@ -319,7 +319,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             contact_person: newContact.contactPerson || null,
             tax_id: newContact.taxId || null,
             specialty_id: newContact.specialtyId || null,
-            default_expense_category_id: newContact.defaultExpenseCategoryId || null,
+            // default_expense_category_id: newContact.defaultExpenseCategoryId || null, // Descomentar cuando la columna exista en Supabase
             google_maps_url: newContact.googleMapsUrl || null,
             website: newContact.website || null,
             credit_balance: newContact.creditBalance || 0,
@@ -342,7 +342,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (patch.contactPerson !== undefined) dbPatch.contact_person = patch.contactPerson;
         if (patch.taxId !== undefined) dbPatch.tax_id = patch.taxId;
         if (patch.specialtyId !== undefined) dbPatch.specialty_id = patch.specialtyId;
-        if (patch.defaultExpenseCategoryId !== undefined) dbPatch.default_expense_category_id = patch.defaultExpenseCategoryId;
+        // if (patch.defaultExpenseCategoryId !== undefined) dbPatch.default_expense_category_id = patch.defaultExpenseCategoryId;
         if (patch.googleMapsUrl !== undefined) dbPatch.google_maps_url = patch.googleMapsUrl;
         if (patch.creditBalance !== undefined) dbPatch.credit_balance = patch.creditBalance;
 
