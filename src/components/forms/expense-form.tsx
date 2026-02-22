@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useData } from "@/context/data-context";
 import { Save, ArrowLeft, Receipt, FileUp, FileText, Camera, X, Plus, ScanLine, Loader2 } from "lucide-react";
@@ -29,13 +29,15 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
     // Filter only suppliers and sort by usage frequency
-    const suppliers = contacts
-        .filter(c => c.type === 'supplier')
-        .sort((a, b) => {
-            const countA = expenses.filter(e => e.supplierId === a.id).length;
-            const countB = expenses.filter(e => e.supplierId === b.id).length;
-            return countB - countA; // Descending order
-        });
+    const suppliers = useMemo(() => {
+        return contacts
+            .filter(c => c.type === 'supplier')
+            .sort((a, b) => {
+                const countA = expenses.filter(e => e.supplierId === a.id).length;
+                const countB = expenses.filter(e => e.supplierId === b.id).length;
+                return countB - countA; // Descending order
+            });
+    }, [contacts, expenses]);
 
     // Default to first category if available, else empty
     const defaultCategoryId = expenseCategories.length > 0 ? expenseCategories[0].id : "";
@@ -233,7 +235,10 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
             if (supplier && supplier.defaultExpenseCategoryId) {
                 const catExists = expenseCategories.some(c => c.id === supplier.defaultExpenseCategoryId);
                 if (catExists) {
-                    setFormData(prev => ({ ...prev, categoryId: supplier.defaultExpenseCategoryId! }));
+                    setFormData(prev => {
+                        if (prev.categoryId === supplier.defaultExpenseCategoryId) return prev;
+                        return { ...prev, categoryId: supplier.defaultExpenseCategoryId! };
+                    });
                 }
             }
         }

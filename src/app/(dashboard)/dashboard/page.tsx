@@ -64,7 +64,9 @@ export default function DashboardPage() {
                                 <div key={inv.id} className="flex justify-between items-center border-b border-gray-50 dark:border-gray-800 pb-2 last:border-0 last:pb-0">
                                     <div>
                                         <p className="font-medium text-gray-800 dark:text-gray-200">{inv.contactName}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-500">Factura #{inv.number}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                                            {inv.type === 'quote' ? 'Cotización' : 'Factura'} #{inv.number}
+                                        </p>
                                     </div>
                                     <span className="font-bold text-gray-700 dark:text-gray-300 transition-colors">${inv.total.toLocaleString()}</span>
                                 </div>
@@ -89,8 +91,8 @@ function StatCard({ title, value, formatter, trend, highlight }: any) {
             <p className="text-gray-500 dark:text-gray-400 text-sm font-medium transition-colors">{title}</p>
             <div className="mt-2 flex items-baseline gap-2">
                 <p className={`text-3xl font-bold transition-colors ${highlight
-                        ? (value >= 0 ? "text-indigo-600 dark:text-indigo-400" : "text-red-600 dark:text-red-400")
-                        : "text-gray-900 dark:text-white"
+                    ? (value >= 0 ? "text-indigo-600 dark:text-indigo-400" : "text-red-600 dark:text-red-400")
+                    : "text-gray-900 dark:text-white"
                     }`}>
                     {formatter(value)}
                 </p>

@@ -20,6 +20,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
     const [name, setName] = useState("");
     const [taxId, setTaxId] = useState("");
     const [email, setEmail] = useState("");
+    const [website, setWebsite] = useState("");
     const [address, setAddress] = useState("");
     const [phone, setPhone] = useState("");
     const [contactPerson, setContactPerson] = useState("");
@@ -60,6 +61,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
             setName(initialData.name);
             setTaxId(initialData.taxId || "");
             setEmail(initialData.email || "");
+            setWebsite(initialData.website || "");
             setAddress(initialData.address || "");
             setPhone(initialData.phone || "");
             setContactPerson(initialData.contactPerson || "");
@@ -78,6 +80,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
             setName("");
             setTaxId("");
             setEmail("");
+            setWebsite("");
             setAddress("");
             setPhone("");
             setContactPerson("");
@@ -102,6 +105,7 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                 name,
                 taxId,
                 email,
+                website,
                 address,
                 phone,
                 contactPerson,
@@ -218,6 +222,16 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Página Web</label>
+                            <input
+                                type="url"
+                                value={website}
+                                onChange={(e) => setWebsite(e.target.value)}
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                placeholder="https://www.ejemplo.com"
                             />
                         </div>
                     </div>

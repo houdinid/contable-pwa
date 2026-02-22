@@ -1,18 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useData } from "@/context/data-context";
-import { Plus, User, Building2, Phone, Mail, Edit, Filter, MapPin, Copy, CreditCard, Map as MapIcon, Search } from "lucide-react";
+import { Plus, User, Building2, Phone, Mail, Edit, Filter, MapPin, Copy, CreditCard, Map as MapIcon, Search, Download, Upload, Globe, Trash2 } from "lucide-react";
+import { toTitleCase, cleanEmail, cleanText, toLowerCaseAll } from "@/lib/utils";
 import { ContactFormModal } from "@/components/forms/contact-form-modal";
 import type { Contact } from "@/types";
 
 export default function ContactsPage() {
-    const { contacts, loadingData, supplierCategories } = useData();
+    const { contacts, loadingData, supplierCategories, addContact, deleteContact } = useData();
     const [showModal, setShowModal] = useState(false);
     const [editingContact, setEditingContact] = useState<Contact | null>(null);
     const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
     const [searchTerm, setSearchTerm] = useState("");
+    const [isImporting, setIsImporting] = useState(false);
 
     const handleCreate = () => {
         setEditingContact(null);
@@ -24,6 +25,16 @@ export default function ContactsPage() {
         setShowModal(true);
     };
 
+    const handleDelete = async (contact: Contact) => {
+        if (confirm(`¿Estás seguro de que deseas eliminar este contacto ("${contact.name}")?\n\nEsta acción no se puede deshacer y podría afectar facturas asociadas.`)) {
+            try {
+                await deleteContact(contact.id);
+            } catch (error) {
+                alert("Error al eliminar el contacto: " + error);
+            }
+        }
+    };
+
     // Filter Logic
     const filteredContacts = contacts.filter(contact => {
         const matchesSpecialty = !selectedSpecialty || (contact.type === 'supplier' && contact.specialtyId === selectedSpecialty);
@@ -31,12 +42,102 @@ export default function ContactsPage() {
         const matchesSearch = (
             contact.name.toLowerCase().includes(searchLower) ||
             (contact.email && contact.email.toLowerCase().includes(searchLower)) ||
-            (contact.phone && contact.phone.includes(searchLower)) ||
+            (contact.phone && contact.phone.toLowerCase().includes(searchLower)) ||
             (contact.taxId && contact.taxId.toLowerCase().includes(searchLower))
         );
 
         return matchesSpecialty && matchesSearch;
     });
+
+    const handleDownloadTemplate = () => {
+        const headers = ["Tipo(Cliente/Proveedor)", "Razon Social", "NIT", "Telefono", "Correo", "Direccion", "Persona Contacto", "Pagina Web"];
+        const sampleRow = ["Cliente", "Mi Empresa S.A.", "900123456", "3001234567", "contacto@miempresa.com", "Calle Falsa 123", "Juan Perez", "https://ejemplo.com"];
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + headers.join(";") + "\n"
+            + sampleRow.join(";");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "plantilla_contactos.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        const reader = new FileReader();
+
+        reader.onload = async (event) => {
+            try {
+                const text = event.target?.result as string;
+                // Basic CSV parser assuming ';' separator which is common in Excel Spanish
+                // Note: handling commas vs semicolons robustly can be tricky, we'll try ';' first then ','
+                const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+                if (lines.length < 2) {
+                    alert("El archivo parece estar vacío o no tiene el formato correcto.");
+                    return;
+                }
+
+                // Detect separator
+                const separator = lines[0].includes(';') ? ';' : ',';
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const row = lines[i].split(separator).map(cell => cell.trim().replace(/^"|"$/g, ''));
+                    if (row.length < 2) continue; // Skip malformed rows
+
+                    const rawType = row[0]?.toLowerCase();
+                    const type = (rawType === 'proveedor' || rawType === 'supplier') ? 'supplier' : 'client';
+                    const name = toTitleCase(row[1] || "");
+                    const taxId = cleanText(row[2] || "");
+                    const phone = cleanText(row[3] || "");
+                    const email = cleanEmail(row[4] || "");
+                    const address = toLowerCaseAll(row[5] || "");
+                    const contactPerson = toTitleCase(row[6] || "");
+                    const website = cleanText(row[7] || "");
+
+                    if (!name) {
+                        errorCount++;
+                        continue;
+                    }
+
+                    try {
+                        await addContact({
+                            type,
+                            name,
+                            taxId,
+                            phone,
+                            email,
+                            address,
+                            contactPerson,
+                            website,
+                        });
+                        successCount++;
+                    } catch (err) {
+                        console.error("Error adding row", i, err);
+                        errorCount++;
+                    }
+                }
+
+                alert(`Importación completada.\n\nContactos importados: ${successCount}\nErrores: ${errorCount}`);
+            } catch (error) {
+                console.error("Error parsing CSV:", error);
+                alert("Hubo un error al procesar el archivo CSV.");
+            } finally {
+                setIsImporting(false);
+                // Reset file input
+                e.target.value = '';
+            }
+        };
+
+        reader.readAsText(file);
+    };
 
     if (loadingData) {
         return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Cargando contactos...</div>;
@@ -49,7 +150,7 @@ export default function ContactsPage() {
                     <h1 className="text-2xl font-bold text-foreground">Contactos</h1>
                     <p className="text-gray-500 dark:text-gray-400">Gestiona tus Clientes y Proveedores</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full sm:w-auto">
                     {/* Search Input */}
                     <div className="relative flex-grow sm:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -80,17 +181,41 @@ export default function ContactsPage() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleCreate}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                    >
-                        <Plus size={20} />
-                        Nuevo Contacto
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleDownloadTemplate}
+                            title="Descargar Plantilla CSV"
+                            className="flex items-center justify-center w-10 h-10 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                        >
+                            <Download size={18} />
+                        </button>
+
+                        <label
+                            title="Importar CSV"
+                            className={`flex items-center justify-center w-10 h-10 ${isImporting ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-green-50 text-green-600 cursor-pointer hover:bg-green-100'} rounded-lg transition-colors border border-green-200`}
+                        >
+                            <Upload size={18} />
+                            <input
+                                type="file"
+                                accept=".csv"
+                                className="hidden"
+                                onChange={handleFileUpload}
+                                disabled={isImporting}
+                            />
+                        </label>
+
+                        <button
+                            onClick={handleCreate}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                        >
+                            <Plus size={20} />
+                            <span className="hidden sm:inline">Nuevo Contacto</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredContacts.length === 0 ? (
                     <div className="col-span-full bg-card p-12 text-center rounded-xl border border-border shadow-sm">
                         <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -142,13 +267,22 @@ export default function ContactsPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleEdit(contact)}
-                                        className="p-2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors"
-                                        title="Editar"
-                                    >
-                                        <Edit size={18} />
-                                    </button>
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => handleEdit(contact)}
+                                            className="p-2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors"
+                                            title="Editar"
+                                        >
+                                            <Edit size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(contact)}
+                                            className="p-2 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 transition-colors"
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
@@ -162,6 +296,14 @@ export default function ContactsPage() {
                                         <div className="flex items-center gap-2">
                                             <Mail size={16} className="text-gray-400 dark:text-gray-500" />
                                             <a href={`mailto:${contact.email}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 truncate">{contact.email}</a>
+                                        </div>
+                                    )}
+                                    {contact.website && (
+                                        <div className="flex items-center gap-2">
+                                            <Globe size={16} className="text-gray-400 dark:text-gray-500" />
+                                            <a href={contact.website.startsWith('http') ? contact.website : `https://${contact.website}`} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-indigo-400 truncate flex-1">
+                                                {contact.website.replace(/^https?:\/\//, '')}
+                                            </a>
                                         </div>
                                     )}
                                     {contact.phone && (

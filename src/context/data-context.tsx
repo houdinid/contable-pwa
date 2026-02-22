@@ -174,19 +174,114 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     supabase.from('service_orders').select('*, items:service_order_items(*)')
                 ]);
 
-                // @ts-ignore
-                setContacts(contactsData || []); // @ts-ignore
-                setInvoices(invoicesData || []);
-                setExpenses(expensesData || []);
-                setBusinessIdentities(identitiesData || []);
+                // Mapping from snake_case to camelCase
+                setContacts((contactsData || []).map((c: any) => ({
+                    ...c,
+                    contactPerson: c.contact_person,
+                    taxId: c.tax_id,
+                    specialtyId: c.specialty_id,
+                    defaultExpenseCategoryId: c.default_expense_category_id,
+                    googleMapsUrl: c.google_maps_url,
+                    website: c.website,
+                    bankAccounts: c.bank_accounts,
+                    creditBalance: c.credit_balance,
+                    createdAt: c.created_at
+                })));
+
+                setInvoices((invoicesData || []).map((i: any) => ({
+                    ...i,
+                    issuerId: i.issuer_id,
+                    dueDate: i.due_date,
+                    creditDays: i.credit_days,
+                    contactId: i.contact_id,
+                    contactName: i.contact_name,
+                    destinationAccountId: i.destination_account_id,
+                    createdAt: i.created_at
+                })));
+
+                setExpenses((expensesData || []).map((e: any) => ({
+                    ...e,
+                    categoryId: e.category_id,
+                    supplierId: e.supplier_id,
+                    businessIdentityId: e.business_identity_id,
+                    sourceAccountId: e.source_account_id,
+                    receiptUrl: e.receipt_url,
+                    createdAt: e.created_at
+                })));
+
+                setBusinessIdentities((identitiesData || []).map((id: any) => ({
+                    ...id,
+                    taxId: id.tax_id,
+                    dv: id.dv,
+                    logoUrl: id.logo_url,
+                    isDefault: id.is_default,
+                    isTaxPayer: id.is_tax_payer,
+                    bankAccounts: id.bank_accounts
+                })));
+
                 setSupplierCategories(categoriesData || []);
                 setPaymentMethods(methodsData || []);
-                setPayments(paymentsData || []);
+                setPayments((paymentsData || []).map((p: any) => ({
+                    ...p,
+                    invoiceId: p.invoice_id,
+                    methodId: p.method_id,
+                    destinationAccountId: p.destination_account_id,
+                    createdAt: p.created_at
+                })));
                 setExpenseCategories(expCategoriesData || []);
-                setProducts(productsData || []); // @ts-ignore
-                setPurchases(purchasesData || []);
-                setWifiNetworks(wifiData || []); // @ts-ignore
-                setServiceOrders(serviceOrdersData || []);
+
+                setProducts((productsData || []).map((p: any) => ({
+                    ...p,
+                    minStock: p.min_stock,
+                    categoryId: p.category_id,
+                    createdAt: p.created_at
+                })));
+
+                setPurchases((purchasesData || []).map((p: any) => ({
+                    ...p,
+                    supplierId: p.supplier_id,
+                    supplierName: p.supplier_name,
+                    businessIdentityId: p.business_identity_id,
+                    receiptUrl: p.receipt_url,
+                    createdAt: p.created_at,
+                    items: (p.items || []).map((item: any) => ({
+                        ...item,
+                        productId: item.product_id,
+                        productName: item.product_name,
+                        unitCost: item.unit_cost
+                    }))
+                })));
+
+                setWifiNetworks((wifiData || []).map((w: any) => ({
+                    ...w,
+                    isHidden: w.is_hidden,
+                    deviceType: w.device_type,
+                    deviceBrand: w.device_brand,
+                    clientId: w.client_id,
+                    ipAddress: w.ip_address,
+                    subnet_mask: w.subnet_mask, // Wait, type says subnetMask
+                    subnetMask: w.subnet_mask,
+                    photoUrl: w.photo_url,
+                    createdAt: w.created_at
+                })));
+
+                setServiceOrders((serviceOrdersData || []).map((o: any) => ({
+                    ...o,
+                    clientId: o.client_id,
+                    clientName: o.client_name,
+                    clientEmail: o.client_email,
+                    clientPhone: o.client_phone,
+                    estimatedDate: o.estimated_date,
+                    technicianNotes: o.technician_notes,
+                    invoiceId: o.invoice_id,
+                    businessIdentityId: o.business_identity_id,
+                    createdAt: o.created_at,
+                    updatedAt: o.updated_at,
+                    items: (o.items || []).map((item: any) => ({
+                        ...item,
+                        productId: item.product_id
+                    }))
+                })));
 
                 // Initialize defaults if empty (Optional, strictly speaking Supabase SQL could handle this or we do it once)
                 if ((!categoriesData || categoriesData.length === 0)) {
@@ -226,6 +321,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             specialty_id: newContact.specialtyId,
             default_expense_category_id: newContact.defaultExpenseCategoryId,
             google_maps_url: newContact.googleMapsUrl,
+            website: newContact.website,
             credit_balance: newContact.creditBalance,
             bank_accounts: newContact.bankAccounts
         });
@@ -242,13 +338,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         // Map keys for Supabase
         const dbPatch: any = { ...patch };
-        if (patch.bankAccounts) dbPatch.bank_accounts = patch.bankAccounts;
-        if (patch.contactPerson) dbPatch.contact_person = patch.contactPerson;
-        if (patch.taxId) dbPatch.tax_id = patch.taxId;
-        if (patch.specialtyId) dbPatch.specialty_id = patch.specialtyId;
-        if (patch.defaultExpenseCategoryId) dbPatch.default_expense_category_id = patch.defaultExpenseCategoryId;
-        if (patch.googleMapsUrl) dbPatch.google_maps_url = patch.googleMapsUrl;
-        if (patch.creditBalance) dbPatch.credit_balance = patch.creditBalance;
+        if (patch.bankAccounts !== undefined) dbPatch.bank_accounts = patch.bankAccounts;
+        if (patch.contactPerson !== undefined) dbPatch.contact_person = patch.contactPerson;
+        if (patch.taxId !== undefined) dbPatch.tax_id = patch.taxId;
+        if (patch.specialtyId !== undefined) dbPatch.specialty_id = patch.specialtyId;
+        if (patch.defaultExpenseCategoryId !== undefined) dbPatch.default_expense_category_id = patch.defaultExpenseCategoryId;
+        if (patch.googleMapsUrl !== undefined) dbPatch.google_maps_url = patch.googleMapsUrl;
+        if (patch.creditBalance !== undefined) dbPatch.credit_balance = patch.creditBalance;
 
         // Remove camelCase keys that don't exist in DB
         delete dbPatch.bankAccounts;
@@ -270,7 +366,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
 
     const addInvoice = async (invoiceData: Omit<Invoice, "id" | "createdAt">) => {
-        const newInvoice = { ...invoiceData, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+        let finalContactId = invoiceData.contactId;
+
+        // Auto-create contact if needed
+        if (finalContactId === 'generated-on-save' && invoiceData.contactName) {
+            const newId = await addContact({
+                name: invoiceData.contactName,
+                type: 'client'
+            });
+            finalContactId = newId;
+        } else if (finalContactId === 'adhoc') {
+            finalContactId = undefined as any;
+        }
+
+        const newInvoice = {
+            ...invoiceData,
+            contactId: finalContactId,
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString()
+        };
         // @ts-ignore
         setInvoices(prev => [...prev, newInvoice]);
 
@@ -286,13 +400,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             total: invoiceHeader.total,
             status: invoiceHeader.status,
             type: invoiceHeader.type,
-            notes: invoiceHeader.notes,
-            issuer_id: invoiceHeader.issuerId,
-            due_date: invoiceHeader.dueDate,
-            credit_days: invoiceHeader.creditDays,
-            contact_id: invoiceHeader.contactId,
-            contact_name: invoiceHeader.contactName,
-            destination_account_id: invoiceHeader.destinationAccountId
+            notes: invoiceHeader.notes || null,
+            issuer_id: (invoiceHeader.issuerId && invoiceHeader.issuerId !== "") ? invoiceHeader.issuerId : null,
+            due_date: (invoiceHeader.dueDate && invoiceHeader.dueDate !== "") ? invoiceHeader.dueDate : null,
+            credit_days: invoiceHeader.creditDays ?? null,
+            contact_id: (finalContactId && finalContactId !== "" && finalContactId !== "adhoc") ? finalContactId : null,
+            contact_name: invoiceHeader.contactName || null,
+            destination_account_id: (invoiceHeader.destinationAccountId && invoiceHeader.destinationAccountId !== "") ? invoiceHeader.destinationAccountId : null
         });
 
         if (invoiceError) {
@@ -301,10 +415,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (items && items.length > 0) {
-            const itemsToInsert = items.map(item => ({
-                ...item,
-                invoice_id: newInvoice.id
-            }));
+            const itemsToInsert = items.map(item => {
+                const { id, ...rest } = item as any; // Strip original ID
+                return {
+                    ...rest,
+                    invoice_id: newInvoice.id
+                };
+            });
             const { error: itemsError } = await supabase.from('invoice_items').insert(itemsToInsert);
             if (itemsError) console.error("Error creating invoice items:", itemsError);
         }
@@ -312,20 +429,35 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const updateInvoice = async (id: string, patch: Partial<Invoice>) => {
         setInvoices(prev => prev.map(i => i.id === id ? { ...i, ...patch } : i));
-        // Note: Logic allows updating status, but if items change, we'd need complex logic (delete old, add new).
-        // For now, assuming patch is mostly status/header fields.
 
         const dbPatch: any = { ...patch };
-        if (patch.issuerId) dbPatch.issuer_id = patch.issuerId;
-        if (patch.dueDate) dbPatch.due_date = patch.dueDate;
-        if (patch.creditDays) dbPatch.credit_days = patch.creditDays;
-        if (patch.contactId) dbPatch.contact_id = patch.contactId;
-        if (patch.contactName) dbPatch.contact_name = patch.contactName;
-        if (patch.destinationAccountId) dbPatch.destination_account_id = patch.destinationAccountId;
+        if (patch.issuerId !== undefined) dbPatch.issuer_id = (patch.issuerId && patch.issuerId !== "") ? patch.issuerId : null;
+        if (patch.dueDate !== undefined) dbPatch.due_date = (patch.dueDate && patch.dueDate !== "") ? patch.dueDate : null;
+        if (patch.creditDays !== undefined) dbPatch.credit_days = patch.creditDays ?? null;
+        if (patch.contactId !== undefined) dbPatch.contact_id = (patch.contactId && patch.contactId !== "" && patch.contactId !== "adhoc") ? patch.contactId : null;
+        if (patch.contactName !== undefined) dbPatch.contact_name = patch.contactName || null;
+        if (patch.destinationAccountId !== undefined) dbPatch.destination_account_id = (patch.destinationAccountId && patch.destinationAccountId !== "") ? patch.destinationAccountId : null;
 
         delete dbPatch.issuerId; delete dbPatch.dueDate; delete dbPatch.creditDays;
         delete dbPatch.contactId; delete dbPatch.contactName; delete dbPatch.destinationAccountId;
-        delete dbPatch.items; // Don't update items via basic patch
+
+        if (patch.items) {
+            delete dbPatch.items;
+            // Handle items update by clear and insert
+            await supabase.from('invoice_items').delete().eq('invoice_id', id);
+
+            if (patch.items.length > 0) {
+                const itemsToInsert = patch.items.map(item => {
+                    const { id: itemId, ...rest } = item as any; // Ignore existing ID
+                    return {
+                        ...rest,
+                        invoice_id: id
+                    }
+                });
+                const { error: itemsError } = await supabase.from('invoice_items').insert(itemsToInsert);
+                if (itemsError) console.error("Error updating invoice items:", itemsError);
+            }
+        }
 
         const { error } = await supabase.from('invoices').update(dbPatch).eq('id', id);
         if (error) console.error("Error updating invoice:", error);
@@ -341,11 +473,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             amount: newExpense.amount,
             date: newExpense.date,
             status: newExpense.status,
-            category_id: newExpense.categoryId,
-            supplier_id: newExpense.supplierId,
-            business_identity_id: newExpense.businessIdentityId,
-            source_account_id: newExpense.sourceAccountId,
-            receipt_url: newExpense.receiptUrl
+            category_id: (newExpense.categoryId && newExpense.categoryId !== "") ? newExpense.categoryId : "other",
+            supplier_id: (newExpense.supplierId && newExpense.supplierId !== "") ? newExpense.supplierId : null,
+            business_identity_id: (newExpense.businessIdentityId && newExpense.businessIdentityId !== "") ? newExpense.businessIdentityId : null,
+            source_account_id: (newExpense.sourceAccountId && newExpense.sourceAccountId !== "") ? newExpense.sourceAccountId : null,
+            receipt_url: newExpense.receiptUrl || null
         });
         if (error) console.error("Error adding expense:", error);
     };
@@ -354,11 +486,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setExpenses(prev => prev.map(e => e.id === id ? { ...e, ...patch } : e));
 
         const dbPatch: any = { ...patch };
-        if (patch.categoryId) dbPatch.category_id = patch.categoryId;
-        if (patch.supplierId) dbPatch.supplier_id = patch.supplierId;
-        if (patch.businessIdentityId) dbPatch.business_identity_id = patch.businessIdentityId;
-        if (patch.sourceAccountId) dbPatch.source_account_id = patch.sourceAccountId;
-        if (patch.receiptUrl) dbPatch.receipt_url = patch.receiptUrl;
+        if (patch.categoryId !== undefined) dbPatch.category_id = patch.categoryId;
+        if (patch.supplierId !== undefined) dbPatch.supplier_id = patch.supplierId;
+        if (patch.businessIdentityId !== undefined) dbPatch.business_identity_id = patch.businessIdentityId;
+        if (patch.sourceAccountId !== undefined) dbPatch.source_account_id = patch.sourceAccountId;
+        if (patch.receiptUrl !== undefined) dbPatch.receipt_url = patch.receiptUrl;
 
         delete dbPatch.categoryId; delete dbPatch.supplierId; delete dbPatch.businessIdentityId;
         delete dbPatch.sourceAccountId; delete dbPatch.receiptUrl;
@@ -389,6 +521,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             id: newIdentity.id,
             name: newIdentity.name,
             tax_id: newIdentity.taxId,
+            dv: newIdentity.dv || null,
             address: newIdentity.address,
             city: newIdentity.city,
             email: newIdentity.email,
@@ -408,13 +541,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
 
         const dbPatch: any = { ...patch };
-        if (patch.taxId) dbPatch.tax_id = patch.taxId;
-        if (patch.logoUrl) dbPatch.logo_url = patch.logoUrl;
+        if (patch.taxId !== undefined) dbPatch.tax_id = patch.taxId;
+        if (patch.dv !== undefined) dbPatch.dv = patch.dv || null;
+        if (patch.logoUrl !== undefined) dbPatch.logo_url = patch.logoUrl;
         if (patch.isDefault !== undefined) dbPatch.is_default = patch.isDefault;
         if (patch.isTaxPayer !== undefined) dbPatch.is_tax_payer = patch.isTaxPayer;
-        if (patch.bankAccounts) dbPatch.bank_accounts = patch.bankAccounts;
+        if (patch.bankAccounts !== undefined) dbPatch.bank_accounts = patch.bankAccounts;
 
-        delete dbPatch.taxId; delete dbPatch.logoUrl; delete dbPatch.isDefault; delete dbPatch.isTaxPayer; delete dbPatch.bankAccounts;
+        delete dbPatch.taxId; delete dbPatch.dv; delete dbPatch.logoUrl; delete dbPatch.isDefault; delete dbPatch.isTaxPayer; delete dbPatch.bankAccounts;
 
         const { error } = await supabase.from('business_identities').update(dbPatch).eq('id', id);
         if (error) console.error("Error updating identity:", error);
@@ -456,6 +590,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const newPayment = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
         setPayments(prev => [...prev, newPayment]);
 
+        const isValidUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+
         const { error } = await supabase.from('payments').insert({
             id: newPayment.id,
             amount: newPayment.amount,
@@ -463,13 +599,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             reference: newPayment.reference,
             notes: newPayment.notes,
             invoice_id: newPayment.invoiceId,
-            method_id: newPayment.methodId,
-            destination_account_id: newPayment.destinationAccountId
+            method_id: newPayment.methodId && isValidUUID(newPayment.methodId) ? newPayment.methodId : null,
+            destination_account_id: newPayment.destinationAccountId && isValidUUID(newPayment.destinationAccountId) ? newPayment.destinationAccountId : null
         });
 
         if (error) {
             console.error("Error adding payment:", error);
-            return;
+            setPayments(prev => prev.filter(p => p.id !== newPayment.id)); // Rollback local state
+            throw error; // Make sure caller knows it failed
         }
 
         // Update Invoice Status
@@ -508,7 +645,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updateExpenseCategory = async (id: string, patch: Partial<ExpenseCategoryItem>) => {
         setExpenseCategories(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c));
         const dbPatch: any = { ...patch };
-        if (patch.parentId) dbPatch.parent_id = patch.parentId;
+        if (patch.parentId !== undefined) dbPatch.parent_id = patch.parentId;
         delete dbPatch.parentId;
         const { error } = await supabase.from('expense_categories').update(dbPatch).eq('id', id);
         if (error) console.error("Error updating expense cat:", error);
@@ -526,13 +663,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.from('products').insert({
             id: newItem.id,
             name: newItem.name,
-            sku: newItem.sku,
-            description: newItem.description,
+            sku: newItem.sku || null,
+            description: newItem.description || null,
             price: newItem.price,
             cost: newItem.cost,
             stock: newItem.stock,
-            min_stock: newItem.minStock,
-            category_id: newItem.categoryId
+            min_stock: newItem.minStock ?? null,
+            category_id: (newItem.categoryId && newItem.categoryId !== "") ? newItem.categoryId : null
         });
         if (error) console.error("Error adding product:", error);
         return newItem.id;
@@ -541,8 +678,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updateProduct = async (id: string, patch: Partial<Product>) => {
         setProducts(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
         const dbPatch: any = { ...patch };
-        if (patch.minStock) dbPatch.min_stock = patch.minStock;
-        if (patch.categoryId) dbPatch.category_id = patch.categoryId;
+        if (patch.minStock !== undefined) dbPatch.min_stock = patch.minStock;
+        if (patch.categoryId !== undefined) dbPatch.category_id = patch.categoryId;
         delete dbPatch.minStock; delete dbPatch.categoryId;
 
         const { error } = await supabase.from('products').update(dbPatch).eq('id', id);
@@ -569,11 +706,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             number: purchaseHeader.number,
             total: purchaseHeader.total,
             status: purchaseHeader.status,
-            notes: purchaseHeader.notes,
-            supplier_id: purchaseHeader.supplierId,
-            supplier_name: purchaseHeader.supplierName,
-            business_identity_id: purchaseHeader.businessIdentityId,
-            receipt_url: purchaseHeader.receiptUrl
+            notes: purchaseHeader.notes || null,
+            supplier_id: (purchaseHeader.supplierId && purchaseHeader.supplierId !== "") ? purchaseHeader.supplierId : null,
+            supplier_name: purchaseHeader.supplierName || null,
+            business_identity_id: (purchaseHeader.businessIdentityId && purchaseHeader.businessIdentityId !== "") ? purchaseHeader.businessIdentityId : null,
+            receipt_url: purchaseHeader.receiptUrl || null
         });
 
         if (error) { console.error("Error creating purchase:", error); return; }
@@ -620,20 +757,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.from('wifi_networks').insert({
             id: newItem.id,
             ssid: newItem.ssid,
-            password: newItem.password,
-            encryption: newItem.encryption,
-            model: newItem.model,
-            area: newItem.area,
-            gateway: newItem.gateway,
-            dns: newItem.dns,
-            notes: newItem.notes,
-            is_hidden: newItem.isHidden,
+            password: newItem.password || null,
+            encryption: newItem.encryption || null,
+            model: newItem.model || null,
+            area: newItem.area || null,
+            gateway: newItem.gateway || null,
+            dns: newItem.dns || null,
+            notes: newItem.notes || null,
+            is_hidden: newItem.isHidden ?? null,
             device_type: newItem.deviceType,
-            device_brand: newItem.deviceBrand,
-            client_id: newItem.clientId,
-            ip_address: newItem.ipAddress,
-            subnet_mask: newItem.subnetMask,
-            photo_url: newItem.photoUrl
+            device_brand: newItem.deviceBrand || null,
+            client_id: (newItem.clientId && newItem.clientId !== "") ? newItem.clientId : null,
+            ip_address: newItem.ipAddress || null,
+            subnet_mask: newItem.subnetMask || null,
+            photo_url: newItem.photoUrl || null
         });
         if (error) console.error("Error adding wifi:", error);
     };
@@ -642,12 +779,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setWifiNetworks(prev => prev.map(w => w.id === id ? { ...w, ...patch } : w));
         const dbPatch: any = { ...patch };
         if (patch.isHidden !== undefined) dbPatch.is_hidden = patch.isHidden;
-        if (patch.deviceType) dbPatch.device_type = patch.deviceType;
-        if (patch.deviceBrand) dbPatch.device_brand = patch.deviceBrand;
-        if (patch.clientId) dbPatch.client_id = patch.clientId;
-        if (patch.ipAddress) dbPatch.ip_address = patch.ipAddress;
-        if (patch.subnetMask) dbPatch.subnet_mask = patch.subnetMask;
-        if (patch.photoUrl) dbPatch.photo_url = patch.photoUrl;
+        if (patch.deviceType !== undefined) dbPatch.device_type = patch.deviceType;
+        if (patch.deviceBrand !== undefined) dbPatch.device_brand = patch.deviceBrand;
+        if (patch.clientId !== undefined) dbPatch.client_id = patch.clientId;
+        if (patch.ipAddress !== undefined) dbPatch.ip_address = patch.ipAddress;
+        if (patch.subnetMask !== undefined) dbPatch.subnet_mask = patch.subnetMask;
+        if (patch.photoUrl !== undefined) dbPatch.photo_url = patch.photoUrl;
 
         delete dbPatch.isHidden; delete dbPatch.deviceType; delete dbPatch.deviceBrand;
         delete dbPatch.clientId; delete dbPatch.ipAddress; delete dbPatch.subnetMask; delete dbPatch.photoUrl;
@@ -663,11 +800,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
 
     const addServiceOrder = async (data: Omit<ServiceOrder, "id" | "createdAt" | "updatedAt">) => {
+        let finalClientId = data.clientId;
+
+        // Auto-create client if needed
+        if (finalClientId === 'generated-on-save' && data.clientName) {
+            const newId = await addContact({
+                name: data.clientName,
+                type: 'client',
+                email: data.clientEmail,
+                phone: data.clientPhone
+            });
+            finalClientId = newId;
+        }
+
+        const now = new Date().toISOString();
         const newOrder = {
             ...data,
+            clientId: finalClientId,
             id: crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            createdAt: now,
+            updatedAt: now
         };
         // @ts-ignore
         setServiceOrders(prev => [newOrder, ...prev]);
@@ -682,15 +834,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             subtotal: orderHeader.subtotal,
             tax: orderHeader.tax,
             total: orderHeader.total,
-            notes: orderHeader.notes,
-            client_id: orderHeader.clientId,
-            client_name: orderHeader.clientName,
-            client_email: orderHeader.clientEmail,
-            client_phone: orderHeader.clientPhone,
-            estimated_date: orderHeader.estimatedDate,
-            technician_notes: orderHeader.technicianNotes,
-            invoice_id: orderHeader.invoiceId,
-            business_identity_id: orderHeader.businessIdentityId
+            notes: orderHeader.notes || null,
+            client_id: (finalClientId && finalClientId !== "" && finalClientId !== "generated-on-save") ? finalClientId : null,
+            client_name: orderHeader.clientName || null,
+            client_email: orderHeader.clientEmail || null,
+            client_phone: orderHeader.clientPhone || null,
+            estimated_date: (orderHeader.estimatedDate && orderHeader.estimatedDate !== "") ? orderHeader.estimatedDate : null,
+            technician_notes: orderHeader.technicianNotes || null,
+            invoice_id: (orderHeader.invoiceId && orderHeader.invoiceId !== "") ? orderHeader.invoiceId : null,
+            business_identity_id: (orderHeader.businessIdentityId && orderHeader.businessIdentityId !== "") ? orderHeader.businessIdentityId : null
         });
 
         if (error) { console.error("Error adding service order:", error); return ""; }
@@ -718,14 +870,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setServiceOrders(prev => prev.map(o => o.id === id ? { ...o, ...patch, updatedAt: now } : o));
 
         const dbPatch: any = { ...patch, updated_at: now };
-        if (patch.clientId) dbPatch.client_id = patch.clientId;
-        if (patch.clientName) dbPatch.client_name = patch.clientName;
-        if (patch.clientEmail) dbPatch.client_email = patch.clientEmail;
-        if (patch.clientPhone) dbPatch.client_phone = patch.clientPhone;
-        if (patch.estimatedDate) dbPatch.estimated_date = patch.estimatedDate;
-        if (patch.technicianNotes) dbPatch.technician_notes = patch.technicianNotes;
-        if (patch.invoiceId) dbPatch.invoice_id = patch.invoiceId;
-        if (patch.businessIdentityId) dbPatch.business_identity_id = patch.businessIdentityId;
+        if (patch.clientId !== undefined) dbPatch.client_id = patch.clientId;
+        if (patch.clientName !== undefined) dbPatch.client_name = patch.clientName;
+        if (patch.clientEmail !== undefined) dbPatch.client_email = patch.clientEmail;
+        if (patch.clientPhone !== undefined) dbPatch.client_phone = patch.clientPhone;
+        if (patch.estimatedDate !== undefined) dbPatch.estimated_date = patch.estimatedDate;
+        if (patch.technicianNotes !== undefined) dbPatch.technician_notes = patch.technicianNotes;
+        if (patch.invoiceId !== undefined) dbPatch.invoice_id = patch.invoiceId;
+        if (patch.businessIdentityId !== undefined) dbPatch.business_identity_id = patch.businessIdentityId;
         if (patch.updatedAt) delete dbPatch.updatedAt; // we set updated_at manually
 
         delete dbPatch.clientId; delete dbPatch.clientName; delete dbPatch.clientEmail;
@@ -747,7 +899,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             setLoadingData(true);
             const tables = [
                 'contacts', 'business_identities', 'supplier_categories', 'expense_categories',
-                'products', 'payment_methods', 'wifi_networks',
+                'products', 'payment_methods', 'wifi_networks', 'cctv_systems', 'cctv_users',
                 'invoices', 'invoice_items',
                 'expenses',
                 'purchases', 'purchase_items',
@@ -795,7 +947,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             // Import Order Matters due to Foreign Keys
             const tableOrder = [
                 'contacts', 'business_identities', 'supplier_categories', 'expense_categories',
-                'products', 'payment_methods', 'wifi_networks',
+                'products', 'payment_methods', 'wifi_networks', 'cctv_systems', 'cctv_users',
                 'invoices', 'invoice_items',
                 'expenses',
                 'purchases', 'purchase_items',

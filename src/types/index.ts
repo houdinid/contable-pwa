@@ -20,6 +20,7 @@ export interface Contact {
   specialtyId?: string; // ID de la especialidad (solo para proveedores)
   defaultExpenseCategoryId?: string; // Categoría de gasto por defecto
   googleMapsUrl?: string; // Enlace a ubicación
+  website?: string; // Página Web
   bankAccounts?: BankAccount[]; // Multiples cuentas bancarias
   creditBalance?: number; // Saldo a favor del cliente
   createdAt: string;
@@ -68,6 +69,7 @@ export interface BusinessIdentity {
   id: string;
   name: string;      // Razón Social
   taxId: string;     // NIT
+  dv?: string;       // Dígito de Verificación
   address: string;
   phone?: string;
   email?: string;

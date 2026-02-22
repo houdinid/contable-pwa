@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useData } from "@/context/data-context";
-import { Printer, ArrowLeft, Download, Mail, Edit, FileText, DollarSign, Upload, Camera } from "lucide-react";
+import { Printer, ArrowLeft, Mail, Edit, FileText, DollarSign, Upload } from "lucide-react";
 import type { Invoice } from "@/types";
 import { OCRService } from "@/lib/ocr-service";
 import { generatePDF, sharePDF } from "@/lib/pdf-generator";
@@ -36,6 +36,16 @@ export default function InvoiceDetailPage() {
         setIsGenerating(true);
         try {
             const filename = `${invoice.type === 'quote' ? 'Cotizacion' : 'Factura'}-${invoice.number}.pdf`;
+
+            // Copiar el correo al portapapeles si existe, para que el usuario solo tenga que pegarlo
+            if (contact?.email) {
+                try {
+                    await navigator.clipboard.writeText(contact.email);
+                } catch (e) {
+                    console.error("No se pudo copiar el correo", e);
+                }
+            }
+
             await sharePDF({ elementId: 'invoice-content', filename });
         } catch (error) {
             console.error("Error sharing PDF:", error);
@@ -216,7 +226,7 @@ export default function InvoiceDetailPage() {
             const invoiceCount = invoices.filter(i => i.type === 'invoice').length;
             const nextNumber = (invoiceCount + 1).toString().padStart(4, '0');
 
-            const { id, createdAt, ...rest } = invoice;
+            const { id: _, createdAt: __, ...rest } = invoice;
 
             // Create new invoice data
             const newInvoiceData = {
@@ -302,96 +312,80 @@ export default function InvoiceDetailPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Invoice Document */}
-                <div id="invoice-content" className="lg:col-span-2 bg-white p-8 md:p-12 rounded-xl shadow-sm border border-gray-200 print:shadow-none print:border-0 print:p-0">
+                <div id="invoice-content" className="lg:col-span-2 bg-white rounded-none shadow-none print:shadow-none print:border-0 print:p-0 overflow-hidden" style={{ minHeight: '297mm', padding: '20px' }}>
                     {/* Header */}
-                    <div className="flex justify-between items-start mb-8 border-b border-gray-100 pb-8">
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-6 border-b pb-4 gap-4 sm:gap-0">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                                {invoice.type === 'quote' ? 'COTIZACIÓN' : 'FACTURA'}
+                            <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                                {emitter?.name || "SYSCOM COLOMBIA S.A.S."}
                             </h1>
-                            <p className="text-gray-500 mt-1"># {invoice.number}</p>
+                            <div className="text-gray-500 text-sm space-y-0.5">
+                                <p>NIT: {emitter?.taxId}</p>
+                                <p>{emitter?.address}</p>
+                                <p>{emitter?.phone} | {emitter?.email}</p>
+                            </div>
+                        </div>
+                        <div className="sm:text-right">
+                            <h2 className="text-2xl font-light text-gray-400 uppercase tracking-wider mb-1">
+                                {invoice.type === 'quote' ? 'Cotización' : 'Factura'}
+                            </h2>
+                            <div className="text-gray-900 font-medium text-lg">
+                                #{invoice.number}
+                            </div>
+                            <div className="text-gray-500 text-sm mt-0.5">
+                                Fecha: {invoice.date?.split('T')[0]}
+                            </div>
                             {invoice.type === 'invoice' && (
-                                <div className={`mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                <div className={`mt-2 inline-block px-3 py-1 rounded-full text-[10px] font-semibold ${isPaid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                     {isPaid ? 'PAGADA' : 'PENDIENTE'}
                                 </div>
                             )}
                         </div>
-                        <div className="text-right">
-                            {emitter ? (
-                                <>
-                                    <h2 className="text-xl font-bold text-indigo-600">{emitter.name}</h2>
-                                    <p className="text-sm text-gray-500 mt-1">NIT: {emitter.taxId}</p>
-                                    <p className="text-sm text-gray-500">{emitter.address}</p>
-                                    {emitter.email && <p className="text-sm text-gray-500">{emitter.email}</p>}
-                                </>
-                            ) : (
-                                <>
-                                    <h2 className="text-xl font-bold text-indigo-600">Mi Empresa</h2>
-                                    <p className="text-sm text-gray-500 mt-1">Configura tu Razón Social</p>
-                                </>
-                            )}
-                        </div>
                     </div>
 
-                    {/* Info Grid */}
-                    <div className="grid grid-cols-2 gap-8 mb-8">
+                    {/* Client Info */}
+                    <div className="mb-6 flex flex-col sm:flex-row justify-between gap-4 sm:gap-0">
                         <div>
-                            <h3 className="text-sm font-medium text-gray-500 uppercase mb-2">Cliente</h3>
-                            <p className="font-semibold text-gray-900 text-lg">{invoice.contactName}</p>
+                            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Facturar A</h3>
+                            <p className="font-semibold text-gray-900 text-base">{invoice.contactName}</p>
                             {contact ? (
-                                <div className="text-sm text-gray-600 mt-1 space-y-0.5">
+                                <div className="text-gray-600 text-sm mt-1 space-y-0.5">
                                     {contact.taxId && <p>NIT: {contact.taxId}</p>}
                                     {contact.address && <p>{contact.address}</p>}
-                                    {contact.phone && <p>Tel: {contact.phone}</p>}
+                                    {contact.phone && <p>{contact.phone}</p>}
                                     {contact.email && <p>{contact.email}</p>}
-                                    {contact.creditBalance && contact.creditBalance > 0 && (
-                                        <p className="mt-2 text-green-600 font-bold bg-green-50 inline-block px-2 py-1 rounded-md text-xs border border-green-200">
-                                            Saldo a Favor: ${contact.creditBalance.toLocaleString()}
-                                        </p>
-                                    )}
                                 </div>
                             ) : (
-                                <p className="text-xs text-red-400">Datos de contacto no disponibles</p>
+                                <p className="italic text-gray-400 text-xs">Datos no vinculados a contacto</p>
                             )}
                         </div>
-                        <div className="text-right">
-                            <div className="mb-4">
-                                <h3 className="text-sm font-medium text-gray-500 uppercase">Fecha Emisión</h3>
-                                <p className="font-semibold text-gray-900">{invoice.date}</p>
+                        <div className="sm:text-right">
+                            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Detalles</h3>
+                            <div className="text-gray-600 text-sm space-y-0.5">
+                                {invoice.dueDate && <p><span className="font-medium">Vence:</span> {invoice.dueDate.split('T')[0]}</p>}
+                                {invoice.creditDays && <p><span className="font-medium">Plazo:</span> {invoice.creditDays} días</p>}
                             </div>
-                            {invoice.dueDate && (
-                                <div>
-                                    <h3 className="text-sm font-medium text-gray-500 uppercase">Vencimiento</h3>
-                                    <p className="font-semibold text-gray-900">{invoice.dueDate}</p>
-                                </div>
-                            )}
-                            {invoice.creditDays && (
-                                <div>
-                                    <h3 className="text-sm font-medium text-gray-500 uppercase">Crédito</h3>
-                                    <p className="font-semibold text-gray-900">{invoice.creditDays} Días</p>
-                                </div>
-                            )}
                         </div>
                     </div>
 
                     {/* Items Table */}
-                    <div className="mb-8">
-                        <table className="w-full text-left table-fixed">
-                            <thead className="bg-gray-50 text-gray-700 font-medium">
-                                <tr>
-                                    <th className="px-4 py-3 rounded-l-lg w-[50%]">Descripción</th>
-                                    <th className="px-4 py-3 text-center w-[15%]">Cant.</th>
-                                    <th className="px-4 py-3 text-right w-[15%]">Precio</th>
-                                    <th className="px-4 py-3 text-right rounded-r-lg w-[20%]">Total</th>
+                    <div className="mb-6">
+                        <table className="w-full text-xs text-left">
+                            <thead>
+                                <tr className="border-b border-gray-300 text-gray-900">
+                                    <th className="py-2 font-semibold w-[60%]">Descripción</th>
+                                    <th className="py-2 text-center font-semibold w-[10%]">Cant.</th>
+                                    <th className="py-2 text-right font-semibold w-[15%]">V. Unitario</th>
+                                    <th className="py-2 text-right font-semibold w-[15%]">Total</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {invoice.items.map((item) => (
                                     <tr key={item.id}>
-                                        <td className="px-4 py-3 text-gray-900 break-words whitespace-pre-wrap">{item.description}</td>
-                                        <td className="px-4 py-3 text-center text-gray-600 align-top">{item.quantity}</td>
-                                        <td className="px-4 py-3 text-right text-gray-600 align-top">${item.price.toLocaleString()}</td>
-                                        <td className="px-4 py-3 text-right font-medium text-gray-900 align-top">${item.total.toLocaleString()}</td>
+                                        <td className="py-2 text-gray-900 break-words whitespace-pre-wrap">{item.description}</td>
+                                        <td className="py-2 text-center text-gray-700">{item.quantity}</td>
+                                        <td className="py-2 text-right text-gray-700">${item.price.toLocaleString()}</td>
+                                        <td className="py-2 text-right font-medium text-gray-900">${item.total.toLocaleString()}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -399,33 +393,36 @@ export default function InvoiceDetailPage() {
                     </div>
 
                     {/* Totals */}
-                    <div className="flex justify-end border-t border-gray-100 pt-8">
-                        <div className="w-64 space-y-3">
-                            <div className="flex justify-between text-gray-600">
+                    <div className="flex justify-end mb-8">
+                        <div className="w-56 space-y-1.5">
+                            <div className="flex justify-between text-gray-600 text-xs">
                                 <span>Subtotal</span>
                                 <span>${invoice.subtotal.toLocaleString()}</span>
                             </div>
-                            {invoice.tax > 0 && (
-                                <div className="flex justify-between text-gray-600">
-                                    <span>Impuestos (19%)</span>
-                                    <span>${invoice.tax.toLocaleString()}</span>
-                                </div>
-                            )}
-                            <div className="pt-3 border-t border-gray-200 flex justify-between font-bold text-xl text-indigo-600">
+                            <div className="flex justify-between text-gray-600 text-xs">
+                                <span>IVA (19%)</span>
+                                <span>${invoice.tax.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-300">
                                 <span>Total</span>
                                 <span>${invoice.total.toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Footer */}
-                    <div className="mt-12 text-center text-sm text-gray-500 border-t border-gray-100 pt-8 print:block">
-                        {invoice.type === 'quote' ? null : (
-                            <>
-                                <p>Gracias por su compra.</p>
-                                <p className="mt-1">Esta factura se asimila en todos sus efectos a una letra de cambio (Art. 774 C.Co).</p>
-                            </>
-                        )}
+                    {/* Footer Notes */}
+                    <div className="border-t border-gray-200 pt-4">
+                        <div className="text-gray-500 text-[10px] leading-tight">
+                            {invoice.notes && (
+                                <div className="mb-2">
+                                    <p className="font-bold text-gray-700 mb-0.5">Notas:</p>
+                                    <p>{invoice.notes}</p>
+                                </div>
+                            )}
+                            <p>Favor realizar sus pagos a nombre de {emitter?.name}.</p>
+                            <p className="mt-0.5">Esta factura de venta se asimila en todos sus efectos a una letra de cambio según los términos del Art. 774 del Código de Comercio.</p>
+                            <p className="mt-2 text-gray-400">Generado por Contable PWA</p>
+                        </div>
                     </div>
                 </div>
 
@@ -567,13 +564,14 @@ export default function InvoiceDetailPage() {
                                     </select>
                                 </div>
 
-                                {emitter && emitter.bankAccounts && emitter.bankAccounts.length > 0 && (
+                                {emitter?.bankAccounts && emitter.bankAccounts.length > 0 && (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta de Destino (Donde entra el dinero)</label>
                                         <select
                                             className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
                                             value={paymentForm.destinationAccountId}
                                             onChange={e => setPaymentForm({ ...paymentForm, destinationAccountId: e.target.value })}
+                                            title="Seleccionar Cuenta"
                                         >
                                             <option value="">-- Seleccionar Cuenta --</option>
                                             {emitter.bankAccounts.map(acc => (
@@ -624,9 +622,9 @@ export default function InvoiceDetailPage() {
                                 </div>
                             </form>
                         </div>
-                    </div >
+                    </div>
                 )
             }
-        </div >
+        </div>
     );
 }

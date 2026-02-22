@@ -7,6 +7,7 @@ import type { BusinessIdentity } from "@/types";
 import { PaymentMethodsManager } from "@/components/payments/payment-methods-manager";
 import { ExpenseCategoriesManager } from "@/components/settings/expense-categories-manager";
 import { ProgrammingDocs } from "@/components/settings/programming-docs";
+import { toTitleCase, cleanEmail, cleanText, toLowerCaseAll } from "@/lib/utils";
 
 import { compressImage } from "@/lib/image-utils";
 
@@ -16,10 +17,12 @@ export default function SettingsPage() {
 
     // Identity Form State
     const [showIdentityForm, setShowIdentityForm] = useState(false);
+    const [isImportingIdentities, setIsImportingIdentities] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [identityForm, setIdentityForm] = useState<Omit<BusinessIdentity, "id">>({
         name: "",
         taxId: "",
+        dv: "",
         address: "",
         city: "",
         email: "",
@@ -45,7 +48,7 @@ export default function SettingsPage() {
     };
 
     const resetForm = () => {
-        setIdentityForm({ name: "", taxId: "", address: "", city: "", email: "", logoUrl: "", isDefault: false, isTaxPayer: true, bankAccounts: [] });
+        setIdentityForm({ name: "", taxId: "", dv: "", address: "", city: "", email: "", logoUrl: "", isDefault: false, isTaxPayer: true, bankAccounts: [] });
         setEditingId(null);
     };
 
@@ -55,6 +58,7 @@ export default function SettingsPage() {
             setIdentityForm({
                 name: identity.name,
                 taxId: identity.taxId || "",
+                dv: identity.dv || "",
                 address: identity.address || "",
                 city: identity.city || "",
                 email: identity.email || "",
@@ -103,6 +107,90 @@ export default function SettingsPage() {
         }
     };
 
+    const handleDownloadIdentitiesTemplate = () => {
+        const headers = ["Razon Social", "NIT", "DV", "Direccion", "Ciudad", "Email"];
+        const sampleRow = ["Mi Empresa S.A.", "900123456", "7", "Calle Principal #1", "Bogota", "contacto@miempresa.com"];
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + headers.join(";") + "\n"
+            + sampleRow.join(";");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "plantilla_razones_sociales.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleIdentitiesFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsImportingIdentities(true);
+        const reader = new FileReader();
+
+        reader.onload = async (event) => {
+            try {
+                const text = event.target?.result as string;
+                const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+                if (lines.length < 2) {
+                    alert("El archivo parece estar vacío o no tiene el formato correcto.");
+                    return;
+                }
+
+                const separator = lines[0].includes(';') ? ';' : ',';
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const row = lines[i].split(separator).map(cell => cell.trim().replace(/^"|"$/g, ''));
+                    if (row.length < 2) continue; // Skip malformed rows
+
+                    const name = toTitleCase(row[0] || "");
+                    const taxId = cleanText(row[1] || "");
+                    const dv = cleanText(row[2] || "");
+                    const address = toLowerCaseAll(row[3] || "");
+                    const city = toTitleCase(row[4] || "");
+                    const email = cleanEmail(row[5] || "");
+
+                    if (!name || !taxId) {
+                        errorCount++;
+                        continue;
+                    }
+
+                    try {
+                        await addBusinessIdentity({
+                            name,
+                            taxId,
+                            dv,
+                            address,
+                            city,
+                            email,
+                            isDefault: false,
+                            isTaxPayer: true,
+                            bankAccounts: []
+                        });
+                        successCount++;
+                    } catch (err) {
+                        console.error("Error adding row", i, err);
+                        errorCount++;
+                    }
+                }
+
+                alert(`Importación completada.\n\nRazones Sociales importadas: ${successCount}\nErrores: ${errorCount}`);
+            } catch (error) {
+                console.error("Error parsing CSV:", error);
+                alert("Hubo un error al procesar el archivo CSV.");
+            } finally {
+                setIsImportingIdentities(false);
+                e.target.value = '';
+            }
+        };
+
+        reader.readAsText(file);
+    };
+
     return (
         <div className="max-w-4xl space-y-8">
             <div>
@@ -111,7 +199,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-                <div className="p-6 border-b border-border bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
+                <div className="p-4 sm:p-6 border-b border-border bg-gray-50 dark:bg-gray-800/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                             <Building2 size={20} className="text-indigo-600 dark:text-indigo-400" />
@@ -121,15 +209,39 @@ export default function SettingsPage() {
                             Gestiona las empresas o nombres con los que facturas.
                         </p>
                     </div>
-                    <button
-                        onClick={() => {
-                            resetForm();
-                            setShowIdentityForm(true);
-                        }}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors"
-                    >
-                        <Plus size={16} /> Agregar
-                    </button>
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <button
+                            onClick={handleDownloadIdentitiesTemplate}
+                            title="Descargar Plantilla CSV"
+                            className="flex items-center justify-center w-8 h-8 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                        >
+                            <Download size={16} />
+                        </button>
+
+                        <label
+                            title="Importar CSV"
+                            className={`flex items-center justify-center w-8 h-8 ${isImportingIdentities ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-green-50 text-green-600 cursor-pointer hover:bg-green-100'} rounded-lg transition-colors border border-green-200`}
+                        >
+                            <Upload size={16} />
+                            <input
+                                type="file"
+                                accept=".csv"
+                                className="hidden"
+                                onChange={handleIdentitiesFileUpload}
+                                disabled={isImportingIdentities}
+                            />
+                        </label>
+
+                        <button
+                            onClick={() => {
+                                resetForm();
+                                setShowIdentityForm(true);
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors"
+                        >
+                            <Plus size={16} /> Agregar
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-6">
@@ -148,7 +260,7 @@ export default function SettingsPage() {
                                                 <span className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">Predeterminado</span>
                                             )}
                                         </div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">NIT: {id.taxId} | {id.address}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">NIT: {id.taxId}{id.dv ? `-${id.dv}` : ''} | {id.address}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
@@ -222,12 +334,25 @@ export default function SettingsPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-foreground mb-1">NIT / Identificación</label>
-                                    <input
-                                        required
-                                        className="w-full px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 text-foreground"
-                                        value={identityForm.taxId}
-                                        onChange={e => setIdentityForm({ ...identityForm, taxId: e.target.value })}
-                                    />
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            required
+                                            className="w-full px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 text-foreground"
+                                            value={identityForm.taxId}
+                                            onChange={e => setIdentityForm({ ...identityForm, taxId: e.target.value })}
+                                        />
+                                        <span className="text-foreground font-bold">-</span>
+                                        <input
+                                            className="w-16 px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 text-foreground text-center"
+                                            placeholder="DV"
+                                            maxLength={1}
+                                            value={identityForm.dv || ""}
+                                            onChange={e => {
+                                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                                setIdentityForm({ ...identityForm, dv: val });
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-foreground mb-1">Ciudad</label>
