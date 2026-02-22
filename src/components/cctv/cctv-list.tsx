@@ -80,15 +80,15 @@ export function CCTVList() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredSystems.map((sys) => (
-                        <div key={sys.id} className="bg-white rounded-xl shadow-sm border hover:shadow-md transition-shadow overflow-hidden">
+                        <div key={sys.id} className="bg-card text-card-foreground rounded-xl shadow-sm border hover:shadow-md transition-shadow overflow-hidden">
                             <div className="p-5">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
-                                        <h3 className="font-bold text-lg text-gray-900 line-clamp-1">{sys.client?.name || "Sin Cliente"}</h3>
+                                        <h3 className="font-bold text-lg text-foreground line-clamp-1">{sys.client?.name || "Sin Cliente"}</h3>
                                         <p className="text-sm text-gray-500">{sys.branch || "Sede Principal"}</p>
                                     </div>
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${sys.technology === 'IP' ? 'bg-blue-100 text-blue-700' :
-                                            sys.technology === 'Analógico' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'
+                                        sys.technology === 'Analógico' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'
                                         }`}>
                                         {sys.technology}
                                     </span>
@@ -97,15 +97,15 @@ export function CCTVList() {
                                 <div className="space-y-2 text-sm text-gray-600 mb-4">
                                     <div className="flex justify-between">
                                         <span>Marca/Modelo:</span>
-                                        <span className="font-medium text-gray-900">{sys.brand} {sys.model}</span>
+                                        <span className="font-medium text-foreground">{sys.brand} {sys.model}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Canales:</span>
-                                        <span className="font-medium text-gray-900">{sys.channels}</span>
+                                        <span className="font-medium text-foreground">{sys.channels}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>IP:</span>
-                                        <span className="font-medium text-gray-900 font-mono">{sys.ip_address || "N/A"}</span>
+                                        <span className="font-medium text-foreground font-mono">{sys.ip_address || "N/A"}</span>
                                     </div>
                                 </div>
 

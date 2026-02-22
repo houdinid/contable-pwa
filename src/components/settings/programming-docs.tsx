@@ -32,7 +32,7 @@ export function ProgrammingDocs() {
             </div>
 
             {isOpen && (
-                <div className="p-6 bg-white dark:bg-card">
+                <div className="p-6 bg-background dark:bg-card">
                     <div className="prose dark:prose-invert max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {programmingDocs}

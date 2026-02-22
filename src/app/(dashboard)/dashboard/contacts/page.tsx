@@ -341,7 +341,7 @@ export default function ContactsPage() {
                                                             <p className="font-semibold text-gray-800 dark:text-gray-200">{acc.bankName}</p>
                                                             <span className="text-[10px] text-gray-500 uppercase tracking-wider">{acc.accountType === 'savings' ? 'Ahorros' : 'Corriente'}</span>
                                                         </div>
-                                                        <div className="flex items-center justify-between bg-white dark:bg-gray-900 px-2 py-1 rounded border border-gray-200 dark:border-gray-700">
+                                                        <div className="flex items-center justify-between bg-background px-2 py-1 rounded border border-border">
                                                             <code className="text-indigo-700 dark:text-indigo-400 font-mono select-all truncate mr-2">{acc.accountNumber}</code>
                                                             <button
                                                                 onClick={() => {

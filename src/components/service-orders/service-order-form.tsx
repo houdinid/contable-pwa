@@ -218,7 +218,7 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
 
                         {/* Dropdown Results */}
                         {showContactDropdown && (
-                            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                 {filteredContacts.length > 0 ? (
                                     filteredContacts.map(c => (
                                         <button
@@ -362,7 +362,7 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
                                     />
                                     {/* Custom Autocomplete Dropdown */}
                                     {productSuggestions && productSuggestions.itemId === item.id && (
-                                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                                             {productSuggestions.products.map(p => (
                                                 <button
                                                     key={p.id}
