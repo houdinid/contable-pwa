@@ -316,14 +316,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             phone: newContact.phone,
             address: newContact.address,
             type: newContact.type,
-            contact_person: newContact.contactPerson,
-            tax_id: newContact.taxId,
-            specialty_id: newContact.specialtyId,
-            default_expense_category_id: newContact.defaultExpenseCategoryId,
-            google_maps_url: newContact.googleMapsUrl,
-            website: newContact.website,
-            credit_balance: newContact.creditBalance,
-            bank_accounts: newContact.bankAccounts
+            contact_person: newContact.contactPerson || null,
+            tax_id: newContact.taxId || null,
+            specialty_id: newContact.specialtyId || null,
+            default_expense_category_id: newContact.defaultExpenseCategoryId || null,
+            google_maps_url: newContact.googleMapsUrl || null,
+            website: newContact.website || null,
+            credit_balance: newContact.creditBalance || 0,
+            bank_accounts: newContact.bankAccounts || []
         });
 
         if (error) {
@@ -522,13 +522,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             name: newIdentity.name,
             tax_id: newIdentity.taxId,
             dv: newIdentity.dv || null,
-            address: newIdentity.address,
-            city: newIdentity.city,
-            email: newIdentity.email,
-            logo_url: newIdentity.logoUrl,
-            is_default: newIdentity.isDefault,
-            is_tax_payer: newIdentity.isTaxPayer,
-            bank_accounts: newIdentity.bankAccounts
+            address: newIdentity.address || null,
+            city: newIdentity.city || null,
+            email: newIdentity.email || null,
+            logo_url: newIdentity.logoUrl || null,
+            is_default: newIdentity.isDefault || false,
+            is_tax_payer: newIdentity.isTaxPayer || false,
+            bank_accounts: newIdentity.bankAccounts || []
         });
         if (error) console.error("Error adding identity:", error);
     };
