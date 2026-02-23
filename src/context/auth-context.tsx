@@ -12,6 +12,7 @@ interface AuthContextType {
     logout: () => void;
     encryptionKey: CryptoKey | null;
     hasPin: boolean;
+    resetPin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
     logout: () => { },
     encryptionKey: null,
     hasPin: false,
+    resetPin: () => { },
 });
 
 const PIN_CHECK_KEY = "auth_check"; // Key in localStorage to store encrypted verification string
@@ -83,6 +85,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/");
     };
 
+    const resetPin = () => {
+        localStorage.removeItem(PIN_CHECK_KEY);
+        setHasPin(false);
+        setEncryptionKey(null);
+        setIsAuthenticated(false);
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -93,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 logout,
                 encryptionKey,
                 hasPin,
+                resetPin,
             }}
         >
             {children}

@@ -6,7 +6,7 @@ import { useAuth } from "@/context/auth-context";
 
 export function PinForm() {
     const router = useRouter();
-    const { login, register, hasPin, isLoading, isAuthenticated } = useAuth();
+    const { login, register, hasPin, isLoading, isAuthenticated, resetPin } = useAuth();
     const [pin, setPin] = useState("");
     const [confirmPin, setConfirmPin] = useState("");
     const [error, setError] = useState("");
@@ -109,6 +109,22 @@ export function PinForm() {
                     >
                         {loading ? "Procesando..." : (hasPin ? "Acceder" : "Crear PIN")}
                     </button>
+
+                    {hasPin && (
+                        <div className="text-center mt-4">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (window.confirm("¿Seguro que deseas restablecer el PIN? Deberás crear uno nuevo para ingresar.")) {
+                                        resetPin();
+                                    }
+                                }}
+                                className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium transition-colors"
+                            >
+                                ¿Olvidaste tu PIN? Restablecer
+                            </button>
+                        </div>
+                    )}
                 </form>
             </div>
         </div>
