@@ -71,7 +71,12 @@ export default function CreateAntivirusPage() {
                 startDate,
                 expirationDate,
                 deviceLimit,
-                devices: devices.map(d => ({ hostname: d.hostname }))
+                devices: devices.map(d => ({
+                    id: d.id,
+                    hostname: d.hostname,
+                    licenseId: "",
+                    createdAt: new Date().toISOString()
+                }))
             });
             router.push("/dashboard/antivirus");
         } catch (error) {

@@ -14,7 +14,7 @@ export default function AntivirusListPage() {
         const supplierName = contacts.find(c => c.id === license.supplierId)?.name.toLowerCase() || "";
         return (
             license.licenseName.toLowerCase().includes(searchLower) ||
-            license.productKey.toLowerCase().includes(searchLower) ||
+            (license.productKey || "").toLowerCase().includes(searchLower) ||
             supplierName.includes(searchLower)
         );
     });
@@ -36,7 +36,8 @@ export default function AntivirusListPage() {
     };
 
     // Calculate days remaining
-    const getDaysRemaining = (expDate: string) => {
+    const getDaysRemaining = (expDate?: string) => {
+        if (!expDate) return 999;
         const today = new Date();
         const exp = new Date(expDate);
         const diffTime = exp.getTime() - today.getTime();
@@ -83,9 +84,9 @@ export default function AntivirusListPage() {
                     filteredLicenses.map((license) => {
                         const daysRemaining = getDaysRemaining(license.expirationDate);
                         const isExpiringSoon = daysRemaining <= 15 && daysRemaining > 0;
-                        const isExpired = daysRemaining <= 0;
+                        const isExpired = license.expirationDate ? daysRemaining <= 0 : false;
 
-                        const usageRatio = (license.devices?.length || 0) / license.deviceLimit;
+                        const usageRatio = (license.devices?.length || 0) / (license.deviceLimit || 1);
                         const isFull = usageRatio >= 1;
 
                         return (
@@ -148,7 +149,7 @@ export default function AntivirusListPage() {
                                             <div className="flex items-center gap-2">
                                                 <Calendar size={14} className={isExpired ? "text-red-500" : isExpiringSoon ? "text-orange-500" : "text-gray-400"} />
                                                 <span className={`font-medium ${isExpired ? "text-red-600" : isExpiringSoon ? "text-orange-600" : ""}`}>
-                                                    {new Date(license.expirationDate).toLocaleDateString()}
+                                                    {license.expirationDate ? new Date(license.expirationDate).toLocaleDateString() : "Ilimitado"}
                                                 </span>
                                             </div>
                                             {isExpired && <p className="text-[10px] text-red-600 font-bold mt-0.5">VENCIDA</p>}

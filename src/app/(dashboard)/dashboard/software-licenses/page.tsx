@@ -14,7 +14,7 @@ export default function SoftwareLicensesListPage() {
         const clientName = contacts.find(c => c.id === license.clientId)?.name.toLowerCase() || "";
         return (
             license.softwareType.toLowerCase().includes(searchLower) ||
-            license.productKey.toLowerCase().includes(searchLower) ||
+            (license.productKey || "").toLowerCase().includes(searchLower) ||
             (license.assignedTo && license.assignedTo.toLowerCase().includes(searchLower)) ||
             clientName.includes(searchLower)
         );
