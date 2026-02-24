@@ -251,6 +251,12 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
         setProductModalOpen(true);
     };
 
+    const handleCreateNewProductModal = () => {
+        setEditingItemIndex(null);
+        setProductModalData(undefined);
+        setProductModalOpen(true);
+    };
+
     const handleProductCreated = (product: Product) => {
         if (editingItemIndex !== null) {
             const newItems = [...items];
@@ -260,6 +266,8 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                 productName: product.name // Update name in case user changed it in modal
             };
             setItems(newItems);
+        } else {
+            setSelectedProductId(product.id);
         }
         setProductModalOpen(false);
         setEditingItemIndex(null);
@@ -376,16 +384,26 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                             <div className="md:col-span-5">
                                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Producto</label>
-                                <select
-                                    className="w-full px-3 py-2 border border-border bg-background rounded-lg text-sm text-foreground focus:ring-2 focus:ring-indigo-500"
-                                    value={selectedProductId}
-                                    onChange={(e) => setSelectedProductId(e.target.value)}
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    {products.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>
-                                    ))}
-                                </select>
+                                <div className="flex gap-2">
+                                    <select
+                                        className="w-full px-3 py-2 border border-border bg-background rounded-lg text-sm text-foreground focus:ring-2 focus:ring-indigo-500"
+                                        value={selectedProductId}
+                                        onChange={(e) => setSelectedProductId(e.target.value)}
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        {products.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={handleCreateNewProductModal}
+                                        className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                                        title="Crear Nuevo Producto"
+                                    >
+                                        <Plus size={20} />
+                                    </button>
+                                </div>
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cant.</label>
