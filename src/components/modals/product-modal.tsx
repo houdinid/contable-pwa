@@ -8,9 +8,10 @@ interface ProductModalProps {
     isOpen: boolean;
     onClose: () => void;
     productToEdit?: Product | null;
+    onSuccess?: (productName: string) => void;
 }
 
-export default function ProductModal({ isOpen, onClose, productToEdit }: ProductModalProps) {
+export default function ProductModal({ isOpen, onClose, productToEdit, onSuccess }: ProductModalProps) {
     const { addProduct, updateProduct } = useData();
     const [name, setName] = useState('');
     const [sku, setSku] = useState('');
@@ -63,6 +64,7 @@ export default function ProductModal({ isOpen, onClose, productToEdit }: Product
             } else {
                 await addProduct(productData);
             }
+            onSuccess?.(productData.name);
             onClose();
         } catch (error) {
             console.error("Error saving product:", error);

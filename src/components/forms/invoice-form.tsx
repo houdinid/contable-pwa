@@ -6,6 +6,7 @@ import { useData } from "@/context/data-context";
 import { Plus, Trash, Save, ArrowLeft } from "lucide-react";
 import type { Invoice, InvoiceItem } from "@/types";
 import { ContactFormModal } from "@/components/forms/contact-form-modal";
+import ProductModal from "@/components/modals/product-modal";
 import { MoneyInput } from "@/components/ui/money-input";
 
 interface InvoiceFormProps {
@@ -24,8 +25,10 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
     const [contactId, setContactId] = useState(initialData?.contactId || "");
     const [showContactDropdown, setShowContactDropdown] = useState(false);
     const [showNewContactModal, setShowNewContactModal] = useState(false);
+    const [showNewProductModal, setShowNewProductModal] = useState(false);
+    const [pendingNewProductItemId, setPendingNewProductItemId] = useState<string | null>(null);
     const [activeItemId, setActiveItemId] = useState<string | null>(null);
-    const [productSuggestions, setProductSuggestions] = useState<{ itemId: string, products: any[] } | null>(null);
+    const [productSuggestions, setProductSuggestions] = useState<{ itemId: string, products: any[], show?: boolean } | null>(null);
 
     const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
     const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
@@ -70,6 +73,14 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
         const newContact = contacts.find(c => c.name === newName);
         if (newContact) setContactId(newContact.id);
         setShowNewContactModal(false);
+    };
+
+    const handleNewProductSuccess = (productName: string) => {
+        if (pendingNewProductItemId) {
+            handleItemChange(pendingNewProductItemId, 'description', productName);
+        }
+        setShowNewProductModal(false);
+        setPendingNewProductItemId(null);
     };
 
     const handleItemChange = (id: string, field: keyof InvoiceItem, value: any) => {
@@ -222,6 +233,11 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                 isOpen={showNewContactModal}
                 onClose={() => setShowNewContactModal(false)}
                 onSuccess={handleNewContactSuccess}
+            />
+            <ProductModal
+                isOpen={showNewProductModal}
+                onClose={() => setShowNewProductModal(false)}
+                onSuccess={handleNewProductSuccess}
             />
 
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
@@ -400,8 +416,8 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
 
                     <div className="space-y-6 md:space-y-4">
                         {items.map((item, index) => (
-                            <div key={item.id} className="flex flex-col md:flex-row gap-4 items-start border-b border-gray-100 pb-4 md:border-0 md:pb-0">
-                                <div className="w-full md:flex-1 relative">
+                            <div key={item.id} className="flex flex-col md:flex-row gap-4 items-start border-b border-gray-100 pb-4 md:border-0 md:pb-0 relative z-10">
+                                <div className="w-full md:flex-1 relative z-50">
                                     <label className="block text-xs font-medium text-gray-500 mb-1 md:hidden">Descripción</label>
                                     <textarea
                                         rows={1}
@@ -417,11 +433,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                                             // Filter products for suggestions
                                             if (val.length > 0) {
                                                 const matches = products.filter(p => p.name.toLowerCase().includes(val.toLowerCase()));
-                                                if (matches.length > 0) {
-                                                    setProductSuggestions({ itemId: item.id, products: matches });
-                                                } else {
-                                                    setProductSuggestions(null);
-                                                }
+                                                setProductSuggestions({ itemId: item.id, products: matches, show: true });
                                             } else {
                                                 setProductSuggestions(null);
                                             }
@@ -430,6 +442,12 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                                             // Resize on focus if needed
                                             e.target.style.height = 'auto';
                                             e.target.style.height = e.target.scrollHeight + 'px';
+
+                                            // Show dropdown again if there's text
+                                            if (item.description.length > 0) {
+                                                const matches = products.filter(p => p.name.toLowerCase().includes(item.description.toLowerCase()));
+                                                setProductSuggestions({ itemId: item.id, products: matches, show: true });
+                                            }
                                         }}
                                         onBlur={() => setTimeout(() => setProductSuggestions(null), 200)}
                                         placeholder="Descripción del ítem"
@@ -437,25 +455,44 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                                         required
                                     />
                                     {/* Custom Autocomplete Dropdown */}
-                                    {productSuggestions && productSuggestions.itemId === item.id && (
-                                        <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                                            {productSuggestions.products.map(p => (
-                                                <button
-                                                    key={p.id}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        handleItemChange(item.id, 'description', p.name);
-                                                        handleItemChange(item.id, 'price', p.price);
-                                                        setProductSuggestions(null);
-                                                    }}
-                                                    className="w-full text-left px-4 py-2 hover:bg-muted/50 flex justify-between items-center"
-                                                >
-                                                    <span className="font-medium text-gray-900 truncate mr-2">{p.name}</span>
-                                                    <span className="text-xs text-gray-500 whitespace-nowrap">
-                                                        ${p.price.toLocaleString()} | Stock: {p.stock}
-                                                    </span>
-                                                </button>
-                                            ))}
+                                    {productSuggestions && productSuggestions.itemId === item.id && productSuggestions.show && (
+                                        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto flex flex-col">
+                                            {productSuggestions.products.length > 0 ? (
+                                                productSuggestions.products.map(p => (
+                                                    <button
+                                                        key={p.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            handleItemChange(item.id, 'description', p.name);
+                                                            handleItemChange(item.id, 'price', p.price);
+                                                            setProductSuggestions(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 hover:bg-muted/50 flex justify-between items-center"
+                                                    >
+                                                        <span className="font-medium text-gray-900 truncate mr-2">{p.name}</span>
+                                                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                                                            ${p.price.toLocaleString()} | Stock: {p.stock}
+                                                        </span>
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="px-4 py-2 text-sm text-gray-500">
+                                                    No encontrado.
+                                                </div>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    setPendingNewProductItemId(item.id);
+                                                    setShowNewProductModal(true);
+                                                    setProductSuggestions(null);
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-indigo-600 font-medium hover:bg-muted/50 border-t border-border flex items-center gap-2"
+                                            >
+                                                <Plus size={14} />
+                                                Crear &quot;{item.description || 'Nuevo Producto'}&quot;
+                                            </button>
                                         </div>
                                     )}
                                 </div>
