@@ -1,12 +1,17 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
-
-const eslintConfig = defineConfig([
-  // ...nextVitals,
-  // ...nextTs,
-  // Relax rules globally to unblock Vercel Deployment builds
+// ESLint 9 Flat Config
+export default [
   {
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "node_modules/**",
+      "public/**",
+      "next-env.d.ts"
+    ]
+  },
+  {
+    files: ["**/*.{js,mjs,cjs,ts,tsx}"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-require-imports": "off",
@@ -18,16 +23,5 @@ const eslintConfig = defineConfig([
       "react/no-unescaped-entities": "off",
       "@next/next/no-assign-module-variable": "off"
     }
-  },
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    "src/**"
-  ]),
-]);
-
-export default eslintConfig;
+  }
+];
