@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import { encryptDataSync, decryptDataSync } from "@/lib/encryption";
 import type { Contact, Invoice, Expense, BusinessIdentity, SupplierCategory, Payment, PaymentMethod, ExpenseCategoryItem, Product, Purchase, WifiNetwork, ServiceOrder, RemoteAccess, AntivirusLicense, CorporateEmail, SoftwareLicense, TaxDeadline } from "@/types";
@@ -201,9 +202,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const [taxDeadlines, setTaxDeadlines] = useState<TaxDeadline[]>([]);
 
     const [loadingData, setLoadingData] = useState(true);
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
 
     // Initial Data Load from Supabase
     useEffect(() => {
+        if (!isAuthenticated) {
+            setLoadingData(false);
+            // Optionally clear state on logout (uncomment if desired)
+            // setContacts([]); setInvoices([]); ...
+            return;
+        }
+
         const loadRequests = async () => {
             setLoadingData(true);
             try {
@@ -426,7 +435,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         };
 
         loadRequests();
-    }, []);
+    }, [isAuthenticated]);
 
     // --- Helper to refresh a specific table (optional, for stricter consistency) ---
     // For now, we will update local state optimistically or re-fetch

@@ -54,43 +54,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const supabase = createClient();
 
-    // Función principal para obtener el usuario y su rol
     const fetchUserProfile = async (currentUser: User) => {
         try {
-            // Intentar obtener el rol del usuario desde la tabla user_roles
-            const { data: userRoleData, error: roleError } = await supabase
-                .from('user_roles')
-                .select(`
-          role_id,
-          roles (
-            name
-          )
-        `)
-                .eq('user_id', currentUser.id)
-                .single();
-
-            if (roleError) {
-                console.error("Error fetching user role:", roleError);
+            // Check for MFA first (no RLS issues)
+            let isMfaEnabled = false;
+            try {
+                const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+                if (!mfaError && mfaData) {
+                    isMfaEnabled = mfaData.currentLevel === 'aal2';
+                }
+            } catch (mfaFail) {
+                console.error("MFA check failed:", mfaFail);
             }
 
-            // Check for MFA
-            const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-            const isMfaEnabled = mfaData?.currentLevel === 'aal2';
+            // Intentar obtener el rol del usuario desde la tabla user_roles
+            let roleName = UserRole.AUXILIAR_CONTABLE; // Default fallback
+            try {
+                const { data: userRoleData, error: roleError } = await supabase
+                    .from('user_roles')
+                    .select(`
+                        role_id,
+                        roles (
+                            name
+                        )
+                    `)
+                    .eq('user_id', currentUser.id)
+                    .single();
 
-            const rawRoleData = userRoleData as unknown as AuthContextRoleData;
-            const roleName = Array.isArray(rawRoleData?.roles)
-                ? rawRoleData.roles[0]?.name
-                : rawRoleData?.roles?.name;
+                if (!roleError && userRoleData) {
+                    const rawRoleData = userRoleData as unknown as AuthContextRoleData;
+                    roleName = (Array.isArray(rawRoleData?.roles)
+                        ? rawRoleData.roles[0]?.name
+                        : rawRoleData?.roles?.name) as UserRole || UserRole.AUXILIAR_CONTABLE;
+                } else if (roleError) {
+                    console.error("Error fetching user role:", roleError);
+                }
+            } catch (roleFail) {
+                console.error("Role fetch failed:", roleFail);
+            }
 
             setUserProfile({
                 id: currentUser.id,
                 email: currentUser.email,
-                role: roleName as UserRole || UserRole.AUXILIAR_CONTABLE, // Default fallback
+                role: roleName,
                 isMfaEnabled
             });
 
         } catch (error) {
             console.error("Failed to build user profile", error);
+            // Fallback en caso de error crítico
+            setUserProfile({
+                id: currentUser.id,
+                email: currentUser.email,
+                role: UserRole.AUXILIAR_CONTABLE,
+                isMfaEnabled: false
+            });
         }
     };
 
@@ -126,11 +144,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (event === 'SIGNED_IN' && currentSession?.user) {
                     setSupabaseUser(currentSession.user);
                     await fetchUserProfile(currentSession.user);
+                    setIsLoading(false); // Ensure loading is cleared
                 } else if (event === 'SIGNED_OUT') {
                     setSupabaseUser(null);
                     setUserProfile(null);
                     setSession(null);
+                    setIsLoading(false); // Ensure loading is cleared
                     router.push('/login');
+                } else if (event === 'INITIAL_SESSION') {
+                    setIsLoading(false);
                 }
             }
         );
