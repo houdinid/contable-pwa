@@ -72,6 +72,8 @@ export function UserForm({ onClose, onSuccess }: UserFormProps) {
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">Invitar Usuario</h2>
                     <button
                         onClick={onClose}
+                        title="Cerrar"
+                        aria-label="Cerrar modal"
                         className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors rounded-full p-1 hover:bg-gray-200 dark:hover:bg-gray-700"
                     >
                         <X size={20} />
@@ -122,6 +124,8 @@ export function UserForm({ onClose, onSuccess }: UserFormProps) {
                             <select
                                 required
                                 value={role}
+                                title="Seleccionar Rol"
+                                aria-label="Seleccionar rol del sistema"
                                 onChange={(e) => setRole(e.target.value as UserRole)}
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-colors"
                             >
