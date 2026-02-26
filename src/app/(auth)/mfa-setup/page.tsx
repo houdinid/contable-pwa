@@ -31,7 +31,7 @@ export default function MfaSetupPage() {
                 if (error) throw error;
 
                 setFactorId(data.id);
-                setQrCode(data.totp.qr_code);
+                setQrCode(data.totp.uri);
                 setSecret(data.totp.secret);
             } catch (err: any) {
                 setError(err.message || "Error al generar la configuración de 2FA.");
