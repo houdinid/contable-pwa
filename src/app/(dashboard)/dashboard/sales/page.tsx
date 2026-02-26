@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useData } from "@/context/data-context";
 import { Plus, FileText, FileCheck, FileX, Printer } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function SalesPage() {
     const { invoices, loadingData } = useData();
+    const { canCreate } = usePermissions();
 
     if (loadingData) {
         return <div className="p-8 text-center">Cargando facturas...</div>;
@@ -18,13 +20,15 @@ export default function SalesPage() {
                     <h1 className="text-2xl font-bold text-foreground">Ingresos y Cotizaciones</h1>
                     <p className="text-gray-500 dark:text-gray-400">Gestiona tus documentos comerciales</p>
                 </div>
-                <Link
-                    href="/dashboard/sales/create"
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                    <Plus size={20} />
-                    Nueva Factura
-                </Link>
+                {canCreate && (
+                    <Link
+                        href="/dashboard/sales/create"
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                        <Plus size={20} />
+                        Nueva Factura
+                    </Link>
+                )}
             </div>
 
             {/* Desktop Table View */}

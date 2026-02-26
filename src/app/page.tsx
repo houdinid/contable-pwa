@@ -1,5 +1,5 @@
-import { PinForm } from "@/components/auth/auth-forms";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <PinForm />;
+  redirect("/login");
 }

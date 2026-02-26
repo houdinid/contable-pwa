@@ -1,25 +1,22 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 export function toTitleCase(str: string): string {
-    if (!str) return "";
-    return str
-        .toLowerCase()
-        .split(" ")
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
+  return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
-export function cleanEmail(str: string): string {
-    if (!str) return "";
-    return str.toLowerCase().replace(/\s+/g, "").trim();
+export function cleanEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
-export function cleanText(str: string): string {
-    if (!str) return "";
-    return str.replace(/\s+/g, " ").trim();
+export function cleanText(text: string): string {
+  return text.trim().replace(/\s+/g, ' ');
 }
 
-export function toLowerCaseAll(str: string): string {
-    if (!str) return "";
-    return str.toLowerCase().replace(/\s+/g, " ").trim();
+export function toLowerCaseAll(text: string): string {
+  return text.trim().toLowerCase();
 }

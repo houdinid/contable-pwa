@@ -1,108 +1,198 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { generateKey, encryptData, decryptData } from "@/lib/encryption";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase-browser";
+import { User, Session } from "@supabase/supabase-js";
+
+// Role-based Enums
+export enum UserRole {
+    SUPER_ADMIN = "SuperAdministrador",
+    CONTADOR_PRINCIPAL = "Contador Principal",
+    AUXILIAR_CONTABLE = "Auxiliar Contable",
+    AUDITOR = "Auditor"
+}
+
+export interface UserProfile {
+    id: string; // The auth.users UUID
+    name?: string;
+    email: string | undefined;
+    role: UserRole;
+    isMfaEnabled?: boolean;
+}
+
+interface AuthContextRoleData {
+    role_id: string;
+    roles: { name: string } | null | { name: string }[];
+}
 
 interface AuthContextType {
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (pin: string) => Promise<boolean>;
-    register: (pin: string) => Promise<void>;
-    logout: () => void;
-    encryptionKey: CryptoKey | null;
-    hasPin: boolean;
-    resetPin: () => void;
+    user: UserProfile | null;
+    supabaseUser: User | null;
+    session: Session | null;
+    logout: () => Promise<void>;
+    checkSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
     isAuthenticated: false,
     isLoading: true,
-    login: async () => false,
-    register: async () => { },
-    logout: () => { },
-    encryptionKey: null,
-    hasPin: false,
-    resetPin: () => { },
+    user: null,
+    supabaseUser: null,
+    session: null,
+    logout: async () => { },
+    checkSession: async () => { },
 });
 
-const PIN_CHECK_KEY = "auth_check"; // Key in localStorage to store encrypted verification string
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [encryptionKey, setEncryptionKey] = useState<CryptoKey | null>(null);
+    const [session, setSession] = useState<Session | null>(null);
+    const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [hasPin, setHasPin] = useState(false);
     const router = useRouter();
+    const supabase = createClient();
+
+    // Función principal para obtener el usuario y su rol
+    const fetchUserProfile = async (currentUser: User) => {
+        try {
+            // Intentar obtener el rol del usuario desde la tabla user_roles
+            const { data: userRoleData, error: roleError } = await supabase
+                .from('user_roles')
+                .select(`
+          role_id,
+          roles (
+            name
+          )
+        `)
+                .eq('user_id', currentUser.id)
+                .single();
+
+            if (roleError) {
+                console.error("Error fetching user role:", roleError);
+            }
+
+            // Check for MFA
+            const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+            const isMfaEnabled = mfaData?.currentLevel === 'aal2';
+
+            const rawRoleData = userRoleData as unknown as AuthContextRoleData;
+            const roleName = Array.isArray(rawRoleData?.roles)
+                ? rawRoleData.roles[0]?.name
+                : rawRoleData?.roles?.name;
+
+            setUserProfile({
+                id: currentUser.id,
+                email: currentUser.email,
+                role: roleName as UserRole || UserRole.AUXILIAR_CONTABLE, // Default fallback
+                isMfaEnabled
+            });
+
+        } catch (error) {
+            console.error("Failed to build user profile", error);
+        }
+    };
+
+    const checkSession = async () => {
+        setIsLoading(true);
+        try {
+            const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+
+            setSession(currentSession);
+            if (currentSession?.user) {
+                setSupabaseUser(currentSession.user);
+                await fetchUserProfile(currentSession.user);
+            } else {
+                setSupabaseUser(null);
+                setUserProfile(null);
+            }
+        } catch (e) {
+            console.error("Error checking session:", e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        // Check if a PIN is already set (by checking if the check value exists)
-        const storedCheck = localStorage.getItem(PIN_CHECK_KEY);
-        setHasPin(!!storedCheck);
-        setIsLoading(false);
-    }, []);
+        // Initial fetch
+        checkSession();
 
-    const login = async (pin: string): Promise<boolean> => {
-        try {
-            const key = await generateKey(pin);
-            const storedCheck = localStorage.getItem(PIN_CHECK_KEY);
+        // Set up real-time listener for Auth State changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (event, currentSession) => {
+                setSession(currentSession);
 
-            if (!storedCheck) return false;
-
-            // Try to decrypt the check value
-            const decrypted = await decryptData<string>(storedCheck, key);
-
-            if (decrypted === "valid-pin") {
-                setEncryptionKey(key);
-                setIsAuthenticated(true);
-                return true;
+                if (event === 'SIGNED_IN' && currentSession?.user) {
+                    setSupabaseUser(currentSession.user);
+                    await fetchUserProfile(currentSession.user);
+                } else if (event === 'SIGNED_OUT') {
+                    setSupabaseUser(null);
+                    setUserProfile(null);
+                    setSession(null);
+                    router.push('/login');
+                }
             }
-            return false;
-        } catch (e) {
-            console.error("Login failed", e);
-            return false;
-        }
-    };
+        );
 
-    const register = async (pin: string) => {
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [router]);
+
+    const logout = async () => {
         try {
-            const key = await generateKey(pin);
-            const encryptedCheck = await encryptData("valid-pin", key); // "valid-pin" is the secret token
-            localStorage.setItem(PIN_CHECK_KEY, encryptedCheck);
-            setEncryptionKey(key);
-            setIsAuthenticated(true);
-            setHasPin(true);
-            router.push("/dashboard");
+            await supabase.auth.signOut();
+            // Router redirection is handled by onAuthStateChange event 'SIGNED_OUT'
         } catch (e) {
-            console.error("Registration failed", e);
-            throw e;
+            console.error("Error logging out:", e);
         }
     };
 
-    const logout = () => {
-        setEncryptionKey(null);
-        setIsAuthenticated(false);
-        router.push("/");
-    };
+    // Inactivity Timeout - Auto Logout (10 Minutes)
+    useEffect(() => {
+        let inactivityTimeout: NodeJS.Timeout;
+        const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 minutes
 
-    const resetPin = () => {
-        localStorage.removeItem(PIN_CHECK_KEY);
-        setHasPin(false);
-        setEncryptionKey(null);
-        setIsAuthenticated(false);
-    };
+        const resetInactivityTimeout = () => {
+            if (inactivityTimeout) clearTimeout(inactivityTimeout);
+
+            if (supabaseUser) {
+                inactivityTimeout = setTimeout(async () => {
+                    console.warn("Session expired due to inactivity. Logging out.");
+                    await logout();
+                }, INACTIVITY_LIMIT);
+            }
+        };
+
+        // Listeners for user activity
+        const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+
+        activityEvents.forEach(event => {
+            window.addEventListener(event, resetInactivityTimeout, { passive: true });
+        });
+
+        // Start timer initially
+        resetInactivityTimeout();
+
+        return () => {
+            if (inactivityTimeout) clearTimeout(inactivityTimeout);
+            activityEvents.forEach(event => {
+                window.removeEventListener(event, resetInactivityTimeout);
+            });
+        };
+    }, [supabaseUser]);
 
     return (
         <AuthContext.Provider
             value={{
-                isAuthenticated,
+                isAuthenticated: !!session,
                 isLoading,
-                login,
-                register,
+                user: userProfile,
+                supabaseUser,
+                session,
                 logout,
-                encryptionKey,
-                hasPin,
-                resetPin,
+                checkSession,
             }}
         >
             {children}

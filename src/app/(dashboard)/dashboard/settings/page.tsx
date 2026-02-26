@@ -5,7 +5,6 @@ import { Download, Upload, CheckCircle, Building2, Plus, Trash2, Edit, CreditCar
 import React, { useState } from "react";
 import type { BusinessIdentity } from "@/types";
 import { PaymentMethodsManager } from "@/components/payments/payment-methods-manager";
-import { ExpenseCategoriesManager } from "@/components/settings/expense-categories-manager";
 import { ProgrammingDocs } from "@/components/settings/programming-docs";
 import { toTitleCase, cleanEmail, cleanText, toLowerCaseAll } from "@/lib/utils";
 
@@ -512,10 +511,6 @@ export default function SettingsPage() {
                         Define las categorías o productos principales para clasificar a tus proveedores.
                     </p>
                 </div>
-
-                <div className="p-6 space-y-6">
-                    <SupplierCategoriesManager />
-                </div>
             </div>
 
             {/* Backup Section */}
@@ -611,7 +606,7 @@ export default function SettingsPage() {
 
 
 
-function SupplierCategoriesManager() {
+function ExpenseCategoriesManager() {
     const { supplierCategories, addSupplierCategory, deleteSupplierCategory } = useData();
     const [newCategory, setNewCategory] = useState("");
 

@@ -20,7 +20,8 @@ import {
     Shield,
     Mail,
     Key,
-    Landmark
+    Landmark,
+    Calculator
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -37,6 +38,8 @@ const menuGroups = [
             { name: "Gastos", href: "/dashboard/expenses", icon: Receipt },
             { name: "Tesorería", href: "/dashboard/treasury", icon: Wallet },
             { name: "Reportes", href: "/dashboard/reports", icon: BarChart3 },
+            { name: "Calculadora", href: "/dashboard/calculator", icon: Calculator },
+            { name: "Usuarios y Permisos", href: "/dashboard/settings/users", icon: Shield },
             { name: "Configuración", href: "/dashboard/settings", icon: Settings },
         ]
     },

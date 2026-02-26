@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useData } from "@/context/data-context";
 import { Plus, TrendingDown, Calendar, Building2, Edit, Trash2, FileText } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function ExpensesPage() {
     const { expenses, contacts, loadingData, deleteExpense, expenseCategories, businessIdentities } = useData();
+    const { canCreate, canUpdate, canDelete } = usePermissions();
 
     const handleDelete = async (id: string) => {
         if (confirm("¿Estás seguro de eliminar este gasto?")) {
@@ -38,13 +40,15 @@ export default function ExpensesPage() {
                     <h1 className="text-2xl font-bold text-foreground transition-colors">Gastos y Compras</h1>
                     <p className="text-gray-500 dark:text-gray-400 transition-colors">Controla tus salidas de dinero</p>
                 </div>
-                <Link
-                    href="/dashboard/expenses/create"
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                    <Plus size={20} />
-                    Registrar Gasto
-                </Link>
+                {canCreate && (
+                    <Link
+                        href="/dashboard/expenses/create"
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                        <Plus size={20} />
+                        Registrar Gasto
+                    </Link>
+                )}
             </div>
 
             {/* Summary Card */}
@@ -107,20 +111,24 @@ export default function ExpensesPage() {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <Link
-                                                href={`/dashboard/expenses/${exp.id}/edit`}
-                                                className="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                                                title="Editar"
-                                            >
-                                                <Edit size={18} />
-                                            </Link>
-                                            <button
-                                                onClick={() => handleDelete(exp.id)}
-                                                className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                                            {canUpdate && (
+                                                <Link
+                                                    href={`/dashboard/expenses/${exp.id}/edit`}
+                                                    className="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                                    title="Editar"
+                                                >
+                                                    <Edit size={18} />
+                                                </Link>
+                                            )}
+                                            {canDelete && (
+                                                <button
+                                                    onClick={() => handleDelete(exp.id)}
+                                                    className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                         {exp.receiptUrl && (
                                             <div className="flex justify-end mt-1">
