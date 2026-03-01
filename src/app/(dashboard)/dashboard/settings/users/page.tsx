@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useAuth, UserRole } from "@/context/auth-context";
 import { createClient } from "@/lib/supabase-browser";
 import { UserForm } from "./components/UserForm";
-import { Shield, Plus, MailOpen, Lock, Search, AlertCircle, Loader2 } from "lucide-react";
+import { EditUserForm } from "./components/EditUserForm";
+import { Shield, Plus, MailOpen, Lock, Search, AlertCircle, Loader2, Trash2 } from "lucide-react";
 
 interface UserRecord {
     id: string;
@@ -27,6 +28,7 @@ export default function UsersSettingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [selectedUserForEdit, setSelectedUserForEdit] = useState<UserRecord | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
     const supabase = createClient();
@@ -82,6 +84,29 @@ export default function UsersSettingsPage() {
             fetchUsers();
         }
     }, [user]);
+
+    const handleDeleteUser = async (userId: string) => {
+        if (!confirm("¿Estás seguro de que deseas eliminar este usuario? Esto revocará su acceso al sistema.")) return;
+
+        try {
+            // First we delete their role assignment to keep DB clean
+            const { error: roleError } = await supabase
+                .from('user_roles')
+                .delete()
+                .eq('user_id', userId);
+
+            if (roleError) throw roleError;
+
+            // Note: Currently we don't have an Admin API route to fully delete from auth.users
+            // deleting from user_roles will effectively block their access via RLS.
+            // A full deletion requires a Server Action using Service Role Key.
+
+            fetchUsers();
+
+        } catch (err: any) {
+            setError(err.message || "Error al eliminar el usuario");
+        }
+    };
 
     if (user?.role !== UserRole.SUPER_ADMIN) {
         return (
@@ -225,9 +250,21 @@ WHERE user_id = '${user?.id || 'TU_USER_ID_AQUI'}';`}
                                             {new Date(u.created_at).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-sm transition-colors">
-                                                Editar Rol
-                                            </button>
+                                            <div className="flex items-center justify-end gap-3">
+                                                <button
+                                                    onClick={() => setSelectedUserForEdit(u)}
+                                                    className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-sm transition-colors"
+                                                >
+                                                    Editar Rol
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(u.id)}
+                                                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                                                    title="Eliminar acceso"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -242,6 +279,17 @@ WHERE user_id = '${user?.id || 'TU_USER_ID_AQUI'}';`}
                     onClose={() => setShowInviteModal(false)}
                     onSuccess={() => {
                         setShowInviteModal(false);
+                        fetchUsers();
+                    }}
+                />
+            )}
+
+            {selectedUserForEdit && (
+                <EditUserForm
+                    user={selectedUserForEdit}
+                    onClose={() => setSelectedUserForEdit(null)}
+                    onSuccess={() => {
+                        setSelectedUserForEdit(null);
                         fetchUsers();
                     }}
                 />
