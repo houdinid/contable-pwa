@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { UserRole } from "@/context/auth-context";
-import { createClient } from "@/lib/supabase-browser";
 import { X, Loader2, AlertCircle } from "lucide-react";
+import { inviteUserAction } from "@/app/actions/users";
 
 interface UserFormProps {
     onClose: () => void;
@@ -17,49 +17,23 @@ export function UserForm({ onClose, onSuccess }: UserFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const supabase = createClient();
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError("");
 
         try {
-            // 1. We invite the user via Supabase Auth
-            // Nota: Esto envía correo automáticamente (Magic Link de Invitación).
-            // Si el entorno limita el acceso web a admin auth API desde cliente, 
-            // esto requeriría un Server Action / API Route con el Service_Role_Key.
-            const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(email, {
-                data: { name } // custom user metadata
-            });
+            // Llamamos a la Server Action en el backend
+            const result = await inviteUserAction(email, name, role);
 
-            if (authError) {
-                // Fallback manual si estamos usando supabase puro desde el PWA
-                // Idealmente esto se moverá a un backend/Server Action para evitar problemas de CORS/Admin API en cliente
-                throw authError;
-            }
-
-            const newUserId = authData.user.id;
-
-            // 2. We assign the corresponding RBAC Role
-
-            const { data: roleData } = await supabase.from('roles').select('id').eq('name', role).single();
-
-            if (roleData) {
-                // El Trigger handle_new_user ya le puso Auxiliar Contable por defecto.
-                // Lo actualizamos al rol seleccionado:
-                const { error: roleError } = await supabase
-                    .from('user_roles')
-                    .update({ role_id: roleData.id })
-                    .eq('user_id', newUserId);
-
-                if (roleError) throw roleError;
+            if (!result.success) {
+                throw new Error(result.error);
             }
 
             onSuccess();
         } catch (err: any) {
             console.error(err);
-            setError(err.message || "Error al invitar al usuario. Puede que requieras privilegios de backend Service Role.");
+            setError(err.message || "Error al invitar al usuario estableciendo conexión con el servidor.");
         } finally {
             setIsLoading(false);
         }

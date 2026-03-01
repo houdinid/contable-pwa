@@ -85,12 +85,44 @@ export default function UsersSettingsPage() {
 
     if (user?.role !== UserRole.SUPER_ADMIN) {
         return (
-            <div className="p-8 text-center bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/30">
+            <div className="p-8 text-center bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/30 max-w-3xl mx-auto mt-8">
                 <Shield className="w-12 h-12 text-red-500 mx-auto mb-4" />
                 <h2 className="text-xl font-bold text-red-700 dark:text-red-400">Acceso Denegado</h2>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
+                <p className="text-gray-600 dark:text-gray-400 mt-2 mb-6">
                     Solo los SuperAdministradores pueden gestionar usuarios y permisos del sistema.
                 </p>
+
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-red-100 dark:border-red-900/50 text-left">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-orange-500" />
+                        Diagnóstico de tu cuenta
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded border border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Tu ID de Usuario (auth.users)</p>
+                            <p className="font-mono text-sm break-all">{user?.id || 'No disponible'}</p>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded border border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Tu Rol Actual (user_roles)</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{user?.role || 'No disponible'}</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-900/30">
+                        <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">¿Cómo solucionar esto?</h4>
+                        <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">
+                            Para ver esta página, necesitas ser "SuperAdministrador" en tu base de datos Supabase. <br />
+                            Abre el <strong>SQL Editor</strong> en tu panel de Supabase y ejecuta el siguiente comando:
+                        </p>
+                        <pre className="bg-white dark:bg-gray-900 p-3 rounded border border-blue-100 dark:border-blue-800/50 text-sm font-mono text-gray-800 dark:text-gray-200 overflow-x-auto select-all">
+                            {`-- 1. Copia este script y ejecútalo en el SQL Editor de Supabase
+UPDATE public.user_roles 
+SET role_id = (SELECT id FROM public.roles WHERE name = 'SuperAdministrador') 
+WHERE user_id = '${user?.id || 'TU_USER_ID_AQUI'}';`}
+                        </pre>
+                    </div>
+                </div>
             </div>
         );
     }

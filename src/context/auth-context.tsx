@@ -79,15 +79,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         )
                     `)
                     .eq('user_id', currentUser.id)
-                    .single();
+                    .maybeSingle();
 
-                if (!roleError && userRoleData) {
+                if (userRoleData) {
                     const rawRoleData = userRoleData as unknown as AuthContextRoleData;
                     roleName = (Array.isArray(rawRoleData?.roles)
                         ? rawRoleData.roles[0]?.name
                         : rawRoleData?.roles?.name) as UserRole || UserRole.AUXILIAR_CONTABLE;
                 } else if (roleError) {
-                    console.error("Error fetching user role:", roleError);
+                    // Solo registrar el error si realmente tiene contenido útil y no es un objeto vacío o genérico de Supabase
+                    const isMeaningfulError = Object.keys(roleError).length > 0 &&
+                        (roleError.message || roleError.details || roleError.hint);
+
+                    if (isMeaningfulError) {
+                        console.error("Error fetching user role:", roleError.message || roleError);
+                    }
                 }
             } catch (roleFail) {
                 console.error("Role fetch failed:", roleFail);
@@ -141,9 +147,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             async (event, currentSession) => {
                 setSession(currentSession);
 
-                if (event === 'SIGNED_IN' && currentSession?.user) {
-                    setSupabaseUser(currentSession.user);
-                    await fetchUserProfile(currentSession.user);
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                    if (currentSession?.user) {
+                        setSupabaseUser(currentSession.user);
+                        await fetchUserProfile(currentSession.user);
+                    }
                     setIsLoading(false); // Ensure loading is cleared
                 } else if (event === 'SIGNED_OUT') {
                     setSupabaseUser(null);
@@ -152,7 +160,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setIsLoading(false); // Ensure loading is cleared
                     router.push('/login');
                 } else if (event === 'INITIAL_SESSION') {
+                    if (currentSession?.user && !supabaseUser) {
+                        setSupabaseUser(currentSession.user);
+                        await fetchUserProfile(currentSession.user);
+                    }
                     setIsLoading(false);
+                } else {
+                    setIsLoading(false); // Fallback to clear loading for any unhandled events
                 }
             }
         );

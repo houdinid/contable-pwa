@@ -71,44 +71,25 @@ CREATE POLICY "Allow authenticated read access on permissions" ON public.permiss
 SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated read access on user_roles" ON public.user_roles FOR
 SELECT TO authenticated USING (true);
+-- Función Security Definer para evitar recursión infinita en las políticas RLS
+CREATE OR REPLACE FUNCTION public.is_superadmin() RETURNS BOOLEAN AS $$
+DECLARE is_admin BOOLEAN;
+BEGIN
+SELECT EXISTS (
+        SELECT 1
+        FROM public.user_roles ur
+            JOIN public.roles r ON ur.role_id = r.id
+        WHERE ur.user_id = auth.uid()
+            AND r.name = 'SuperAdministrador'
+    ) INTO is_admin;
+RETURN COALESCE(is_admin, false);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Solo SuperAdministradores pueden modificar estas tablas (Inserción/Actualización/Borrado)
--- Esta es una política básica, la complejidad real se manejará en el backend/middleware validando el rol
-CREATE POLICY "Allow superadmins full access on roles" ON public.roles FOR ALL TO authenticated USING (
-    EXISTS (
-        SELECT 1
-        FROM public.user_roles ur
-            JOIN public.roles r ON ur.role_id = r.id
-        WHERE ur.user_id = auth.uid()
-            AND r.name = 'SuperAdministrador'
-    )
-);
-CREATE POLICY "Allow superadmins full access on modules" ON public.modules FOR ALL TO authenticated USING (
-    EXISTS (
-        SELECT 1
-        FROM public.user_roles ur
-            JOIN public.roles r ON ur.role_id = r.id
-        WHERE ur.user_id = auth.uid()
-            AND r.name = 'SuperAdministrador'
-    )
-);
-CREATE POLICY "Allow superadmins full access on permissions" ON public.permissions FOR ALL TO authenticated USING (
-    EXISTS (
-        SELECT 1
-        FROM public.user_roles ur
-            JOIN public.roles r ON ur.role_id = r.id
-        WHERE ur.user_id = auth.uid()
-            AND r.name = 'SuperAdministrador'
-    )
-);
-CREATE POLICY "Allow superadmins full access on user_roles" ON public.user_roles FOR ALL TO authenticated USING (
-    EXISTS (
-        SELECT 1
-        FROM public.user_roles ur
-            JOIN public.roles r ON ur.role_id = r.id
-        WHERE ur.user_id = auth.uid()
-            AND r.name = 'SuperAdministrador'
-    )
-);
+CREATE POLICY "Allow superadmins full access on roles" ON public.roles FOR ALL TO authenticated USING (public.is_superadmin());
+CREATE POLICY "Allow superadmins full access on modules" ON public.modules FOR ALL TO authenticated USING (public.is_superadmin());
+CREATE POLICY "Allow superadmins full access on permissions" ON public.permissions FOR ALL TO authenticated USING (public.is_superadmin());
+CREATE POLICY "Allow superadmins full access on user_roles" ON public.user_roles FOR ALL TO authenticated USING (public.is_superadmin());
 -- Insertar roles iniciales
 INSERT INTO public.roles (name, description)
 VALUES (
