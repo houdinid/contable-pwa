@@ -74,13 +74,23 @@ export default function MfaVerificationPage() {
 
             if (verify.error) throw verify.error;
 
-            await checkSession(); // Reload context state
-            router.push("/dashboard");
+            // Recargar estado del contexto de React Auth
+            await checkSession();
+
+            // Forzar actualización de cookies del lado del servidor (vital para móviles)
+            router.refresh();
+
+            // Pequeño retraso para dar tiempo a la sincronización de cookies en dispositivos lentos antes de la redirección
+            setTimeout(() => {
+                router.push("/dashboard");
+            }, 800);
 
         } catch (err: any) {
+            console.error("MFA Verification Error:", err);
             setError(err.message || "Código inválido, por favor intenta nuevamente.");
         } finally {
-            setIsLoading(false);
+            // No detener el estado de carga aquí si fue exitoso, así evitamos parpadeos antes del router.push
+            // Se asume éxito si no hay error
         }
     };
 
