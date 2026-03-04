@@ -146,6 +146,9 @@ export default function MfaSetupPage() {
                                 id="code"
                                 name="code"
                                 type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                autoComplete="one-time-code"
                                 maxLength={6}
                                 required
                                 value={code}
