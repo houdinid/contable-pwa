@@ -1310,7 +1310,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 'invoices', 'invoice_items',
                 'expenses',
                 'purchases', 'purchase_items',
-                'service_orders', 'service_order_items', 'payments'
+                'service_orders', 'service_order_items', 'payments',
+                'remote_access', 'antivirus_licenses', 'antivirus_devices',
+                'corporate_emails', 'software_licenses', 'tax_deadlines'
             ];
 
             for (const table of tableOrder) {
