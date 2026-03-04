@@ -26,6 +26,7 @@ export default function MfaSetupPage() {
             try {
                 const { data, error } = await supabase.auth.mfa.enroll({
                     factorType: 'totp',
+                    issuer: 'Contable PWA'
                 });
 
                 if (error) throw error;
