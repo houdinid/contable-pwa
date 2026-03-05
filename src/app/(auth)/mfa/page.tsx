@@ -77,20 +77,14 @@ export default function MfaVerificationPage() {
             // Recargar estado del contexto de React Auth
             await checkSession();
 
-            // Forzar actualización de cookies del lado del servidor (vital para móviles)
-            router.refresh();
-
-            // Pequeño retraso para dar tiempo a la sincronización de cookies en dispositivos lentos antes de la redirección
-            setTimeout(() => {
-                router.push("/dashboard");
-            }, 800);
+            // Forzar navegación real completa del navegador (vital para móviles y caché de Next.js)
+            // Esto asegura que las cookies actualizadas del MFA lleguen frescas al middleware del servidor
+            window.location.href = "/dashboard";
 
         } catch (err: any) {
             console.error("MFA Verification Error:", err);
             setError(err.message || "Código inválido, por favor intenta nuevamente.");
-        } finally {
-            // No detener el estado de carga aquí si fue exitoso, así evitamos parpadeos antes del router.push
-            // Se asume éxito si no hay error
+            setIsLoading(false); // Restore loading state on error
         }
     };
 
