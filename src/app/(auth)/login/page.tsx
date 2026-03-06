@@ -5,15 +5,23 @@ import { useAuth } from "@/context/auth-context";
 import { createClient } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
 import { Shield, Mail, Lock, AlertCircle } from "lucide-react";
+import { useEffect } from "react";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const { checkSession } = useAuth();
+    const { checkSession, isAuthenticated, isLoading: authLoading } = useAuth();
     const router = useRouter();
     const supabase = createClient();
+
+    // Si el usuario ya está autenticado, redirigir al dashboard (Manejo de recargas en móvil)
+    useEffect(() => {
+        if (isAuthenticated && !authLoading) {
+            window.location.href = "/dashboard";
+        }
+    }, [isAuthenticated, authLoading]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,7 +43,7 @@ export default function LoginPage() {
 
             if (mfaData.nextLevel === 'aal2' && mfaData.currentLevel === 'aal1') {
                 // Requires MFA verification
-                router.push("/mfa");
+                window.location.href = "/mfa";
                 return;
             }
 
@@ -44,13 +52,13 @@ export default function LoginPage() {
 
             if (!totpFactor) {
                 // Requires MFA Setup
-                router.push("/mfa-setup");
+                window.location.href = "/mfa-setup";
                 return;
             }
 
             // Successfully logged in and AAL2 satisfied 
             await checkSession();
-            router.push("/dashboard");
+            window.location.href = "/dashboard";
         } catch (err: any) {
             setError(err.message || "Error al iniciar sesión. Verifica tus credenciales.");
         } finally {

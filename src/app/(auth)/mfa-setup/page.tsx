@@ -24,6 +24,17 @@ export default function MfaSetupPage() {
         // Generate MFA Secret when the page loads
         const setupMfa = async () => {
             try {
+                // First, check for existing Unverified factors and remove them
+                // to avoid "factor ... already exists" error when reloading the page
+                const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+                if (factorsError) throw factorsError;
+
+                const unverifiedFactors = factorsData.all.filter(f => f.status === 'unverified');
+
+                for (const factor of unverifiedFactors) {
+                    await supabase.auth.mfa.unenroll({ factorId: factor.id });
+                }
+
                 const { data, error } = await supabase.auth.mfa.enroll({
                     factorType: 'totp',
                     issuer: 'Contable PWA'
@@ -45,7 +56,7 @@ export default function MfaSetupPage() {
             setupMfa();
         } else {
             // En caso de recargar la página directamente
-            router.push("/login");
+            window.location.href = "/login";
         }
     }, [supabaseUser, supabase, router]);
 
@@ -70,7 +81,7 @@ export default function MfaSetupPage() {
 
             // Successfully enrolled and verified
             await checkSession();
-            router.push("/dashboard");
+            window.location.href = "/dashboard";
 
         } catch (err: any) {
             setError(err.message || "Código incorrecto. Verifica que estás ingresando el código correcto de la App.");
