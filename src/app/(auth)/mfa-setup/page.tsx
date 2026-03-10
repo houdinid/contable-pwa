@@ -4,188 +4,128 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/context/auth-context";
-import { QRCodeSVG } from "qrcode.react";
-import { ShieldAlert, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, AlertCircle, Loader2 } from "lucide-react";
 
-export default function MfaSetupPage() {
-    const [qrCode, setQrCode] = useState("");
-    const [secret, setSecret] = useState("");
-    const [factorId, setFactorId] = useState("");
+export default function MfaVerificationPage() {
     const [code, setCode] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [isSettingUp, setIsSettingUp] = useState(true);
-
+    const [status, setStatus] = useState("");
+    const [factorId, setFactorId] = useState("");
     const router = useRouter();
     const supabase = createClient();
-    const { checkSession, supabaseUser } = useAuth();
+    const { checkSession } = useAuth();
 
     useEffect(() => {
-        // Generate MFA Secret when the page loads
-        const setupMfa = async () => {
-            try {
-                // First, check for existing Unverified factors and remove them
-                // to avoid "factor ... already exists" error when reloading the page
-                const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
-                if (factorsError) throw factorsError;
-
-                const unverifiedFactors = factorsData.all.filter(f => f.status === 'unverified');
-
-                for (const factor of unverifiedFactors) {
-                    await supabase.auth.mfa.unenroll({ factorId: factor.id });
-                }
-
-                const { data, error } = await supabase.auth.mfa.enroll({
-                    factorType: 'totp',
-                    issuer: 'Contable PWA'
-                });
-
-                if (error) throw error;
-
-                setFactorId(data.id);
-                setQrCode(data.totp.uri);
-                setSecret(data.totp.secret);
-            } catch (err: any) {
-                setError(err.message || "Error al generar la configuración de 2FA.");
-            } finally {
-                setIsSettingUp(false);
-            }
+        const checkUser = async () => {
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError || !session) { router.push("/login"); return; }
+            const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+            if (mfaData?.currentLevel === 'aal2') { router.push("/dashboard"); return; }
+            const { data, error } = await supabase.auth.mfa.listFactors();
+            if (error) { setError("Error cargando factores."); return; }
+            const totpFactor = data.totp[0];
+            if (!totpFactor) { router.push("/mfa-setup"); return; }
+            setFactorId(totpFactor.id);
         };
+        checkUser();
+    }, [router, supabase]);
 
-        if (supabaseUser) {
-            setupMfa();
-        } else {
-            // En caso de recargar la página directamente
-            window.location.href = "/login";
-        }
-    }, [supabaseUser, supabase, router]);
-
-    const verifySetup = async (e: React.FormEvent) => {
+    const verifyCode = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!factorId) return;
 
         setIsLoading(true);
         setError("");
+        setStatus("Iniciando...");
+
+        // Tiempo máximo de espera: 15 segundos
+        const withTimeout = (promise: Promise<any>, msg: string) => {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error(`Tiempo agotado: ${msg}`)), 15000)
+                )
+            ]);
+        };
 
         try {
-            const challenge = await supabase.auth.mfa.challenge({ factorId });
-            if (challenge.error) throw challenge.error;
+            setStatus("Conectando...");
+            const challenge = await withTimeout(
+                supabase.auth.mfa.challenge({ factorId }),
+                "Solicitando permiso a Supabase"
+            ) as any;
 
-            const verify = await supabase.auth.mfa.verify({
-                factorId,
-                challengeId: challenge.data.id,
-                code
-            });
+            if (challenge.error) throw new Error(challenge.error.message);
 
-            if (verify.error) throw verify.error;
+            const challengeId = challenge.data.id;
+            setStatus("Verificando código...");
 
-            // Successfully enrolled and verified
+            const verify = await withTimeout(
+                supabase.auth.mfa.verify({ factorId, challengeId, code }),
+                "Validando con Supabase"
+            ) as any;
+
+            if (verify.error) throw new Error(verify.error.message);
+
+            setStatus("Sincronizando...");
             await checkSession();
+
+            setStatus("Entrando...");
             window.location.href = "/dashboard";
 
         } catch (err: any) {
-            setError(err.message || "Código incorrecto. Verifica que estás ingresando el código correcto de la App.");
-        } finally {
+            console.error("MFA Error:", err);
+            if (err.message.includes("Tiempo agotado")) {
+                setError("El navegador bloqueó la conexión. Cierra todas las pestañas de la app e intenta de nuevo o usa Modo Incógnito.");
+            } else {
+                setError(err.message || "Error al verificar código.");
+            }
             setIsLoading(false);
         }
     };
 
-    if (isSettingUp) {
-        return (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
                 <div className="flex justify-center">
-                    <div className="bg-indigo-600 p-3 rounded-xl shadow-lg ring-1 ring-black/5">
+                    <div className="bg-orange-500 p-3 rounded-xl shadow-lg ring-1 ring-black/5">
                         <ShieldAlert className="w-10 h-10 text-white" />
                     </div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-                    Configurar 2FA
-                </h2>
-                <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400 px-4">
-                    Por seguridad, requerimos Autenticación de Dos Factores en tu cuenta.
-                </p>
+                <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">Doble Factor (2FA)</h2>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100 dark:border-gray-700">
-
-                    <div className="mb-8">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                            1. Escanea este código QR
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                            Usa una app como Google Authenticator o Authy en tu celular.
-                        </p>
-                        <div className="flex justify-center p-4 bg-white rounded-lg border-2 border-dashed border-gray-300">
-                            {qrCode ? (
-                                <QRCodeSVG value={qrCode} size={200} />
-                            ) : (
-                                <div className="w-[200px] h-[200px] bg-gray-100 animate-pulse flex items-center justify-center text-gray-400">Generando QR...</div>
-                            )}
-                        </div>
-
-                        <div className="mt-4 text-center">
-                            <span className="text-xs text-gray-500 block mb-1">O ingresa el código manual:</span>
-                            <code className="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded text-sm text-indigo-600 dark:text-indigo-400 font-bold tracking-widest">
-                                {secret}
-                            </code>
-                        </div>
-                    </div>
-
-                    <form className="space-y-6" onSubmit={verifySetup}>
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                            2. Ingresa el código generado
-                        </h3>
-
+                <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700">
+                    <form className="space-y-6" onSubmit={verifyCode}>
                         {error && (
-                            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 rounded-md flex items-start">
-                                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-3 shrink-0" />
-                                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 rounded-md flex items-start text-red-700 dark:text-red-400">
+                                <AlertCircle className="h-5 w-5 mr-3 shrink-0" />
+                                <p className="text-sm font-medium">{error}</p>
                             </div>
                         )}
 
-                        <div>
-                            <label htmlFor="code" className="sr-only">Código TOTP</label>
-                            <input
-                                id="code"
-                                name="code"
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                autoComplete="one-time-code"
-                                maxLength={6}
-                                required
-                                value={code}
-                                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                                className="block w-full text-center text-3xl tracking-[0.5em] font-mono rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 h-16"
-                                placeholder="------"
-                            />
-                        </div>
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                            required
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                            className="block w-full text-center text-3xl tracking-[0.5em] font-mono rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-orange-500 focus:border-orange-500 h-16"
+                            placeholder="------"
+                        />
 
                         <button
                             type="submit"
                             disabled={isLoading || code.length !== 6 || !factorId}
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="w-full flex justify-center py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50"
                         >
                             {isLoading ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                    Verificando...
-                                </>
-                            ) : (
-                                <>
-                                    <CheckCircle2 className="w-5 h-5 mr-2" />
-                                    Activar 2FA y Entrar
-                                </>
-                            )}
+                                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> {status}</>
+                            ) : "Verificar y Entrar"}
                         </button>
                     </form>
                 </div>
