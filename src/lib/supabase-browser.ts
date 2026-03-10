@@ -1,9 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { SupabaseClient } from '@supabase/supabase-js'
 
-/**
- * Singleton client for browser-side Supabase interactions.
- */
 export function createClient() {
     const globalSupabase = globalThis as unknown as {
         __supabase_client__?: SupabaseClient
@@ -15,14 +12,14 @@ export function createClient() {
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             {
                 auth: {
+                    storageKey: 'sb-contable-v4-fix',
                     persistSession: true,
                     autoRefreshToken: true,
                     detectSessionInUrl: true,
-                    // Robust bypass for LockManager across all platforms (Mobile/Desktop/SSR)
                     // @ts-ignore
-                    lock: (...args: any[]) => {
-                        const callback = args.find(arg => typeof arg === 'function');
-                        if (callback) return callback();
+                    lock: async (name, acquireTimeout, callback) => {
+                        if (typeof acquireTimeout === 'function') return acquireTimeout();
+                        if (typeof callback === 'function') return callback();
                         return Promise.resolve();
                     }
                 }
