@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
 import { createClient } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
 import { Shield, Mail, Lock, AlertCircle } from "lucide-react";
-import { useEffect } from "react";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -16,7 +15,6 @@ export default function LoginPage() {
     const router = useRouter();
     const supabase = createClient();
 
-    // Si el usuario ya está autenticado, redirigir al dashboard (Manejo de recargas en móvil)
     useEffect(() => {
         if (isAuthenticated && !authLoading) {
             window.location.href = "/dashboard";
@@ -28,35 +26,31 @@ export default function LoginPage() {
         setError("");
         setIsLoading(true);
 
+        // Limpiar espacios en blanco del correo (común en móviles)
+        const cleanEmail = email.trim();
+
         try {
-            const { data, error: signInError } = await supabase.auth.signInWithPassword({
-                email,
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: cleanEmail,
                 password,
             });
 
             if (signInError) throw signInError;
 
-            // Check MFA Status
             const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-
             if (mfaError) throw mfaError;
 
             if (mfaData.nextLevel === 'aal2' && mfaData.currentLevel === 'aal1') {
-                // Requires MFA verification
                 window.location.href = "/mfa";
                 return;
             }
 
             const { data: factors } = await supabase.auth.mfa.listFactors();
-            const totpFactor = factors?.totp[0];
-
-            if (!totpFactor) {
-                // Requires MFA Setup
+            if (!factors?.totp[0]) {
                 window.location.href = "/mfa-setup";
                 return;
             }
 
-            // Successfully logged in and AAL2 satisfied 
             await checkSession();
             window.location.href = "/dashboard";
         } catch (err: any) {
@@ -68,16 +62,16 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
                 <div className="flex justify-center">
                     <div className="bg-indigo-600 p-3 rounded-xl shadow-lg ring-1 ring-black/5">
                         <Shield className="w-10 h-10 text-white" />
                     </div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+                <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
                     Contable PWA
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                     Inicia sesión para acceder a tu panel
                 </p>
             </div>
@@ -86,17 +80,14 @@ export default function LoginPage() {
                 <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100 dark:border-gray-700">
                     <form className="space-y-6" onSubmit={handleLogin}>
                         {error && (
-                            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 rounded-md flex items-start">
-                                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-3 shrink-0" />
-                                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 rounded-md flex items-start text-red-700 dark:text-red-400">
+                                <AlertCircle className="h-5 w-5 mr-3 shrink-0" />
+                                <p className="text-sm">{error}</p>
                             </div>
                         )}
 
                         <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                            >
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Correo Electrónico
                             </label>
                             <div className="mt-1 relative rounded-md shadow-sm">
@@ -107,21 +98,19 @@ export default function LoginPage() {
                                     id="email"
                                     name="email"
                                     type="email"
-                                    autoComplete="email"
+                                    autoCapitalize="none"
+                                    autoCorrect="off"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="block w-full pl-10 sm:text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 h-11 transition-colors"
+                                    className="block w-full pl-10 sm:text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 h-11"
                                     placeholder="tu@correo.com"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label
-                                htmlFor="password"
-                                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                            >
+                            <label htmlFor="password" title="Tips: Revisa si la primera letra está en mayúscula" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Contraseña
                             </label>
                             <div className="mt-1 relative rounded-md shadow-sm">
@@ -132,30 +121,18 @@ export default function LoginPage() {
                                     id="password"
                                     name="password"
                                     type="password"
-                                    autoComplete="current-password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full pl-10 sm:text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 h-11 transition-colors"
+                                    className="block w-full pl-10 sm:text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 h-11"
                                 />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                            <div className="text-sm">
-                                <a
-                                    href="/forgot-password"
-                                    className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
-                                >
-                                    ¿Olvidaste tu contraseña?
-                                </a>
                             </div>
                         </div>
 
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                         >
                             {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
                         </button>
@@ -165,3 +142,4 @@ export default function LoginPage() {
         </div>
     );
 }
+
