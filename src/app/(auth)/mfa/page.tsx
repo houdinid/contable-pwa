@@ -10,29 +10,28 @@ export default function MfaVerificationPage() {
     const [code, setCode] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [status, setStatus] = useState("");
     const [factorId, setFactorId] = useState("");
     const router = useRouter();
     const supabase = createClient();
     const { checkSession } = useAuth();
 
     useEffect(() => {
-        // Check if user is logged in but missing AAL2
         const checkUser = async () => {
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
             if (sessionError || !session) {
-                router.push("/login"); // Not logged in
+                router.push("/login");
                 return;
             }
 
             const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
             if (mfaData?.currentLevel === 'aal2') {
-                router.push("/dashboard"); // Already verified
+                router.push("/dashboard");
                 return;
             }
 
-            // Find TOTP factor explicitly
             const { data, error } = await supabase.auth.mfa.listFactors();
             if (error) {
                 setError("Error cargando los factores de autenticación.");
@@ -40,9 +39,7 @@ export default function MfaVerificationPage() {
             }
 
             const totpFactor = data.totp[0];
-
             if (!totpFactor) {
-                // Needs setup
                 router.push("/mfa-setup");
                 return;
             }
@@ -59,12 +56,17 @@ export default function MfaVerificationPage() {
 
         setIsLoading(true);
         setError("");
+        setStatus("Iniciando verificación...");
 
         try {
+            setStatus("Solicitando challenge a Supabase...");
             const challenge = await supabase.auth.mfa.challenge({ factorId });
-            if (challenge.error) throw challenge.error;
+            if (challenge.error) {
+                throw new Error("Error en challenge: " + challenge.error.message);
+            }
 
             const challengeId = challenge.data.id;
+            setStatus("Enviando código de verificación...");
 
             const verify = await supabase.auth.mfa.verify({
                 factorId,
@@ -72,35 +74,37 @@ export default function MfaVerificationPage() {
                 code
             });
 
-            if (verify.error) throw verify.error;
+            if (verify.error) {
+                throw new Error("Error en verificación: " + verify.error.message);
+            }
 
-            // Recargar estado del contexto de React Auth
+            setStatus("Verificación OK. Sincronizando...");
+            
             await checkSession();
 
-            // Forzar navegación real completa del navegador (vital para móviles y caché de Next.js)
-            // Esto asegura que las cookies actualizadas del MFA lleguen frescas al middleware del servidor
+            setStatus("Redirigiendo...");
             window.location.href = "/dashboard";
 
         } catch (err: any) {
-            console.error("MFA Verification Error:", err);
+            console.error("MFA Final Catch:", err);
             setError(err.message || "Código inválido, por favor intenta nuevamente.");
-            setIsLoading(false); // Restore loading state on error
+            setIsLoading(false);
         }
     };
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
                 <div className="flex justify-center">
                     <div className="bg-orange-500 p-3 rounded-xl shadow-lg ring-1 ring-black/5">
                         <ShieldAlert className="w-10 h-10 text-white" />
                     </div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+                <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
                     Doble Factor (2FA)
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400 px-4">
-                    Ingresa el código de 6 dígitos generado por tu aplicación autenticadora (ej. Google Authenticator).
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 px-4">
+                    Ingresa el código de 6 dígitos generado por tu aplicación autenticadora.
                 </p>
             </div>
 
@@ -108,14 +112,13 @@ export default function MfaVerificationPage() {
                 <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100 dark:border-gray-700">
                     <form className="space-y-6" onSubmit={verifyCode}>
                         {error && (
-                            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 rounded-md flex items-start">
-                                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-3 shrink-0" />
-                                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 rounded-md flex items-start text-red-700 dark:text-red-400">
+                                <AlertCircle className="h-5 w-5 mr-3 shrink-0" />
+                                <p className="text-sm">{error}</p>
                             </div>
                         )}
 
                         <div>
-                            <label htmlFor="code" className="sr-only">Código de Seguridad</label>
                             <input
                                 id="code"
                                 name="code"
@@ -126,7 +129,7 @@ export default function MfaVerificationPage() {
                                 maxLength={6}
                                 required
                                 value={code}
-                                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} // Solo números
+                                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                                 className="block w-full text-center text-3xl tracking-[0.5em] font-mono rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-orange-500 focus:border-orange-500 h-16"
                                 placeholder="------"
                             />
@@ -140,7 +143,7 @@ export default function MfaVerificationPage() {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                    Verificando...
+                                    {status || "Verificando..."}
                                 </>
                             ) : (
                                 "Verificar y Entrar"
