@@ -19,6 +19,8 @@ export interface UserProfile {
     email: string | undefined;
     role: UserRole;
     isMfaEnabled?: boolean;
+    isMfaRequired?: boolean;
+    isMfaVerified?: boolean;
 }
 
 interface AuthContextRoleData {
@@ -29,6 +31,8 @@ interface AuthContextRoleData {
 interface AuthContextType {
     isAuthenticated: boolean;
     isLoading: boolean;
+    isMfaVerified: boolean;
+    isMfaRequired: boolean;
     user: UserProfile | null;
     supabaseUser: User | null;
     session: Session | null;
@@ -41,6 +45,8 @@ const AuthContext = createContext<AuthContextType>({
     isLoading: true,
     user: null,
     supabaseUser: null,
+    isMfaVerified: false,
+    isMfaRequired: false,
     session: null,
     logout: async () => { },
     checkSession: async () => { },
@@ -53,33 +59,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
     const supabase = createClient();
+    const isChecking = React.useRef(false);
+    const isFetchingProfile = React.useRef<string | null>(null); // Track which user is being fetched
+    const initialCheckDone = React.useRef(false);
+
 
     const fetchUserProfile = async (currentUser: User) => {
+        if (isFetchingProfile.current === currentUser.id) {
+            console.log("AuthContext: Profile fetch already in progress for user:", currentUser.id);
+            return;
+        }
+        isFetchingProfile.current = currentUser.id;
+        console.log(`[${new Date().toISOString()}] AuthContext: Fetching profile for:`, currentUser.id);
         try {
             // Check for MFA first (no RLS issues)
             let isMfaEnabled = false;
+            let isMfaRequired = false;
+            let isMfaVerified = false;
+
             try {
                 const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
                 if (!mfaError && mfaData) {
-                    isMfaEnabled = mfaData.currentLevel === 'aal2';
+                    isMfaEnabled = mfaData.currentLevel === 'aal2' || mfaData.nextLevel === 'aal2';
+                    isMfaVerified = mfaData.currentLevel === 'aal2';
+                    isMfaRequired = mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2';
                 }
             } catch (mfaFail) {
                 console.error("MFA check failed:", mfaFail);
             }
 
-            // Intentar obtener el rol del usuario desde la tabla user_roles
             let roleName = UserRole.AUXILIAR_CONTABLE; // Default fallback
             try {
-                const { data: userRoleData, error: roleError } = await supabase
-                    .from('user_roles')
-                    .select(`
-                        role_id,
-                        roles (
-                            name
+                // Función de ayuda para timeout local en la query
+                const withTimeout = (promise: Promise<any>, timeoutMs = 8000) => {
+                    return Promise.race([
+                        promise,
+                        new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error("Timeout en query de roles")), timeoutMs)
                         )
-                    `)
-                    .eq('user_id', currentUser.id)
-                    .maybeSingle();
+                    ]);
+                };
+
+                const { data: userRoleData, error: roleError } = await withTimeout(
+                    Promise.resolve(supabase
+                        .from('user_roles')
+                        .select(`
+                            role_id,
+                            roles (
+                                name
+                            )
+                        `)
+                        .eq('user_id', currentUser.id)
+                        .maybeSingle()
+                    )
+                ).catch(err => {
+                    console.warn("AuthContext: Role query timed out or failed:", err.message);
+                    return { data: null, error: null };
+                }) as any;
 
                 if (userRoleData) {
                     const rawRoleData = userRoleData as unknown as AuthContextRoleData;
@@ -103,7 +139,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 id: currentUser.id,
                 email: currentUser.email,
                 role: roleName,
-                isMfaEnabled
+                isMfaEnabled,
+                isMfaRequired,
+                isMfaVerified
             });
 
         } catch (error) {
@@ -113,15 +151,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 id: currentUser.id,
                 email: currentUser.email,
                 role: UserRole.AUXILIAR_CONTABLE,
-                isMfaEnabled: false
+                isMfaEnabled: false,
+                isMfaRequired: false,
+                isMfaVerified: false
             });
         }
     };
 
     const checkSession = async () => {
+        if (isChecking.current) return;
+        isChecking.current = true;
         setIsLoading(true);
         try {
+            console.log("AuthContext: Calling getSession()...");
             const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+            if (error) {
+                console.error("AuthContext: getSession error:", error);
+                throw error;
+            }
+            console.log("AuthContext: getSession success, user:", currentSession?.user?.id);
 
             setSession(currentSession);
             if (currentSession?.user) {
@@ -130,43 +178,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else {
                 setSupabaseUser(null);
                 setUserProfile(null);
+                setIsLoading(false);
             }
         } catch (e) {
-            console.error("Error checking session:", e);
+            console.error("AuthContext: Error checking session:", e);
         } finally {
+            isFetchingProfile.current = null;
+            console.log(`[${new Date().toISOString()}] AuthContext: checkSession completed.`);
             setIsLoading(false);
+            isChecking.current = false;
         }
     };
 
     useEffect(() => {
-        // Initial fetch
-        checkSession();
-
-        // Set up real-time listener for Auth State changes
+        // Set up real-time listener for Auth State changes - runs ONCE
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, currentSession) => {
-                setSession(currentSession);
+                console.log("AuthContext: Auth Event:", event);
 
                 if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                    setSession(currentSession);
                     if (currentSession?.user) {
                         setSupabaseUser(currentSession.user);
                         await fetchUserProfile(currentSession.user);
                     }
-                    setIsLoading(false); // Ensure loading is cleared
+                    setIsLoading(false);
                 } else if (event === 'SIGNED_OUT') {
                     setSupabaseUser(null);
                     setUserProfile(null);
                     setSession(null);
-                    setIsLoading(false); // Ensure loading is cleared
+                    isFetchingProfile.current = null;
+                    setIsLoading(false);
                     router.push('/login');
                 } else if (event === 'INITIAL_SESSION') {
-                    if (currentSession?.user && !supabaseUser) {
-                        setSupabaseUser(currentSession.user);
-                        await fetchUserProfile(currentSession.user);
+                    if (currentSession) {
+                        setSession(currentSession);
+                        if (currentSession.user) {
+                            setSupabaseUser(currentSession.user);
+                            await fetchUserProfile(currentSession.user);
+                        }
+                    } else {
+                        // No session at all
+                        setSession(null);
+                        setSupabaseUser(null);
+                        setUserProfile(null);
                     }
                     setIsLoading(false);
+                    initialCheckDone.current = true;
                 } else {
-                    setIsLoading(false); // Fallback to clear loading for any unhandled events
+                    setSession(currentSession);
+                    setIsLoading(false);
                 }
             }
         );
@@ -174,7 +235,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => {
             subscription.unsubscribe();
         };
-    }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run ONCE - onAuthStateChange handles all session updates
 
     const logout = async () => {
         try {
@@ -219,18 +281,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
     }, [supabaseUser]);
 
+    const value = React.useMemo(() => ({
+        isAuthenticated: !!session,
+        isLoading,
+        isMfaVerified: userProfile?.isMfaVerified || false,
+        isMfaRequired: userProfile?.isMfaRequired || false,
+        user: userProfile,
+        supabaseUser,
+        session,
+        logout,
+        checkSession,
+    }), [session, isLoading, userProfile, supabaseUser]);
+
     return (
-        <AuthContext.Provider
-            value={{
-                isAuthenticated: !!session,
-                isLoading,
-                user: userProfile,
-                supabaseUser,
-                session,
-                logout,
-                checkSession,
-            }}
-        >
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

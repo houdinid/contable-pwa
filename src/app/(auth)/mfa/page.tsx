@@ -10,48 +10,47 @@ export default function MfaVerificationPage() {
     const [code, setCode] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [status, setStatus] = useState("");
     const [factorId, setFactorId] = useState("");
     const router = useRouter();
     const supabase = createClient();
-    const { checkSession } = useAuth();
+    const { checkSession, isMfaVerified, isMfaRequired, isLoading: authLoading } = useAuth();
 
     useEffect(() => {
-        // Check if user is logged in but missing AAL2
-        const checkUser = async () => {
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Redirigir si ya está verificado o si no se requiere MFA
+        if (!authLoading && isMfaVerified) {
+            router.push("/dashboard");
+        }
+    }, [authLoading, isMfaVerified, router]);
 
-            if (sessionError || !session) {
-                router.push("/login"); // Not logged in
-                return;
+    // Obtener factorId inicial independientemente de isMfaRequired para evitar race-conditions
+    useEffect(() => {
+        let isMounted = true;
+
+        const getFactor = async () => {
+            try {
+                const { data, error } = await supabase.auth.mfa.listFactors();
+                if (error) {
+                    if (isMounted) setError("Error cargando factores de doble autenticación.");
+                    return;
+                }
+
+                const totpFactor = data?.totp?.[0];
+                if (totpFactor) {
+                    if (isMounted) setFactorId(totpFactor.id);
+                } else if (!authLoading && isMfaRequired) {
+                    // Si definitivamente requiere MFA pero no tiene factores TOTP, enviarlo al setup
+                    router.push("/mfa-setup");
+                }
+            } catch (err) {
+                console.error("MFA List Factors error", err);
             }
-
-            const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-
-            if (mfaData?.currentLevel === 'aal2') {
-                router.push("/dashboard"); // Already verified
-                return;
-            }
-
-            // Find TOTP factor explicitly
-            const { data, error } = await supabase.auth.mfa.listFactors();
-            if (error) {
-                setError("Error cargando los factores de autenticación.");
-                return;
-            }
-
-            const totpFactor = data.totp[0];
-
-            if (!totpFactor) {
-                // Needs setup
-                router.push("/mfa-setup");
-                return;
-            }
-
-            setFactorId(totpFactor.id);
         };
 
-        checkUser();
-    }, [router, supabase]);
+        getFactor();
+
+        return () => { isMounted = false; };
+    }, [supabase, authLoading, isMfaRequired, router]);
 
     const verifyCode = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -59,32 +58,65 @@ export default function MfaVerificationPage() {
 
         setIsLoading(true);
         setError("");
+        setStatus("Iniciando verificación...");
+
+        // Función de ayuda para timeout
+        const withTimeout = (promise: Promise<any>, msg: string, timeoutMs = 12000) => {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(`Tiempo agotado: ${msg}. Es posible que la conexión esté bloqueada.`)), timeoutMs)
+                )
+            ]);
+        };
 
         try {
-            const challenge = await supabase.auth.mfa.challenge({ factorId });
-            if (challenge.error) throw challenge.error;
+            setStatus("Solicitando challenge (con timeout)...");
+            const challenge = await withTimeout(
+                supabase.auth.mfa.challenge({ factorId }),
+                "Solicitando challenge a Supabase"
+            ) as any;
+
+            if (challenge.error) {
+                throw new Error("Error en challenge: " + challenge.error.message);
+            }
 
             const challengeId = challenge.data.id;
+            setStatus("Enviando código (con timeout)...");
 
-            const verify = await supabase.auth.mfa.verify({
-                factorId,
-                challengeId,
-                code
+            const verify = await withTimeout(
+                supabase.auth.mfa.verify({
+                    factorId,
+                    challengeId,
+                    code
+                }),
+                "Verificando código con Supabase"
+            ) as any;
+
+            if (verify.error) {
+                throw new Error("Error en verificación: " + verify.error.message);
+            }
+
+            setStatus("Verificación OK. Sincronizando...");
+
+            // Recargar estado del contexto de React Auth con timeout corto
+            await withTimeout(checkSession(), "Sincronizando sesión local", 5000).catch(err => {
+                console.warn("Timeout en checkSession, continuando con redirección:", err);
             });
 
-            if (verify.error) throw verify.error;
-
-            // Recargar estado del contexto de React Auth
-            await checkSession();
-
-            // Forzar navegación real completa del navegador (vital para móviles y caché de Next.js)
-            // Esto asegura que las cookies actualizadas del MFA lleguen frescas al middleware del servidor
-            window.location.href = "/dashboard";
+            setStatus("Redirigiendo...");
+            router.replace("/dashboard");
 
         } catch (err: any) {
-            console.error("MFA Verification Error:", err);
-            setError(err.message || "Código inválido, por favor intenta nuevamente.");
-            setIsLoading(false); // Restore loading state on error
+            console.error("MFA Error:", err);
+            const errorMessage = err.message || "Error desconocido";
+
+            if (errorMessage.includes("Tiempo agotado")) {
+                setError("La conexión con Supabase está bloqueada en este navegador. Por favor: 1. Refresca la página, o 2. Abre la app en una pestaña de incógnito.");
+            } else {
+                setError(errorMessage);
+            }
+            setIsLoading(false);
         }
     };
 
@@ -140,7 +172,7 @@ export default function MfaVerificationPage() {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                    Verificando...
+                                    {status || "Verificando..."}
                                 </>
                             ) : (
                                 "Verificar y Entrar"

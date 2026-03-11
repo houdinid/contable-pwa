@@ -202,20 +202,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const [taxDeadlines, setTaxDeadlines] = useState<TaxDeadline[]>([]);
 
     const [loadingData, setLoadingData] = useState(true);
-    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const { isAuthenticated, isMfaRequired, isMfaVerified, isLoading: authLoading } = useAuth();
+    const isFetchingData = React.useRef(false);
 
     // Initial Data Load from Supabase
     useEffect(() => {
-        if (!isAuthenticated) {
+        // Wait until auth is not loading
+        if (authLoading) return;
+
+        // Condition: must be authenticated and, if MFA is required, it must be verified
+        const canFetch = isAuthenticated && (!isMfaRequired || isMfaVerified);
+
+        if (!canFetch) {
             setLoadingData(false);
-            // Optionally clear state on logout (uncomment if desired)
-            // setContacts([]); setInvoices([]); ...
             return;
         }
 
         const loadRequests = async () => {
+            if (isFetchingData.current) return;
+            isFetchingData.current = true;
             setLoadingData(true);
             try {
+                console.log("DataContext: Starting Promise.all for 17 tables...");
                 const [
                     { data: contactsData },
                     { data: invoicesData },
@@ -235,24 +243,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     { data: softwareLicensesData },
                     { data: taxDeadlinesData }
                 ] = await Promise.all([
-                    supabase.from('contacts').select('*'),
-                    supabase.from('invoices').select('*, items:invoice_items(*)'),
-                    supabase.from('expenses').select('*'),
-                    supabase.from('business_identities').select('*'),
-                    supabase.from('supplier_categories').select('*'),
-                    supabase.from('payment_methods').select('*'),
-                    supabase.from('payments').select('*'),
-                    supabase.from('expense_categories').select('*'),
-                    supabase.from('products').select('*'),
-                    supabase.from('purchases').select('*, items:purchase_items(*)'),
-                    supabase.from('wifi_networks').select('*'),
-                    supabase.from('service_orders').select('*, items:service_order_items(*)'),
-                    supabase.from('remote_access').select('*, client:contacts(name)'),
-                    supabase.from('antivirus_licenses').select('*, devices:antivirus_devices(*), supplier:contacts(name)'),
-                    supabase.from('corporate_emails').select('*, client:contacts(name)'),
-                    supabase.from('software_licenses').select('*, client:contacts(name)'),
-                    supabase.from('tax_deadlines').select('*')
+                    supabase.from('contacts').select('*').then(r => { console.log("Fetched: contacts", r.error || "OK"); return r; }),
+                    supabase.from('invoices').select('*, items:invoice_items(*)').then(r => { console.log("Fetched: invoices", r.error || "OK"); return r; }),
+                    supabase.from('expenses').select('*').then(r => { console.log("Fetched: expenses", r.error || "OK"); return r; }),
+                    supabase.from('business_identities').select('*').then(r => { console.log("Fetched: identities", r.error || "OK"); return r; }),
+                    supabase.from('supplier_categories').select('*').then(r => { console.log("Fetched: supplier_categories", r.error || "OK"); return r; }),
+                    supabase.from('payment_methods').select('*').then(r => { console.log("Fetched: payment_methods", r.error || "OK"); return r; }),
+                    supabase.from('payments').select('*').then(r => { console.log("Fetched: payments", r.error || "OK"); return r; }),
+                    supabase.from('expense_categories').select('*').then(r => { console.log("Fetched: expense_categories", r.error || "OK"); return r; }),
+                    supabase.from('products').select('*').then(r => { console.log("Fetched: products", r.error || "OK"); return r; }),
+                    supabase.from('purchases').select('*, items:purchase_items(*)').then(r => { console.log("Fetched: purchases", r.error || "OK"); return r; }),
+                    supabase.from('wifi_networks').select('*').then(r => { console.log("Fetched: wifi_networks", r.error || "OK"); return r; }),
+                    supabase.from('service_orders').select('*, items:service_order_items(*)').then(r => { console.log("Fetched: service_orders", r.error || "OK"); return r; }),
+                    supabase.from('remote_access').select('*, client:contacts(name)').then(r => { console.log("Fetched: remote_access", r.error || "OK"); return r; }),
+                    supabase.from('antivirus_licenses').select('*, devices:antivirus_devices(*), supplier:contacts(name)').then(r => { console.log("Fetched: antivirus_licenses", r.error || "OK"); return r; }),
+                    supabase.from('corporate_emails').select('*, client:contacts(name)').then(r => { console.log("Fetched: corporate_emails", r.error || "OK"); return r; }),
+                    supabase.from('software_licenses').select('*, client:contacts(name)').then(r => { console.log("Fetched: software_licenses", r.error || "OK"); return r; }),
+                    supabase.from('tax_deadlines').select('*').then(r => { console.log("Fetched: tax_deadlines", r.error || "OK"); return r; })
                 ]);
+                console.log("DataContext: All 17 tables fetched successfully.");
 
                 // Mapping from snake_case to camelCase
                 setContacts((contactsData || []).map((c: any) => ({
@@ -431,6 +440,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 console.error("Error loading data from Supabase:", error);
             } finally {
                 setLoadingData(false);
+                isFetchingData.current = false;
             }
         };
 
@@ -1337,34 +1347,34 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const value = React.useMemo(() => ({
+        contacts, invoices, expenses, businessIdentities, supplierCategories, paymentMethods, payments, expenseCategories, products, purchases, wifiNetworks, serviceOrders,
+        remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines,
+        addContact, updateContact, deleteContact,
+        addInvoice, updateInvoice,
+        addExpense, updateExpense, deleteExpense,
+        addBusinessIdentity, updateBusinessIdentity, deleteBusinessIdentity,
+        addSupplierCategory, deleteSupplierCategory,
+        addPaymentMethod, deletePaymentMethod, addPayment,
+        addExpenseCategory, updateExpenseCategory, deleteExpenseCategory,
+        addProduct, updateProduct, deleteProduct,
+        addPurchase,
+        addWifiNetwork, updateWifiNetwork, deleteWifiNetwork,
+        addServiceOrder, updateServiceOrder, deleteServiceOrder,
+        addRemoteAccess, updateRemoteAccess, deleteRemoteAccess,
+        addAntivirusLicense, updateAntivirusLicense, deleteAntivirusLicense,
+        addCorporateEmail, updateCorporateEmail, deleteCorporateEmail,
+        addSoftwareLicense, updateSoftwareLicense, deleteSoftwareLicense,
+        addTaxDeadline, updateTaxDeadline, deleteTaxDeadline,
+        exportData, importData, loadingData,
+    }), [
+        contacts, invoices, expenses, businessIdentities, supplierCategories, paymentMethods, payments, expenseCategories, products, purchases, wifiNetworks, serviceOrders,
+        remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines,
+        loadingData
+    ]);
+
     return (
-        <DataContext.Provider
-            value={{
-                contacts, invoices, expenses, businessIdentities, supplierCategories, paymentMethods, payments, expenseCategories, products, purchases, wifiNetworks, serviceOrders,
-
-                // Nuevos
-                remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines,
-
-                addContact, updateContact, deleteContact,
-
-                addInvoice, updateInvoice,
-                addExpense, updateExpense, deleteExpense,
-                addBusinessIdentity, updateBusinessIdentity, deleteBusinessIdentity,
-                addSupplierCategory, deleteSupplierCategory,
-                addPaymentMethod, deletePaymentMethod, addPayment,
-                addExpenseCategory, updateExpenseCategory, deleteExpenseCategory,
-                addProduct, updateProduct, deleteProduct,
-                addPurchase,
-                addWifiNetwork, updateWifiNetwork, deleteWifiNetwork,
-                addServiceOrder, updateServiceOrder, deleteServiceOrder,
-                addRemoteAccess, updateRemoteAccess, deleteRemoteAccess,
-                addAntivirusLicense, updateAntivirusLicense, deleteAntivirusLicense,
-                addCorporateEmail, updateCorporateEmail, deleteCorporateEmail,
-                addSoftwareLicense, updateSoftwareLicense, deleteSoftwareLicense,
-                addTaxDeadline, updateTaxDeadline, deleteTaxDeadline,
-                exportData, importData, loadingData,
-            }}
-        >
+        <DataContext.Provider value={value}>
             {children}
         </DataContext.Provider>
     );

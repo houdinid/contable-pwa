@@ -11,18 +11,42 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const [forceLoadingFinished, setForceLoadingFinished] = useState(false);
     const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.push("/");
-        }
-    }, [isLoading, isAuthenticated, router]);
+        console.log("DashboardLayout checking in... authLoading:", authLoading);
+        // Failsafe: if it stays in loading for more than 5 seconds, force it to finish
+        const timer = setTimeout(() => {
+            console.log("DashboardLayout: Failsafe triggered, forcing loading to finish");
+            setForceLoadingFinished(true);
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [authLoading]);
 
-    if (isLoading) {
-        return <div className="min-h-screen flex items-center justify-center bg-background transition-colors">Cargando...</div>;
+    useEffect(() => {
+        if (!authLoading && !isAuthenticated) {
+            router.push("/login");
+        }
+    }, [authLoading, isAuthenticated, router]);
+
+    const showLoading = authLoading && !forceLoadingFinished;
+
+    if (showLoading) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-background transition-colors">
+                <div className="text-xl mb-4">Cargando...</div>
+                <div className="text-xs text-muted-foreground">Auth State: {authLoading ? 'Waiting' : 'Ready'}</div>
+                <button
+                    onClick={() => setForceLoadingFinished(true)}
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md text-sm"
+                >
+                    Forzar entrada
+                </button>
+            </div>
+        );
     }
 
     if (!isAuthenticated) {
