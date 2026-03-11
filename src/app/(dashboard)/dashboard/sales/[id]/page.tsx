@@ -219,18 +219,24 @@ export default function InvoiceDetailPage() {
 
     const handleConvertToInvoice = async () => {
         if (!invoice) return;
-        if (!confirm("¿Deseas convertir esta cotización en una Factura de Venta?")) return;
 
         try {
             // Find next number
             const invoiceCount = invoices.filter(i => i.type === 'invoice').length;
             const nextNumber = (invoiceCount + 1).toString().padStart(4, '0');
 
-            const { id: _, createdAt: __, ...rest } = invoice;
+            // Strip IDs from items and the invoice itself
+            const { id: _, createdAt: __, items: oldItems, ...rest } = invoice;
+
+            const mappedItems = oldItems.map(item => {
+                const { id: __, ...itemRest } = item;
+                return itemRest;
+            });
 
             // Create new invoice data
             const newInvoiceData = {
                 ...rest,
+                items: mappedItems,
                 type: 'invoice' as const,
                 number: nextNumber,
                 date: new Date().toISOString().split('T')[0],
@@ -241,9 +247,9 @@ export default function InvoiceDetailPage() {
 
             alert(`Cotización convertida exitosamente a Factura #${nextNumber}`);
             router.push('/dashboard/sales');
-        } catch (error) {
-            console.error(error);
-            alert("Error al convertir la cotización");
+        } catch (error: any) {
+            console.error("Conversion error details:", error);
+            alert("Error al convertir la cotización: " + (error.message || String(error)));
         }
     };
 

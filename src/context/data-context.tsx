@@ -561,8 +561,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (invoiceError) {
-            console.error("Error creating invoice header:", invoiceError);
-            return;
+            console.error("Error creating invoice header:", JSON.stringify(invoiceError, null, 2));
+            alert(`Error al guardar factura: ${invoiceError.message || JSON.stringify(invoiceError)}`);
+            throw new Error(invoiceError.message);
         }
 
         if (items && items.length > 0) {
