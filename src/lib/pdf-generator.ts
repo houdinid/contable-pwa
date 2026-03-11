@@ -68,24 +68,52 @@ const ensureRgb = (color: string): string => {
 };
 
 const sanitizeStyles = (element: HTMLElement) => {
-    // Helper to process a single node
+    const colorProps = [
+        'color', 'backgroundColor', 'borderColor', 'borderTopColor', 
+        'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+        'outlineColor', 'columnRuleColor', 'textDecorationColor',
+        'fill', 'stroke'
+    ];
+
     const processNode = (node: HTMLElement) => {
         const computed = window.getComputedStyle(node);
 
-        // Critical colors
-        if (computed.color) node.style.color = ensureRgb(computed.color);
-        if (computed.backgroundColor) node.style.backgroundColor = ensureRgb(computed.backgroundColor);
-        if (computed.borderColor) node.style.borderColor = ensureRgb(computed.borderColor);
+        // 1. Basic color properties
+        colorProps.forEach(prop => {
+            const value = (computed as any)[prop];
+            if (value && value !== 'transparent' && value !== 'none') {
+                (node.style as any)[prop] = ensureRgb(value);
+            }
+        });
 
-        // Handle SVGs
-        if (computed.fill && computed.fill !== 'none') node.style.fill = ensureRgb(computed.fill);
-        if (computed.stroke && computed.stroke !== 'none') node.style.stroke = ensureRgb(computed.stroke);
+        // 2. Complex properties: Box Shadow
+        if (computed.boxShadow && computed.boxShadow !== 'none') {
+            // Box shadow can contain multiple colors. 
+            // The simplest is to either convert colors or remove it if it contains modern formats.
+            if (computed.boxShadow.includes('oklch') || computed.boxShadow.includes('lab')) {
+                // If it contains modern colors, just strip it for now to avoid the crash
+                node.style.boxShadow = 'none';
+            } else {
+                // Try to sanitize it by forcing it to RGB if it's already standard
+                node.style.boxShadow = computed.boxShadow;
+            }
+        }
 
-        // Box shadow is complex causing issues with lab colors, 
-        // if it contains unsupported formats, we might want to simplify or remove it for PDF
-        if (computed.boxShadow && (computed.boxShadow.includes('lab(') || computed.boxShadow.includes('oklch('))) {
-            // Attempt to keep layout but lose shadow color if complex
-            node.style.boxShadow = 'none';
+        // 3. Gradients and background images
+        if (computed.backgroundImage && computed.backgroundImage.includes('gradient')) {
+            // Gradients are notoriously hard to sanitize. 
+            // If they contain oklch/lab, we simplify to a solid color or common fallback.
+            if (computed.backgroundImage.includes('oklch') || computed.backgroundImage.includes('lab')) {
+                node.style.backgroundImage = 'none';
+                node.style.backgroundColor = ensureRgb(computed.backgroundColor || '#ffffff');
+            }
+        }
+        
+        // 4. Filters
+        if (computed.filter && computed.filter !== 'none') {
+            if (computed.filter.includes('oklch') || computed.filter.includes('lab')) {
+                node.style.filter = 'none';
+            }
         }
     };
 
