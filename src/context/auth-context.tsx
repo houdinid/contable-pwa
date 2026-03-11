@@ -71,22 +71,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         isFetchingProfile.current = currentUser.id;
         console.log(`[${new Date().toISOString()}] AuthContext: Fetching profile for:`, currentUser.id);
+        
         try {
-            // Check for MFA first (no RLS issues)
+            // MFA DESACTIVADO A PETICIÓN DEL USUARIO
+            // Defaulting all MFA states to false to bypass any MFA checks
             let isMfaEnabled = false;
             let isMfaRequired = false;
             let isMfaVerified = false;
-
-            try {
-                const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-                if (!mfaError && mfaData) {
-                    isMfaEnabled = mfaData.currentLevel === 'aal2' || mfaData.nextLevel === 'aal2';
-                    isMfaVerified = mfaData.currentLevel === 'aal2';
-                    isMfaRequired = mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2';
-                }
-            } catch (mfaFail) {
-                console.error("MFA check failed:", mfaFail);
-            }
 
             let roleName = UserRole.AUXILIAR_CONTABLE; // Default fallback
             try {

@@ -21,14 +21,10 @@ export default function LoginPage() {
         if (hasRedirected.current) return; // Ya se redirigió, no hacer nada más
         if (!authLoading && isAuthenticated) {
             hasRedirected.current = true;
-            console.log("LoginPage: Usuario ya autenticado, redirigiendo (una sola vez)...");
-            if (isMfaRequired && !isMfaVerified) {
-                router.replace("/mfa");
-            } else {
-                router.replace("/dashboard");
-            }
+            console.log("LoginPage: Usuario ya autenticado, redirigiendo a dashboard (MFA desactivado)...");
+            router.replace("/dashboard");
         }
-    }, [isAuthenticated, authLoading, isMfaRequired, isMfaVerified, router]);
+    }, [isAuthenticated, authLoading, router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,27 +42,12 @@ export default function LoginPage() {
 
             if (signInError) throw signInError;
 
-            // Verificar MFA directamente con Supabase (no esperar al contexto)
-            const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-            if (mfaError) throw mfaError;
-
+            // MFA DESACTIVADO A PETICIÓN DEL USUARIO
+            // Redirigir directamente al dashboard sin comprobar o exigir factores AAL2
+            
             hasRedirected.current = true; // Marcar que ya vamos a redirigir
-
-            if (mfaData.nextLevel === 'aal2' && mfaData.currentLevel === 'aal1') {
-                // Necesita MFA
-                router.replace("/mfa");
-                return;
-            }
-
-            // No necesita MFA, verificar si tiene factores configurados
-            const { data: factors } = await supabase.auth.mfa.listFactors();
-            if (!factors?.totp?.[0]) {
-                router.replace("/mfa-setup");
-                return;
-            }
-
-            // Login completo sin MFA, ir al dashboard
             router.replace("/dashboard");
+            
         } catch (err: any) {
             hasRedirected.current = false; // Reset si hay error
             console.error("LoginPage: handleLogin error:", err);
