@@ -12,16 +12,22 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const { checkSession, isAuthenticated, isLoading: authLoading } = useAuth();
+    const { checkSession, isAuthenticated, isMfaRequired, isMfaVerified, isLoading: authLoading } = useAuth();
     const router = useRouter();
     const supabase = createClient();
 
-    // Si el usuario ya está autenticado, redirigir al dashboard (Manejo de recargas en móvil)
+    // Si el usuario ya está autenticado, la redirección al dashboard o MFA
+    // ahora se maneja más suavemente o desde el layout para evitar bucles de renderizado
     useEffect(() => {
-        if (isAuthenticated && !authLoading) {
-            window.location.href = "/dashboard";
+        if (!authLoading && isAuthenticated) {
+           console.log("LoginPage: Usuario ya autenticado, redirigiendo...");
+           if (isMfaRequired && !isMfaVerified) {
+                router.replace("/mfa");
+            } else if (!isMfaRequired || isMfaVerified) {
+                router.replace("/dashboard");
+            }
         }
-    }, [isAuthenticated, authLoading]);
+    }, [isAuthenticated, authLoading, isMfaRequired, isMfaVerified, router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,39 +35,28 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
+            console.log("LoginPage: Attempting signInWithPassword...");
             const { data, error: signInError } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
-            if (signInError) throw signInError;
-
-            // Check MFA Status
-            const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-
-            if (mfaError) throw mfaError;
-
-            if (mfaData.nextLevel === 'aal2' && mfaData.currentLevel === 'aal1') {
-                // Requires MFA verification
-                window.location.href = "/mfa";
-                return;
+            if (signInError) {
+                console.error("LoginPage: signInError:", signInError);
+                throw signInError;
             }
+            console.log("LoginPage: signInWithPassword success, user:", data.user?.id);
 
-            const { data: factors } = await supabase.auth.mfa.listFactors();
-            const totpFactor = factors?.totp[0];
-
-            if (!totpFactor) {
-                // Requires MFA Setup
-                window.location.href = "/mfa-setup";
-                return;
-            }
-
-            // Successfully logged in and AAL2 satisfied 
+            // Successfully logged in
+            console.log("LoginPage: Calling checkSession...");
             await checkSession();
-            window.location.href = "/dashboard";
+            console.log("LoginPage: checkSession completed.");
+            // La redirección se maneja en el useEffect arriba basado en el estado del contexto
         } catch (err: any) {
+            console.error("LoginPage: handleLogin caught error:", err);
             setError(err.message || "Error al iniciar sesión. Verifica tus credenciales.");
         } finally {
+            console.log("LoginPage: handleLogin finally block.");
             setIsLoading(false);
         }
     };
@@ -108,6 +103,8 @@ export default function LoginPage() {
                                     name="email"
                                     type="email"
                                     autoComplete="email"
+                                    autoCapitalize="none"
+                                    autoCorrect="off"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
