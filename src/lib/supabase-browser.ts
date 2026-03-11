@@ -21,8 +21,6 @@ export function createClient() {
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             {
                 auth: {
-                    // Force a new storage key to clear stuck locks on mobile devices
-                    storageKey: 'sb-contable-v4-fix',
                     persistSession: true,
                     autoRefreshToken: true,
                     detectSessionInUrl: true,

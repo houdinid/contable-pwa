@@ -21,8 +21,8 @@ export default function LoginPage() {
         if (hasRedirected.current) return; // Ya se redirigió, no hacer nada más
         if (!authLoading && isAuthenticated) {
             hasRedirected.current = true;
-            console.log("LoginPage: Usuario ya autenticado, redirigiendo a dashboard (MFA desactivado)...");
-            router.replace("/dashboard");
+            console.log("LoginPage: Usuario ya autenticado, redirigiendo a dashboard con recarga completa...");
+            window.location.href = "/dashboard";
         }
     }, [isAuthenticated, authLoading, router]);
 
@@ -46,7 +46,7 @@ export default function LoginPage() {
             // Redirigir directamente al dashboard sin comprobar o exigir factores AAL2
             
             hasRedirected.current = true; // Marcar que ya vamos a redirigir
-            router.replace("/dashboard");
+            window.location.href = "/dashboard";
             
         } catch (err: any) {
             hasRedirected.current = false; // Reset si hay error
