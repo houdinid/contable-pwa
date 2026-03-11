@@ -40,7 +40,7 @@ export default function MfaVerificationPage() {
         setError("");
         setStatus("Iniciando...");
 
-        const withTimeout = (promise: Promise<any>, msg: string, timeoutMs = 12000) => {
+        const withTimeout = (promise: Promise<any>, msg: string, timeoutMs = 45000) => {
             return Promise.race([
                 promise,
                 new Promise((_, reject) => 
@@ -69,7 +69,7 @@ export default function MfaVerificationPage() {
             if (verify.error) throw new Error(verify.error.message);
 
             setStatus("Sincronizando...");
-            await withTimeout(checkSession(), "Sincronizando sesión", 5000).catch(() => {});
+            await withTimeout(checkSession(), "Sincronizando sesión", 15000).catch(() => {});
 
             setStatus("Redirigiendo...");
             router.replace("/dashboard");
