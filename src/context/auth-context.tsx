@@ -231,8 +231,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     }
                     setIsLoading(false);
                     initialCheckDone.current = true;
+                } else if (event === 'MFA_CHALLENGE_VERIFIED') {
+                    // MFA was just verified - update session and re-fetch profile with new aal2 level
+                    console.log("AuthContext: MFA verified, updating profile...");
+                    if (currentSession) {
+                        setSession(currentSession);
+                        if (currentSession.user) {
+                            setSupabaseUser(currentSession.user);
+                            await fetchUserProfile(currentSession.user);
+                        }
+                    } else {
+                        // MFA verified but no session passed - re-fetch from Supabase
+                        const { data: { session: freshSession } } = await supabase.auth.getSession();
+                        if (freshSession) {
+                            setSession(freshSession);
+                            if (freshSession.user) {
+                                setSupabaseUser(freshSession.user);
+                                await fetchUserProfile(freshSession.user);
+                            }
+                        }
+                    }
+                    setIsLoading(false);
                 } else {
-                    setSession(currentSession);
+                    // Unknown event - only update session if it's not null (don't wipe existing session)
+                    if (currentSession) {
+                        setSession(currentSession);
+                    }
                     setIsLoading(false);
                 }
             }
