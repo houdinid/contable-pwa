@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/auth-context";
 import { createClient } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
@@ -14,14 +14,17 @@ export default function LoginPage() {
     const { checkSession, isAuthenticated, isMfaRequired, isMfaVerified, isLoading: authLoading } = useAuth();
     const router = useRouter();
     const supabase = createClient();
+    const hasRedirected = useRef(false); // Guard to prevent multiple redirects
 
-    // Si el usuario ya está autenticado, redirigir sin recargar la página
+    // Si el usuario ya está autenticado (ej. vuelve a /login con sesión activa), redirigir UNA sola vez
     useEffect(() => {
+        if (hasRedirected.current) return; // Ya se redirigió, no hacer nada más
         if (!authLoading && isAuthenticated) {
-           console.log("LoginPage: Usuario ya autenticado, redirigiendo...");
-           if (isMfaRequired && !isMfaVerified) {
+            hasRedirected.current = true;
+            console.log("LoginPage: Usuario ya autenticado, redirigiendo (una sola vez)...");
+            if (isMfaRequired && !isMfaVerified) {
                 router.replace("/mfa");
-            } else if (!isMfaRequired || isMfaVerified) {
+            } else {
                 router.replace("/dashboard");
             }
         }
@@ -29,10 +32,10 @@ export default function LoginPage() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (hasRedirected.current) return; // Evitar doble submit
         setError("");
         setIsLoading(true);
 
-        // Limpiar espacios en blanco del correo (común en móviles)
         const cleanEmail = email.trim();
 
         try {
@@ -43,26 +46,30 @@ export default function LoginPage() {
 
             if (signInError) throw signInError;
 
-            // Verificar si necesita MFA antes de redirigir
+            // Verificar MFA directamente con Supabase (no esperar al contexto)
             const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
             if (mfaError) throw mfaError;
 
+            hasRedirected.current = true; // Marcar que ya vamos a redirigir
+
             if (mfaData.nextLevel === 'aal2' && mfaData.currentLevel === 'aal1') {
+                // Necesita MFA
                 router.replace("/mfa");
                 return;
             }
 
-            // Verificar si tiene factores TOTP configurados
+            // No necesita MFA, verificar si tiene factores configurados
             const { data: factors } = await supabase.auth.mfa.listFactors();
-            if (!factors?.totp[0]) {
+            if (!factors?.totp?.[0]) {
                 router.replace("/mfa-setup");
                 return;
             }
 
-            await checkSession();
-            // La redirección se maneja en el useEffect arriba basado en el estado del contexto
+            // Login completo sin MFA, ir al dashboard
+            router.replace("/dashboard");
         } catch (err: any) {
-            console.error("LoginPage: handleLogin caught error:", err);
+            hasRedirected.current = false; // Reset si hay error
+            console.error("LoginPage: handleLogin error:", err);
             setError(err.message || "Error al iniciar sesión. Verifica tus credenciales.");
         } finally {
             setIsLoading(false);

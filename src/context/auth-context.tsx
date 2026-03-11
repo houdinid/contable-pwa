@@ -90,7 +90,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             let roleName = UserRole.AUXILIAR_CONTABLE; // Default fallback
             try {
-                // Función de ayuda para timeout local en la query
                 const withTimeout = (promise: Promise<any>, timeoutMs = 8000) => {
                     return Promise.race([
                         promise,
@@ -123,7 +122,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         ? rawRoleData.roles[0]?.name
                         : rawRoleData?.roles?.name) as UserRole || UserRole.AUXILIAR_CONTABLE;
                 } else if (roleError) {
-                    // Solo registrar el error si realmente tiene contenido útil y no es un objeto vacío o genérico de Supabase
                     const isMeaningfulError = Object.keys(roleError).length > 0 &&
                         (roleError.message || roleError.details || roleError.hint);
 
@@ -146,7 +144,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         } catch (error) {
             console.error("Failed to build user profile", error);
-            // Fallback en caso de error crítico
             setUserProfile({
                 id: currentUser.id,
                 email: currentUser.email,
@@ -155,6 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isMfaRequired: false,
                 isMfaVerified: false
             });
+        } finally {
+            // CRITICAL: Always reset the guard so subsequent events can update profile
+            isFetchingProfile.current = null;
         }
     };
 
@@ -197,6 +197,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 console.log("AuthContext: Auth Event:", event);
 
                 if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                    // Skip SIGNED_IN if we already handled this user via INITIAL_SESSION
+                    if (event === 'SIGNED_IN' && initialCheckDone.current && session) {
+                        console.log("AuthContext: Skipping duplicate SIGNED_IN (already handled by INITIAL_SESSION)");
+                        setIsLoading(false);
+                        return;
+                    }
                     setSession(currentSession);
                     if (currentSession?.user) {
                         setSupabaseUser(currentSession.user);
