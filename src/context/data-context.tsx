@@ -445,7 +445,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         };
 
         loadRequests();
-    }, [isAuthenticated]);
+    }, [isAuthenticated, authLoading, isMfaRequired, isMfaVerified]);
 
     // --- Helper to refresh a specific table (optional, for stricter consistency) ---
     // For now, we will update local state optimistically or re-fetch
