@@ -47,11 +47,32 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
-    // Si ya hay usuario y quiere entrar a /login, /registro o /, mandarlo al dashboard
+    // Permitir acceso a /mfa y /mfa-setup para usuarios autenticados (no redirigir)
+    if (
+        user &&
+        (request.nextUrl.pathname === '/mfa' || request.nextUrl.pathname === '/mfa-setup')
+    ) {
+        return supabaseResponse
+    }
+
+    // Si ya hay usuario y quiere entrar a /login o /, verificar MFA antes de redirigir
     if (
         user &&
         (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/')
     ) {
+        // Verificar nivel de MFA para decidir a dónde redirigir
+        try {
+            const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+            if (mfaData && mfaData.nextLevel === 'aal2' && mfaData.currentLevel !== 'aal2') {
+                // MFA pendiente, redirigir a /mfa
+                const url = request.nextUrl.clone()
+                url.pathname = '/mfa'
+                return NextResponse.redirect(url)
+            }
+        } catch (e) {
+            // Si falla la verificación MFA, dejar pasar al dashboard
+            console.error('Middleware MFA check failed:', e)
+        }
         const url = request.nextUrl.clone()
         url.pathname = '/dashboard'
         return NextResponse.redirect(url)
