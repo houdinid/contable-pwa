@@ -419,10 +419,11 @@ export default function InvoiceDetailPage() {
 
                     {/* Footer Notes */}
                     <div className="border-t border-gray-200 pt-4">
-                        <div className="text-gray-500 text-[10px] leading-tight">
+                        <div className="text-[10px] text-gray-500 border-t border-gray-100 pt-8 mt-20 text-center">
+                            <p className="text-sm font-bold text-gray-800 mb-4 italic">¡Gracias por tu {invoice.type === 'quote' ? 'Cotización' : 'Compra'}!</p>
                             {invoice.notes && (
-                                <div className="mb-2">
-                                    <p className="font-bold text-gray-700 mb-0.5">Notas:</p>
+                                <div className="mb-4 text-left">
+                                    <p className="font-semibold text-gray-700">Notas:</p>
                                     <p>{invoice.notes}</p>
                                 </div>
                             )}
