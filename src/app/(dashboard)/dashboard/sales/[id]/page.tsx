@@ -428,7 +428,7 @@ export default function InvoiceDetailPage() {
                             )}
                             <p>Favor realizar sus pagos a nombre de {emitter?.name}.</p>
                             <p className="mt-0.5">Esta factura de venta se asimila en todos sus efectos a una letra de cambio según los términos del Art. 774 del Código de Comercio.</p>
-                            <p className="mt-2 text-gray-400">Generado por Contable PWA</p>
+                            <p className="mt-2 text-gray-400">Generado por Contable PWA | © Todos los derechos reservados por Lg Ingenieros Sas</p>
                         </div>
                     </div>
                 </div>
