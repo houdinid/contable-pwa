@@ -65,6 +65,7 @@ interface DataContextType {
 
     addInvoice: (invoice: Omit<Invoice, "id" | "createdAt">) => Promise<void>;
     updateInvoice: (id: string, invoice: Partial<Invoice>) => Promise<void>;
+    deleteInvoice: (id: string) => Promise<void>;
 
     addExpense: (expense: Omit<Expense, "id" | "createdAt">) => Promise<void>;
     updateExpense: (id: string, expense: Partial<Expense>) => Promise<void>;
@@ -150,6 +151,7 @@ const DataContext = createContext<DataContextType>({
     deleteContact: async () => { },
     addInvoice: async () => { },
     updateInvoice: async () => { },
+    deleteInvoice: async () => { },
     addExpense: async () => { },
     updateExpense: async () => { },
     deleteExpense: async () => { },
@@ -613,6 +615,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         const { error } = await supabase.from('invoices').update(dbPatch).eq('id', id);
         if (error) console.error("Error updating invoice:", error);
+    };
+
+    const deleteInvoice = async (id: string) => {
+        // Optimistic update
+        setInvoices(prev => prev.filter(i => i.id !== id));
+
+        // Delete items first (though DB should handle cascade, being explicit as per update pattern)
+        await supabase.from('invoice_items').delete().eq('invoice_id', id);
+        
+        // Delete invoice header
+        const { error } = await supabase.from('invoices').delete().eq('id', id);
+        if (error) console.error("Error deleting invoice:", error);
     };
 
     const addExpense = async (expense: Omit<Expense, "id" | "createdAt">) => {
@@ -1352,8 +1366,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         contacts, invoices, expenses, businessIdentities, supplierCategories, paymentMethods, payments, expenseCategories, products, purchases, wifiNetworks, serviceOrders,
         remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines,
         addContact, updateContact, deleteContact,
-        addInvoice, updateInvoice,
-        addExpense, updateExpense, deleteExpense,
+        addInvoice,
+        updateInvoice,
+        deleteInvoice,
+        addExpense,
+        updateExpense, deleteExpense,
         addBusinessIdentity, updateBusinessIdentity, deleteBusinessIdentity,
         addSupplierCategory, deleteSupplierCategory,
         addPaymentMethod, deletePaymentMethod, addPayment,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useData } from "@/context/data-context";
-import { Printer, ArrowLeft, Mail, Edit, FileText, DollarSign, Upload } from "lucide-react";
+import { Printer, ArrowLeft, Mail, Edit, FileText, DollarSign, Upload, Trash2 } from "lucide-react";
 import type { Invoice } from "@/types";
 import { OCRService } from "@/lib/ocr-service";
 import { generatePDF, sharePDF } from "@/lib/pdf-generator";
@@ -12,7 +12,7 @@ import { MoneyInput } from "@/components/ui/money-input";
 export default function InvoiceDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const { invoices, loadingData, businessIdentities, addInvoice, payments, paymentMethods, addPayment, contacts, updateContact } = useData();
+    const { invoices, loadingData, businessIdentities, addInvoice, payments, paymentMethods, addPayment, contacts, updateContact, deleteInvoice } = useData();
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -51,6 +51,21 @@ export default function InvoiceDetailPage() {
             console.error("Error sharing PDF:", error);
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!invoice) return;
+        
+        const typeLabel = invoice.type === 'quote' ? 'esta cotización' : 'esta factura';
+        if (confirm(`¿Estás seguro de que deseas eliminar ${typeLabel}? Esta acción no se puede deshacer.`)) {
+            try {
+                await deleteInvoice(invoice.id);
+                router.push('/dashboard/sales');
+            } catch (error) {
+                console.error("Error deleting invoice:", error);
+                alert("Ocurrió un error al intentar eliminar el documento.");
+            }
         }
     };
 
@@ -285,6 +300,14 @@ export default function InvoiceDetailPage() {
                                     <span className="sm:hidden">Convertir</span>
                                 </button>
                             )}
+                            <button
+                                onClick={handleDelete}
+                                className="flex items-center gap-2 text-red-600 hover:text-red-900 transition-colors ml-4"
+                                title="Eliminar"
+                            >
+                                <Trash2 size={20} />
+                                <span className="hidden sm:inline">Eliminar</span>
+                            </button>
                         </div>
                     )}
                 </div>
