@@ -341,7 +341,7 @@ export default function InvoiceDetailPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Invoice Document */}
-                <div id="invoice-content" className="lg:col-span-2 bg-card rounded-none shadow-none print:shadow-none print:border-0 print:p-0 overflow-hidden" style={{ minHeight: '297mm', padding: '20px' }}>
+                <div id="invoice-content" className="lg:col-span-2 bg-card rounded-none shadow-none print:shadow-none print:border-0 print:p-0 overflow-hidden" style={{ padding: '20px' }}>
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start mb-6 border-b pb-4 gap-4 sm:gap-0">
                         <div>

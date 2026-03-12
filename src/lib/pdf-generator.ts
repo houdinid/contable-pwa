@@ -36,10 +36,6 @@ const prepareElementForPdf = (elementId: string): HTMLElement => {
     container.appendChild(clone);
     document.body.appendChild(container);
 
-    // Add the clone to the container
-    container.appendChild(clone);
-    document.body.appendChild(container);
-
     // Sanitize styles to remove unsupported functions like lab() or oklch()
     // by freezing computed styles as RGB/RGBA
     sanitizeStyles(clone);
