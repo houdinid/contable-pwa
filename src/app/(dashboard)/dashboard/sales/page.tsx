@@ -13,6 +13,14 @@ export default function SalesPage() {
         return <div className="p-8 text-center">Cargando facturas...</div>;
     }
 
+    const sortedInvoices = [...invoices].sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        // Secondary sort by createdAt if dates are equal
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -52,7 +60,7 @@ export default function SalesPage() {
                                 </td>
                             </tr>
                         ) : (
-                            invoices.map((inv) => (
+                            sortedInvoices.map((inv) => (
                                 <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-foreground flex items-center gap-2">
                                         <FileText size={16} className={inv.type === 'quote' ? 'text-orange-500' : 'text-blue-500'} />
@@ -85,7 +93,7 @@ export default function SalesPage() {
                         No hay documentos registrados.
                     </div>
                 ) : (
-                    invoices.map((inv) => (
+                    sortedInvoices.map((inv) => (
                         <div key={inv.id} className="bg-card p-4 rounded-lg shadow-sm border border-border space-y-3">
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-2">
