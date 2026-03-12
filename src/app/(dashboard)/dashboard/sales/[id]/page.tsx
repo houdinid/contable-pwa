@@ -344,11 +344,7 @@ export default function InvoiceDetailPage() {
                             <div className="text-gray-500 text-sm mt-0.5">
                                 Fecha: {invoice.date?.split('T')[0]}
                             </div>
-                            {invoice.type === 'invoice' && (
-                                <div className={`mt-2 inline-block px-3 py-1 rounded-full text-[10px] font-semibold print:hidden ${isPaid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                    {isPaid ? 'PAGADA' : 'PENDIENTE'}
-                                </div>
-                            )}
+                            {/* Status badge removed from here to ensure it doesn't appear in Print/PDF */}
                         </div>
                     </div>
 

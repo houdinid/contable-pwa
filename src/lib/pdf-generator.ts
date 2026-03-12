@@ -115,6 +115,11 @@ const sanitizeStyles = (element: HTMLElement) => {
                 node.style.filter = 'none';
             }
         }
+
+        // 5. Handle Print-Hiding classes
+        if (node.classList.contains('print:hidden') || node.classList.contains('print-none')) {
+            node.style.display = 'none';
+        }
     };
 
     // Process the element itself
