@@ -329,6 +329,9 @@ export default function InvoiceDetailPage() {
                                 <p>NIT: {emitter?.taxId}</p>
                                 <p>{emitter?.address}</p>
                                 <p>{emitter?.phone} | {emitter?.email}</p>
+                                <p className="font-semibold text-indigo-600 dark:text-indigo-400">
+                                    {emitter?.isTaxPayer ? 'Régimen Común (Responsable de IVA)' : 'Régimen Simplificado (No Responsable de IVA)'}
+                                </p>
                             </div>
                         </div>
                         <div className="sm:text-right">
@@ -342,7 +345,7 @@ export default function InvoiceDetailPage() {
                                 Fecha: {invoice.date?.split('T')[0]}
                             </div>
                             {invoice.type === 'invoice' && (
-                                <div className={`mt-2 inline-block px-3 py-1 rounded-full text-[10px] font-semibold ${isPaid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                <div className={`mt-2 inline-block px-3 py-1 rounded-full text-[10px] font-semibold print:hidden ${isPaid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                     {isPaid ? 'PAGADA' : 'PENDIENTE'}
                                 </div>
                             )}
@@ -405,10 +408,12 @@ export default function InvoiceDetailPage() {
                                 <span>Subtotal</span>
                                 <span>${invoice.subtotal.toLocaleString()}</span>
                             </div>
-                            <div className="flex justify-between text-gray-600 text-xs">
-                                <span>IVA (19%)</span>
-                                <span>${invoice.tax.toLocaleString()}</span>
-                            </div>
+                            {emitter?.isTaxPayer && (
+                                <div className="flex justify-between text-gray-600 text-xs">
+                                    <span>IVA (19%)</span>
+                                    <span>${invoice.tax.toLocaleString()}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-300">
                                 <span>Total</span>
                                 <span>${invoice.total.toLocaleString()}</span>
