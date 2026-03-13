@@ -11,8 +11,20 @@ import { toTitleCase, cleanEmail, cleanText, toLowerCaseAll } from "@/lib/utils"
 import { compressImage } from "@/lib/image-utils";
 
 export default function SettingsPage() {
-    const { exportData, importData, businessIdentities, addBusinessIdentity, updateBusinessIdentity, deleteBusinessIdentity } = useData();
+    const { 
+        exportData: handleExportData, 
+        importData, 
+        businessIdentities, 
+        addBusinessIdentity, 
+        updateBusinessIdentity, 
+        deleteBusinessIdentity,
+        uploadBackupToCloud,
+        listCloudBackups,
+        restoreFromCloud
+    } = useData();
     const [status, setStatus] = useState<string>("");
+    const [cloudBackups, setCloudBackups] = useState<any[]>([]);
+    const [isLoadingCloud, setIsLoadingCloud] = useState(false);
 
     // Identity Form State
     const [showIdentityForm, setShowIdentityForm] = useState(false);
@@ -79,7 +91,7 @@ export default function SettingsPage() {
 
     const handleExport = async () => {
         try {
-            await exportData();
+            await handleExportData();
             setStatus("success-export");
             setTimeout(() => setStatus(""), 3000);
         } catch (e) {
@@ -105,6 +117,29 @@ export default function SettingsPage() {
             alert("Error importando archivo: El formato no es válido o la clave es incorrecta.");
         }
     };
+
+    const handleCloudBackup = async () => {
+        await uploadBackupToCloud();
+        loadCloudBackups();
+    };
+
+    const loadCloudBackups = async () => {
+        setIsLoadingCloud(true);
+        try {
+            const list = await listCloudBackups();
+            setCloudBackups(list);
+        } finally {
+            setIsLoadingCloud(false);
+        }
+    };
+
+    const handleCloudRestore = async (name: string) => {
+        await restoreFromCloud(name);
+    };
+
+    React.useEffect(() => {
+        loadCloudBackups();
+    }, []);
 
     const handleDownloadIdentitiesTemplate = () => {
         const headers = ["Razon Social", "NIT", "DV", "Direccion", "Ciudad", "Email"];
@@ -567,6 +602,52 @@ export default function SettingsPage() {
                                 <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                             </label>
                         </div>
+                    </div>
+
+                    {/* Cloud Backup Section */}
+                    <div className="flex flex-col gap-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-full text-indigo-600 dark:text-indigo-400">
+                                <Building2 size={24} />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-medium text-indigo-900 dark:text-indigo-100">Copia de Seguridad en la Nube</h3>
+                                <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-3">
+                                    Guarda tus datos de forma segura en nuestros servidores de Supabase.
+                                </p>
+                                <button
+                                    onClick={handleCloudBackup}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                                >
+                                    Guardar en la Nube Ahora
+                                </button>
+                            </div>
+                        </div>
+
+                        {cloudBackups.length > 0 && (
+                            <div className="mt-4 border-t border-indigo-200 dark:border-indigo-800 pt-4">
+                                <h4 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mb-2">Respaldos Recientes en la Nube</h4>
+                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                    {cloudBackups.map((backup) => (
+                                        <div key={backup.name} className="flex justify-between items-center text-sm p-3 bg-white/50 dark:bg-black/20 rounded border border-indigo-100 dark:border-indigo-900">
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-gray-700 dark:text-gray-300">{backup.name}</span>
+                                                <span className="text-xs text-gray-500">{(backup.metadata.size / 1024).toFixed(2)} KB | {new Date(backup.created_at).toLocaleString()}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleCloudRestore(backup.name)}
+                                                className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold"
+                                            >
+                                                Restaurar
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {isLoadingCloud && (
+                            <p className="text-xs text-indigo-500 animate-pulse">Cargando respaldos de la nube...</p>
+                        )}
                     </div>
                 </div>
             </div>

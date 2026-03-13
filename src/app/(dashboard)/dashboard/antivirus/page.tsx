@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Shield, Copy, Edit, Trash2, Calendar, Monitor, User } from "lucide-react";
+import { Plus, Search, Shield, Copy, Edit, Trash2, Calendar, Monitor, User, ExternalLink } from "lucide-react";
 import { useData } from "@/context/data-context";
 
 export default function AntivirusListPage() {
@@ -141,6 +141,27 @@ export default function AntivirusListPage() {
                                             <Copy size={16} />
                                         </button>
                                     </div>
+
+                                    {/* Download Link Section */}
+                                    {license.downloadUrl && (
+                                        <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30 flex items-center justify-between">
+                                            <div className="flex-1 min-w-0 mr-2">
+                                                <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase font-semibold">Instalador</p>
+                                                <div className="text-xs text-blue-800 dark:text-blue-200 truncate font-medium">
+                                                    Link de Descarga Disponible
+                                                </div>
+                                            </div>
+                                            <a
+                                                href={license.downloadUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all shadow-sm"
+                                                title="Ir al Link de Descarga"
+                                            >
+                                                <ExternalLink size={14} />
+                                            </a>
+                                        </div>
+                                    )}
 
                                     {/* Dates & Status Grid */}
                                     <div className="grid grid-cols-2 gap-3 text-sm border-t border-border pt-3">

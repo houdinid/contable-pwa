@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS public.antivirus_licenses (
         start_date DATE,
         expiration_date DATE,
         device_limit INTEGER NOT NULL DEFAULT 1,
+        download_url TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 -- Políticas RLS para antivirus_licenses

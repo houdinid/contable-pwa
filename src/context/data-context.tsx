@@ -95,6 +95,11 @@ interface DataContextType {
 
     exportData: () => Promise<void>;
     importData: (jsonData: string) => Promise<void>;
+    
+    // Cloud Backup Actions
+    uploadBackupToCloud: () => Promise<void>;
+    listCloudBackups: () => Promise<any[]>;
+    restoreFromCloud: (fileName: string) => Promise<void>;
 
     loadingData: boolean;
 }
@@ -178,6 +183,9 @@ const DataContext = createContext<DataContextType>({
 
     exportData: async () => { },
     importData: async () => { },
+    uploadBackupToCloud: async () => { },
+    listCloudBackups: async () => [],
+    restoreFromCloud: async () => { },
     loadingData: true,
 });
 
@@ -393,6 +401,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     startDate: a.start_date,
                     expirationDate: a.expiration_date,
                     deviceLimit: a.device_limit,
+                    downloadUrl: a.download_url,
                     supplierName: a.supplier?.name,
                     createdAt: a.created_at,
                     devices: (a.devices || []).map((d: any) => ({
@@ -1105,7 +1114,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             product_key: newRecord.productKey,
             start_date: newRecord.startDate,
             expiration_date: newRecord.expirationDate,
-            device_limit: newRecord.deviceLimit
+            device_limit: newRecord.deviceLimit,
+            download_url: newRecord.downloadUrl
         };
 
         const { error: licenseError } = await supabase.from('antivirus_licenses').insert(dbLicense);
@@ -1136,6 +1146,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate;
         if (patch.expirationDate !== undefined) dbPatch.expiration_date = patch.expirationDate;
         if (patch.deviceLimit !== undefined) dbPatch.device_limit = patch.deviceLimit;
+        if (patch.downloadUrl !== undefined) dbPatch.download_url = patch.downloadUrl;
 
         if (Object.keys(dbPatch).length > 0) {
             const { error } = await supabase.from('antivirus_licenses').update(dbPatch).eq('id', id);
@@ -1287,7 +1298,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 'purchases', 'purchase_items',
                 'service_orders', 'service_order_items', 'payments',
                 'remote_access', 'antivirus_licenses', 'antivirus_devices',
-                'corporate_emails', 'software_licenses', 'tax_deadlines'
+                'corporate_emails', 'software_licenses', 'tax_deadlines',
+                'roles', 'modules', 'permissions', 'user_roles'
             ];
 
             const backupData: any = {};
@@ -1295,10 +1307,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             // Fetch all data in parallel
             await Promise.all(tables.map(async (table) => {
                 const { data, error } = await supabase.from(table).select('*');
-                if (error) throw error;
-                backupData[table] = data;
+                if (error) {
+                    console.warn(`Error exporting table ${table}:`, error);
+                    backupData[table] = []; // Fallback empty
+                } else {
+                    backupData[table] = data;
+                }
             }));
 
+            return backupData;
+        } catch (error) {
+            console.error("Export failed:", error);
+            throw error;
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    const downloadBackup = async () => {
+        try {
+            const backupData = await exportData();
             // Create and download file
             const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1309,11 +1337,67 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        } catch (e) {
+            alert("Error al descargar backup.");
+        }
+    };
 
+    const uploadBackupToCloud = async () => {
+        try {
+            setLoadingData(true);
+            const backupData = await exportData();
+            const fileName = `backup_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+            
+            const { error } = await supabase.storage
+                .from('backups')
+                .upload(fileName, JSON.stringify(backupData, null, 2), {
+                    contentType: 'application/json'
+                });
+
+            if (error) throw error;
+            alert("Respaldo subido a la nube correctamente.");
         } catch (error) {
-            console.error("Export failed:", error);
-            alert("Error al exportar datos. Revisa la consola.");
-            throw error;
+            console.error("Cloud upload failed:", error);
+            alert("Error al subir a la nube. Asegúrate de que el bucket 'backups' existe en Supabase.");
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    const listCloudBackups = async () => {
+        try {
+            const { data, error } = await supabase.storage
+                .from('backups')
+                .list('', {
+                    limit: 100,
+                    offset: 0,
+                    sortBy: { column: 'created_at', order: 'desc' },
+                });
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Error listing cloud backups:", error);
+            return [];
+        }
+    };
+
+    const restoreFromCloud = async (fileName: string) => {
+        if (!confirm(`¿Estás seguro de restaurar el respaldo ${fileName}?`)) return;
+        
+        try {
+            setLoadingData(true);
+            const { data, error } = await supabase.storage
+                .from('backups')
+                .download(fileName);
+
+            if (error) throw error;
+            
+            const text = await data.text();
+            await importData(text);
+        } catch (error) {
+            console.error("Error restoring from cloud:", error);
+            alert("Error al restaurar desde la nube.");
         } finally {
             setLoadingData(false);
         }
@@ -1330,6 +1414,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
             // Import Order Matters due to Foreign Keys
             const tableOrder = [
+                'roles', 'modules', 'permissions', // First RBAC
                 'contacts', 'business_identities', 'supplier_categories', 'expense_categories',
                 'products', 'payment_methods', 'wifi_networks', 'cctv_systems', 'cctv_users',
                 'invoices', 'invoice_items',
@@ -1337,7 +1422,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 'purchases', 'purchase_items',
                 'service_orders', 'service_order_items', 'payments',
                 'remote_access', 'antivirus_licenses', 'antivirus_devices',
-                'corporate_emails', 'software_licenses', 'tax_deadlines'
+                'corporate_emails', 'software_licenses', 'tax_deadlines',
+                'user_roles' // Last RBAC likely due to user references
             ];
 
             for (const table of tableOrder) {
@@ -1384,7 +1470,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addCorporateEmail, updateCorporateEmail, deleteCorporateEmail,
         addSoftwareLicense, updateSoftwareLicense, deleteSoftwareLicense,
         addTaxDeadline, updateTaxDeadline, deleteTaxDeadline,
-        exportData, importData, loadingData,
+        exportData: downloadBackup, // Rename internal downloadBackup to external exportData for UI compatibility
+        importData, 
+        uploadBackupToCloud, listCloudBackups, restoreFromCloud,
+        loadingData,
     }), [
         contacts, invoices, expenses, businessIdentities, supplierCategories, paymentMethods, payments, expenseCategories, products, purchases, wifiNetworks, serviceOrders,
         remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines,

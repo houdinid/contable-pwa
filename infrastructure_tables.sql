@@ -22,6 +22,7 @@ create table if not exists antivirus_licenses (
     start_date date,
     expiration_date date,
     device_limit integer default 1,
+    download_url text,
     created_at timestamptz default now()
 );
 -- Dispositivos Antivirus (Hija 1 a N)

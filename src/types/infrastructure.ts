@@ -27,6 +27,7 @@ export interface AntivirusLicense {
     startDate?: string;
     expirationDate?: string;
     deviceLimit: number;
+    downloadUrl?: string;
     devices?: AntivirusDevice[]; // 1:N relations
     createdAt: string;
 

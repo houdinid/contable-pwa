@@ -21,6 +21,7 @@ export default function CreateAntivirusPage() {
     const [startDate, setStartDate] = useState("");
     const [expirationDate, setExpirationDate] = useState("");
     const [deviceLimit, setDeviceLimit] = useState(1);
+    const [downloadUrl, setDownloadUrl] = useState("");
 
     // Dynamic Devices Array
     const [devices, setDevices] = useState<{ id: string, hostname: string }[]>([]);
@@ -71,6 +72,7 @@ export default function CreateAntivirusPage() {
                 startDate,
                 expirationDate,
                 deviceLimit,
+                downloadUrl,
                 devices: devices.map(d => ({
                     id: d.id,
                     hostname: d.hostname,
@@ -200,6 +202,16 @@ export default function CreateAntivirusPage() {
                                     setDeviceLimit(isNaN(v) ? 1 : v);
                                 }}
                                 className="w-full md:w-1/3 px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            />
+                        </div>
+                        <div className="col-span-1 md:col-span-2">
+                            <label className="block text-sm font-medium text-foreground mb-1">Link de Descarga (Opcional)</label>
+                            <input
+                                type="url"
+                                value={downloadUrl}
+                                onChange={(e) => setDownloadUrl(e.target.value)}
+                                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                placeholder="https://ejemplo.com/descargar"
                             />
                         </div>
                     </div>
