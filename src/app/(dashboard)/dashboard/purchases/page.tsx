@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useData } from "@/context/data-context";
 import { Plus, Search, ShoppingCart, Calendar, FileText, Edit, Trash2 } from "lucide-react";
