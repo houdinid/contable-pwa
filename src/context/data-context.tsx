@@ -1303,7 +1303,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             business_name: newRecord.businessName,
             tax_id: newRecord.taxId,
             tax_type: newRecord.taxType,
-            expiration_date: newRecord.expirationDate
+            expiration_date: newRecord.expirationDate,
+            completed: newRecord.completed ?? false
         };
 
         const { error } = await supabase.from('tax_deadlines').insert(dbDeadline);
@@ -1320,6 +1321,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (patch.taxId !== undefined) dbPatch.tax_id = patch.taxId;
         if (patch.taxType !== undefined) dbPatch.tax_type = patch.taxType;
         if (patch.expirationDate !== undefined) dbPatch.expiration_date = patch.expirationDate;
+        if (patch.completed !== undefined) dbPatch.completed = patch.completed;
 
         const { error } = await supabase.from('tax_deadlines').update(dbPatch).eq('id', id);
         if (error) console.error("Error updating tax deadline:", error);

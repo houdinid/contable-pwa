@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Landmark, Calendar, Search } from "lucide-react";
+import { ArrowLeft, Save, Landmark, Calendar, Search, Plus } from "lucide-react";
 import { useData } from "@/context/data-context";
 
 export default function CreateTaxDeadlinePage() {
@@ -44,7 +44,8 @@ export default function CreateTaxDeadlinePage() {
                 businessName,
                 taxId,
                 taxType,
-                expirationDate
+                expirationDate,
+                completed: false
             });
             router.push("/dashboard/tax-deadlines");
         } catch (error) {
@@ -121,22 +122,38 @@ export default function CreateTaxDeadlinePage() {
 
                         <div>
                             <label className="block text-sm font-medium text-foreground mb-1">Tipo de Impuesto / Obligación *</label>
-                            <input
-                                list="tax-types"
-                                required
-                                value={taxType}
-                                onChange={(e) => setTaxType(e.target.value)}
-                                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
-                                placeholder="Ej: Declaración de Renta, IVA, ICA..."
-                            />
-                            <datalist id="tax-types">
-                                <option value="Declaración de Renta" />
-                                <option value="IVA" />
-                                <option value="ICA" />
-                                <option value="Retención en la Fuente" />
-                                <option value="Renovación Cámara de Comercio" />
-                                <option value="Información Exógena" />
-                            </datalist>
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <input
+                                        list="tax-types"
+                                        required
+                                        value={taxType}
+                                        onChange={(e) => setTaxType(e.target.value)}
+                                        className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                        placeholder="Ej: Declaración de Renta, IVA, ICA..."
+                                    />
+                                    <datalist id="tax-types">
+                                        <option value="Declaración de Renta" />
+                                        <option value="IVA" />
+                                        <option value="ICA" />
+                                        <option value="Retención en la Fuente" />
+                                        <option value="Renovación Cámara de Comercio" />
+                                        <option value="Información Exógena" />
+                                    </datalist>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setTaxType("");
+                                        // Focus the input would be better but requires a ref
+                                        alert("Escribe el nuevo nombre del impuesto en el campo.");
+                                    }}
+                                    className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                                    title="Nuevo Tipo de Impuesto"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
                         </div>
 
                         <div>
