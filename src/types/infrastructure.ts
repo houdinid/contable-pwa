@@ -67,5 +67,13 @@ export interface TaxDeadline {
     taxType: string; // Renta, IVA, ICA, Cámara de Comercio, Retefuente
     expirationDate: string;
     completed: boolean;
+    user_id?: string;
     createdAt: string;
+}
+
+export interface TaxType {
+    id: string;
+    name: string;
+    user_id?: string;
+    createdAt?: string;
 }

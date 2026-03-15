@@ -68,6 +68,14 @@ create table if not exists tax_deadlines (
     tax_type text not null,
     -- Renta, IVA, ICA, Cámara de Comercio, Retefuente
     expiration_date date not null,
+    completed boolean default false,
+    created_at timestamptz default now()
+);
+
+-- Módulo 6: Tipos de Impuestos (Dinámico)
+create table if not exists tax_types (
+    id uuid primary key default uuid_generate_v4(),
+    name text not null unique,
     created_at timestamptz default now()
 );
 -- ==========================================================

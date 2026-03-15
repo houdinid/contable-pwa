@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import { encryptDataSync, decryptDataSync } from "@/lib/encryption";
-import type { Contact, Invoice, Expense, BusinessIdentity, SupplierCategory, Payment, PaymentMethod, ExpenseCategoryItem, Product, Purchase, WifiNetwork, ServiceOrder, RemoteAccess, AntivirusLicense, CorporateEmail, SoftwareLicense, TaxDeadline } from "@/types";
+import type { Contact, Invoice, Expense, BusinessIdentity, SupplierCategory, Payment, PaymentMethod, ExpenseCategoryItem, Product, Purchase, WifiNetwork, ServiceOrder, RemoteAccess, AntivirusLicense, CorporateEmail, SoftwareLicense, TaxDeadline, TaxType } from "@/types";
 
 interface DataContextType {
     contacts: Contact[];
@@ -27,6 +27,8 @@ interface DataContextType {
     corporateEmails: CorporateEmail[];
     softwareLicenses: SoftwareLicense[];
     taxDeadlines: TaxDeadline[];
+    taxTypes: TaxType[];
+    isTaxTypesTableMissing: boolean; // New Flag
 
     addRemoteAccess: (data: Omit<RemoteAccess, "id" | "createdAt">) => Promise<void>;
     updateRemoteAccess: (id: string, data: Partial<RemoteAccess>) => Promise<void>;
@@ -44,9 +46,12 @@ interface DataContextType {
     updateSoftwareLicense: (id: string, data: Partial<SoftwareLicense>) => Promise<void>;
     deleteSoftwareLicense: (id: string) => Promise<void>;
 
-    addTaxDeadline: (data: Omit<TaxDeadline, "id" | "createdAt">) => Promise<void>;
+    addTaxDeadline: (data: Omit<TaxDeadline, "id" | "createdAt"> & { completed?: boolean; user_id?: string }) => Promise<string>;
     updateTaxDeadline: (id: string, data: Partial<TaxDeadline>) => Promise<void>;
     deleteTaxDeadline: (id: string) => Promise<void>;
+
+    addTaxType: (data: Omit<TaxType, "id">) => Promise<void>;
+    deleteTaxType: (id: string) => Promise<void>;
 
     addServiceOrder: (order: Omit<ServiceOrder, "id" | "createdAt" | "updatedAt">) => Promise<string>;
     updateServiceOrder: (id: string, order: Partial<ServiceOrder>) => Promise<void>;
@@ -127,6 +132,8 @@ const DataContext = createContext<DataContextType>({
     corporateEmails: [],
     softwareLicenses: [],
     taxDeadlines: [],
+    taxTypes: [],
+    isTaxTypesTableMissing: false,
 
     addRemoteAccess: async () => { },
     updateRemoteAccess: async () => { },
@@ -144,9 +151,12 @@ const DataContext = createContext<DataContextType>({
     updateSoftwareLicense: async () => { },
     deleteSoftwareLicense: async () => { },
 
-    addTaxDeadline: async () => { },
+    addTaxDeadline: async () => "",
     updateTaxDeadline: async () => { },
     deleteTaxDeadline: async () => { },
+
+    addTaxType: async () => { },
+    deleteTaxType: async () => { },
 
     addServiceOrder: async () => "",
     updateServiceOrder: async () => { },
@@ -214,9 +224,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const [corporateEmails, setCorporateEmails] = useState<CorporateEmail[]>([]);
     const [softwareLicenses, setSoftwareLicenses] = useState<SoftwareLicense[]>([]);
     const [taxDeadlines, setTaxDeadlines] = useState<TaxDeadline[]>([]);
+    const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
+    const [isTaxTypesTableMissing, setIsTaxTypesTableMissing] = useState(false);
 
     const [loadingData, setLoadingData] = useState(true);
-    const { isAuthenticated, isMfaRequired, isMfaVerified, isLoading: authLoading } = useAuth();
+    const { user, isAuthenticated, isMfaRequired, isMfaVerified, isLoading: authLoading } = useAuth();
     const isFetchingData = React.useRef(false);
 
     // Initial Data Load from Supabase
@@ -237,7 +249,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             isFetchingData.current = true;
             setLoadingData(true);
             try {
-                console.log("DataContext: Starting Promise.all for 17 tables...");
+                console.log("DataContext: Starting Promise.all for 18 tables...");
                 const [
                     { data: contactsData },
                     { data: invoicesData },
@@ -255,7 +267,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     { data: antivirusLicensesData },
                     { data: corporateEmailsData },
                     { data: softwareLicensesData },
-                    { data: taxDeadlinesData }
+                    { data: taxDeadlinesData },
+                    { data: taxTypesData, error: taxTypesError }
                 ] = await Promise.all([
                     supabase.from('contacts').select('*').then(r => { console.log("Fetched: contacts", r.error || "OK"); return r; }),
                     supabase.from('invoices').select('*, items:invoice_items(*)').then(r => { console.log("Fetched: invoices", r.error || "OK"); return r; }),
@@ -273,9 +286,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     supabase.from('antivirus_licenses').select('*, devices:antivirus_devices(*), supplier:contacts(name)').then(r => { console.log("Fetched: antivirus_licenses", r.error || "OK"); return r; }),
                     supabase.from('corporate_emails').select('*, client:contacts(name)').then(r => { console.log("Fetched: corporate_emails", r.error || "OK"); return r; }),
                     supabase.from('software_licenses').select('*, client:contacts(name)').then(r => { console.log("Fetched: software_licenses", r.error || "OK"); return r; }),
-                    supabase.from('tax_deadlines').select('*').then(r => { console.log("Fetched: tax_deadlines", r.error || "OK"); return r; })
+                    supabase.from('tax_deadlines').select('*').then(r => { console.log("Fetched: tax_deadlines", r.error || "OK"); return r; }),
+                    supabase.from('tax_types').select('*').then(r => { console.log("Fetched: tax_types", r.error || "OK"); return r; })
                 ]);
-                console.log("DataContext: All 17 tables fetched successfully.");
+                console.log("DataContext: All 18 tables fetched successfully.");
 
                 // Mapping from snake_case to camelCase
                 setContacts((contactsData || []).map((c: any) => ({
@@ -443,8 +457,64 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     taxId: t.tax_id,
                     taxType: t.tax_type,
                     expirationDate: t.expiration_date,
+                    completed: t.completed,
                     createdAt: t.created_at
                 })));
+
+                if (taxTypesData && taxTypesData.length > 0) {
+                    setTaxTypes(taxTypesData);
+                    setIsTaxTypesTableMissing(false);
+                    
+                    // AUTO-SYNC: If there are local types, try to upload them
+                    const local = localStorage.getItem('fallback_tax_types');
+                    if (local) {
+                        const localTypes = JSON.parse(local) as TaxType[];
+                        const missingInDB = localTypes.filter(lt => !taxTypesData.some(dt => dt.name === lt.name));
+                        
+                        if (missingInDB.length > 0) {
+                            console.log(`Syncing ${missingInDB.length} tax types to Cloud...`);
+                            for (const lt of missingInDB) {
+                                await supabase.from('tax_types').insert({
+                                    id: lt.id,
+                                    name: lt.name,
+                                    user_id: user?.id
+                                });
+                            }
+                            // Refresh local state with combined data
+                            const { data: refreshed } = await supabase.from('tax_types').select('*');
+                            if (refreshed) setTaxTypes(refreshed);
+                        }
+                        // Clean up local storage after sync attempt
+                        localStorage.removeItem('fallback_tax_types');
+                    }
+                } else if (taxTypesError && taxTypesError.code === 'PGRST205') {
+                    console.warn("Table tax_types is missing, using local storage fallback.");
+                    setIsTaxTypesTableMissing(true);
+                    const local = localStorage.getItem('fallback_tax_types');
+                    if (local) setTaxTypes(JSON.parse(local));
+                } else {
+                    // Table exists but might be empty. 
+                    // Let's check local storage just in case there's unsynced data
+                    const local = localStorage.getItem('fallback_tax_types');
+                    if (local) {
+                        const localTypes = JSON.parse(local) as TaxType[];
+                        if (localTypes.length > 0) {
+                            console.log("Migrating local tax types to empty DB table...");
+                            for (const lt of localTypes) {
+                                await supabase.from('tax_types').insert({
+                                    id: lt.id,
+                                    name: lt.name,
+                                    user_id: user?.id
+                                });
+                            }
+                            const { data: refreshed } = await supabase.from('tax_types').select('*');
+                            if (refreshed) setTaxTypes(refreshed);
+                        }
+                        localStorage.removeItem('fallback_tax_types');
+                    } else {
+                        setTaxTypes(taxTypesData || []);
+                    }
+                }
 
                 // Initialize defaults if empty (Optional, strictly speaking Supabase SQL could handle this or we do it once)
                 if ((!categoriesData || categoriesData.length === 0)) {
@@ -1295,8 +1365,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (error) console.error("Error deleting software license:", error);
     };
 
-    const addTaxDeadline = async (data: Omit<TaxDeadline, "id" | "createdAt">) => {
-        const newRecord = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    const addTaxDeadline = async (data: Omit<TaxDeadline, "id" | "createdAt" | "completed"> & { completed?: boolean }) => {
+        const id = crypto.randomUUID();
+        const createdAt = new Date().toISOString();
+        const newRecord: TaxDeadline = { 
+            ...data, 
+            id, 
+            createdAt,
+            completed: data.completed ?? false
+        };
 
         const dbDeadline = {
             id: newRecord.id,
@@ -1304,13 +1381,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             tax_id: newRecord.taxId,
             tax_type: newRecord.taxType,
             expiration_date: newRecord.expirationDate,
-            completed: newRecord.completed ?? false
+            completed: newRecord.completed,
+            user_id: user?.id,
+            created_at: newRecord.createdAt
         };
 
         const { error } = await supabase.from('tax_deadlines').insert(dbDeadline);
         if (error) console.error("Error adding tax deadline:", error);
 
-        setTaxDeadlines(prev => [...prev, newRecord as TaxDeadline]);
+        setTaxDeadlines(prev => [...prev, newRecord]);
+        return id;
     };
 
     const updateTaxDeadline = async (id: string, patch: Partial<TaxDeadline>) => {
@@ -1331,6 +1411,59 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setTaxDeadlines(prev => prev.filter(t => t.id !== id));
         const { error } = await supabase.from('tax_deadlines').delete().eq('id', id);
         if (error) console.error("Error deleting tax deadline:", error);
+    };
+
+    const addTaxType = async (data: Omit<TaxType, "id">) => {
+        const newItem: TaxType = { 
+            ...data, 
+            id: crypto.randomUUID(), 
+            user_id: user?.id,
+            createdAt: new Date().toISOString() 
+        };
+        
+        setTaxTypes(prev => {
+            const updated = [...prev, newItem];
+            if (isTaxTypesTableMissing) {
+                localStorage.setItem('fallback_tax_types', JSON.stringify(updated));
+            }
+            return updated;
+        });
+
+        if (isTaxTypesTableMissing) return;
+
+        const { error } = await supabase.from('tax_types').insert({
+            id: newItem.id,
+            name: newItem.name,
+            user_id: user?.id
+        });
+        
+        if (error) {
+            console.error("Error adding tax type:", error);
+            if (error.code === 'PGRST205') {
+                setIsTaxTypesTableMissing(true);
+                localStorage.setItem('fallback_tax_types', JSON.stringify([...taxTypes, newItem]));
+                throw new Error("La tabla 'tax_types' no existe. Se guardará localmente por ahora.");
+            }
+            throw error;
+        }
+    };
+
+    const deleteTaxType = async (id: string) => {
+        setTaxTypes(prev => {
+            const updated = prev.filter(t => t.id !== id);
+            if (isTaxTypesTableMissing) {
+                localStorage.setItem('fallback_tax_types', JSON.stringify(updated));
+            }
+            return updated;
+        });
+
+        if (isTaxTypesTableMissing) return;
+
+        const { error } = await supabase.from('tax_types').delete().eq('id', id);
+        if (error) {
+            console.error("Error deleting tax type:", error);
+            throw error;
+        }
     };
 
     const exportData = async () => {
@@ -1468,7 +1601,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 'purchases', 'purchase_items',
                 'service_orders', 'service_order_items', 'payments',
                 'remote_access', 'antivirus_licenses', 'antivirus_devices',
-                'corporate_emails', 'software_licenses', 'tax_deadlines',
+                'corporate_emails', 'software_licenses', 'tax_deadlines', 'tax_types',
                 'user_roles' // Last RBAC likely due to user references
             ];
 
@@ -1496,7 +1629,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const value = React.useMemo(() => ({
         contacts, invoices, expenses, businessIdentities, supplierCategories, paymentMethods, payments, expenseCategories, products, purchases, wifiNetworks, serviceOrders,
-        remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines,
+        remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines, taxTypes,
         addContact, updateContact, deleteContact,
         addInvoice,
         updateInvoice,
@@ -1516,14 +1649,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addCorporateEmail, updateCorporateEmail, deleteCorporateEmail,
         addSoftwareLicense, updateSoftwareLicense, deleteSoftwareLicense,
         addTaxDeadline, updateTaxDeadline, deleteTaxDeadline,
+        addTaxType, deleteTaxType,
         exportData: downloadBackup, // Rename internal downloadBackup to external exportData for UI compatibility
         importData, 
         uploadBackupToCloud, listCloudBackups, restoreFromCloud,
         loadingData,
+        isTaxTypesTableMissing,
     }), [
         contacts, invoices, expenses, businessIdentities, supplierCategories, paymentMethods, payments, expenseCategories, products, purchases, wifiNetworks, serviceOrders,
-        remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines,
-        loadingData
+        remoteAccesses, antivirusLicenses, corporateEmails, softwareLicenses, taxDeadlines, taxTypes,
+        loadingData, isTaxTypesTableMissing
     ]);
 
     return (

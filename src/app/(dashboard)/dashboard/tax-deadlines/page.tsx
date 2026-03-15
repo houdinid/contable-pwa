@@ -64,13 +64,22 @@ export default function TaxDeadlinesListPage() {
                     <h1 className="text-2xl font-bold text-foreground">Obligaciones Fiscales</h1>
                     <p className="text-gray-500 dark:text-gray-400">Controla los vencimientos de impuestos y renovaciones.</p>
                 </div>
-                <Link
-                    href="/dashboard/tax-deadlines/create"
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-                >
-                    <Plus size={20} />
-                    Nueva Obligación
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                    <Link
+                        href="/dashboard/tax-deadlines/types"
+                        className="flex items-center justify-center gap-2 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                        <Landmark size={20} className="text-amber-500" />
+                        Gestionar Impuestos
+                    </Link>
+                    <Link
+                        href="/dashboard/tax-deadlines/create"
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                    >
+                        <Plus size={20} />
+                        Nueva Obligación
+                    </Link>
+                </div>
             </div>
 
             {/* Search */}

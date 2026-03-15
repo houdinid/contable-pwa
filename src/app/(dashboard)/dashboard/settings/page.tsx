@@ -1,7 +1,7 @@
 "use client";
 
 import { useData } from "@/context/data-context";
-import { Download, Upload, CheckCircle, Building2, Plus, Trash2, Edit, CreditCard } from "lucide-react";
+import { Download, Upload, CheckCircle, Building2, Plus, Trash2, Edit, CreditCard, Bell } from "lucide-react";
 import React, { useState } from "react";
 import type { BusinessIdentity } from "@/types";
 import { PaymentMethodsManager } from "@/components/payments/payment-methods-manager";
@@ -9,6 +9,7 @@ import { ProgrammingDocs } from "@/components/settings/programming-docs";
 import { toTitleCase, cleanEmail, cleanText, toLowerCaseAll } from "@/lib/utils";
 
 import { compressImage } from "@/lib/image-utils";
+import { PushNotificationManager } from "@/components/notifications/PushNotificationManager";
 
 export default function SettingsPage() {
     const { 
@@ -649,6 +650,22 @@ export default function SettingsPage() {
                             <p className="text-xs text-indigo-500 animate-pulse">Cargando respaldos de la nube...</p>
                         )}
                     </div>
+                </div>
+            </div>
+
+            {/* Notificaciones Push Section */}
+            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+                <div className="p-6 border-b border-border bg-muted/50">
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <Bell size={20} className="text-indigo-600 dark:text-indigo-400" />
+                        Notificaciones Externas (Celular/Escritorio)
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Recibe alertas de vencimiento directamente en tu dispositivo sin tener que abrir la aplicación.
+                    </p>
+                </div>
+                <div className="p-6">
+                    <PushNotificationManager />
                 </div>
             </div>
 

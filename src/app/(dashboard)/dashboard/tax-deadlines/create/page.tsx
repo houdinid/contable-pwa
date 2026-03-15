@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, Landmark, Calendar, Search, Plus } from "lucide-react";
 import { useData } from "@/context/data-context";
+import { TaxTypeFormModal } from "@/components/tax-deadlines/tax-type-modal";
 
 export default function CreateTaxDeadlinePage() {
     const router = useRouter();
-    const { addTaxDeadline, businessIdentities } = useData();
+    const { addTaxDeadline, businessIdentities, taxTypes, isTaxTypesTableMissing } = useData();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Form State
     const [businessName, setBusinessName] = useState("");
@@ -133,21 +135,26 @@ export default function CreateTaxDeadlinePage() {
                                         placeholder="Ej: Declaración de Renta, IVA, ICA..."
                                     />
                                     <datalist id="tax-types">
-                                        <option value="Declaración de Renta" />
-                                        <option value="IVA" />
-                                        <option value="ICA" />
-                                        <option value="Retención en la Fuente" />
-                                        <option value="Renovación Cámara de Comercio" />
-                                        <option value="Información Exógena" />
+                                        {/* Dynamic types from DB */}
+                                        {taxTypes.map(t => (
+                                            <option key={t.id} value={t.name} />
+                                        ))}
+                                        {/* Default fallbacks if needed */}
+                                        {taxTypes.length === 0 && (
+                                            <>
+                                                <option value="Declaración de Renta" />
+                                                <option value="IVA" />
+                                                <option value="ICA" />
+                                                <option value="Retención en la Fuente" />
+                                                <option value="Renovación Cámara de Comercio" />
+                                                <option value="Información Exógena" />
+                                            </>
+                                        )}
                                     </datalist>
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setTaxType("");
-                                        // Focus the input would be better but requires a ref
-                                        alert("Escribe el nuevo nombre del impuesto en el campo.");
-                                    }}
+                                    onClick={() => setIsModalOpen(true)}
                                     className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                                     title="Nuevo Tipo de Impuesto"
                                 >
@@ -196,6 +203,12 @@ export default function CreateTaxDeadlinePage() {
                     </button>
                 </div>
             </form>
+
+            <TaxTypeFormModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSuccess={(name) => setTaxType(name)}
+            />
         </div>
     );
 }

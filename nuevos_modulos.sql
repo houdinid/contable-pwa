@@ -107,6 +107,13 @@ CREATE TABLE IF NOT EXISTS public.tax_deadlines (
     tax_id TEXT NOT NULL,
     tax_type TEXT NOT NULL,
     expiration_date DATE NOT NULL,
+    completed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- 7. Tipos de Impuestos (Dinámico)
+CREATE TABLE IF NOT EXISTS public.tax_types (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 -- Políticas RLS para tax_deadlines
@@ -118,3 +125,10 @@ INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Enable update for authenticated users" ON public.tax_deadlines FOR
 UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "Enable delete for authenticated users" ON public.tax_deadlines FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Políticas RLS para tax_types
+ALTER TABLE public.tax_types ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read for all" ON public.tax_types FOR SELECT USING (true);
+CREATE POLICY "Enable insert for authenticated" ON public.tax_types FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable update for authenticated" ON public.tax_types FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable delete for authenticated" ON public.tax_types FOR DELETE USING (auth.role() = 'authenticated');
