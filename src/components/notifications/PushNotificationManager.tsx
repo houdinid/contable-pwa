@@ -103,25 +103,64 @@ export function PushNotificationManager() {
         }
     };
 
+    const sendTestNotification = async () => {
+        setLoading(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-push`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({ testUserId: user?.id })
+            });
+
+            if (!response.ok) throw new Error('Error al enviar la prueba');
+            alert('¡Notificación de prueba enviada! Deberías recibirla en unos segundos.');
+        } catch (err: any) {
+            setError('Error al enviar prueba: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading) return <Loader2 className="animate-spin text-indigo-600" size={20} />;
 
     return (
-        <div className="flex flex-col gap-2">
-            <button
-                onClick={isSubscribed ? unsubscribe : subscribe}
-                disabled={loading}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
-                    isSubscribed 
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' 
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                }`}
-            >
-                {isSubscribed ? <BellOff size={18} /> : <Bell size={18} />}
-                {isSubscribed ? 'Desactivar Notificaciones Push' : 'Activar Notificaciones Push'}
-            </button>
-            {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+        <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+                <button
+                    onClick={isSubscribed ? unsubscribe : subscribe}
+                    disabled={loading}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm ${
+                        isSubscribed 
+                        ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' 
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
+                    }`}
+                >
+                    {isSubscribed ? <BellOff size={18} /> : <Bell size={18} />}
+                    {isSubscribed ? 'Desactivar Notificaciones' : 'Activar Notificaciones Push'}
+                </button>
+
+                {isSubscribed && (
+                    <button
+                        onClick={sendTestNotification}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-colors font-medium text-sm"
+                    >
+                        <Bell size={18} />
+                        Probar Notificación
+                    </button>
+                )}
+            </div>
+            
+            {error && <p className="text-xs text-red-500 font-medium bg-red-50 p-2 rounded border border-red-100">{error}</p>}
+            
             {!isSubscribed && !error && (
-                <p className="text-[10px] text-gray-500">Recibe alertas directamente en tu celular.</p>
+                <p className="text-[10px] text-gray-500 bg-indigo-50/50 p-1.5 rounded inline-block w-fit">
+                    Recibe alertas directamente en tu celular sobre tus vencimientos.
+                </p>
             )}
         </div>
     );

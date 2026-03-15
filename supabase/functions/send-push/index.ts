@@ -17,8 +17,16 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
-  // 1. Buscar obligaciones vencidas hoy que no estén completadas
+  // Parse body for test mode
+  let testUserId = null;
+  try {
+    const body = await req.json();
+    testUserId = body.testUserId;
+  } catch (e) { /* ignore parse errors for empty bodies */ }
+
   const today = new Date().toISOString().split("T")[0];
+  
+  // 1. Get deadlines
   const { data: deadlines, error: dlError } = await supabaseClient
     .from("tax_deadlines")
     .select("*")
@@ -27,19 +35,23 @@ serve(async (req) => {
 
   if (dlError) throw dlError;
 
-  if (deadlines.length > 0) {
-    // 2. Obtener todas las suscripciones push
-    const { data: subscriptions, error: subError } = await supabaseClient
-      .from("push_subscriptions")
-      .select("*");
+  // 2. Get subscriptions (filtered if testing)
+  let query = supabaseClient.from("push_subscriptions").select("*");
+  if (testUserId) {
+    query = query.eq("user_id", testUserId);
+  }
+  
+  const { data: subscriptions, error: subError } = await query;
+  if (subError) throw subError;
 
-    if (subError) throw subError;
-
-    // 3. Enviar notificaciones
+  // 3. Send notifications
+  if (subscriptions && subscriptions.length > 0) {
     const sendPromises = subscriptions.map(async (sub) => {
       const payload = JSON.stringify({
-        title: "¡Vencimiento Hoy!",
-        body: `Tienes ${deadlines.length} obligación(es) que vencen hoy.`,
+        title: testUserId ? "🔔 Prueba de Notificación" : "¡Vencimiento Hoy!",
+        body: testUserId 
+          ? "Si ves esto, tus notificaciones están configuradas correctamente." 
+          : `Tienes ${deadlines.length} obligación(es) que vencen hoy.`,
         url: "/dashboard/tax-deadlines"
       });
 
@@ -47,7 +59,6 @@ serve(async (req) => {
         await webpush.sendNotification(sub.subscription, payload);
       } catch (error) {
         console.error("Error enviando notificación:", error);
-        // Si el endpoint ya no existe, borrar la suscripción
         if (error.statusCode === 404 || error.statusCode === 410) {
           await supabaseClient.from("push_subscriptions").delete().eq("id", sub.id);
         }
@@ -57,7 +68,7 @@ serve(async (req) => {
     await Promise.all(sendPromises);
   }
 
-  return new Response(JSON.stringify({ success: true }), {
+  return new Response(JSON.stringify({ success: true, notifiedCount: subscriptions?.length || 0 }), {
     headers: { "Content-Type": "application/json" },
     status: 200,
   });
