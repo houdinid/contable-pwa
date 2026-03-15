@@ -1,20 +1,36 @@
-"use client";
-
 import { useState } from "react";
 import { useData } from "@/context/data-context";
-import { Plus, Search, ShoppingCart, Calendar, FileText } from "lucide-react";
+import { Plus, Search, ShoppingCart, Calendar, FileText, Edit, Trash2 } from "lucide-react";
 import { PurchaseForm } from "@/components/purchases/purchase-form";
+import type { Purchase } from "@/types";
 
 export default function PurchasesPage() {
-    const { purchases } = useData();
+    const { purchases, deletePurchase } = useData();
     const [searchTerm, setSearchTerm] = useState("");
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingPurchase, setEditingPurchase] = useState<Purchase | undefined>(undefined);
 
     // Filter purchases
     const filteredPurchases = purchases.filter(p =>
         p.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.number?.toLowerCase().includes(searchTerm.toLowerCase())
     ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const handleEdit = (purchase: Purchase) => {
+        setEditingPurchase(purchase);
+        setIsFormOpen(true);
+    };
+
+    const handleDelete = async (id: string, number?: string) => {
+        if (confirm(`¿Estás seguro de eliminar la compra ${number || ""}?`)) {
+            await deletePurchase(id);
+        }
+    };
+
+    const handleCloseForm = () => {
+        setIsFormOpen(false);
+        setEditingPurchase(undefined);
+    };
 
     return (
         <div className="space-y-6">
@@ -24,7 +40,10 @@ export default function PurchasesPage() {
                     <p className="text-gray-500 dark:text-gray-400 transition-colors">Registra facturas de proveedores y entradas de inventario.</p>
                 </div>
                 <button
-                    onClick={() => setIsFormOpen(true)}
+                    onClick={() => {
+                        setEditingPurchase(undefined);
+                        setIsFormOpen(true);
+                    }}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                     <Plus size={20} />
@@ -57,7 +76,7 @@ export default function PurchasesPage() {
                                 <th className="px-6 py-3">Items</th>
                                 <th className="px-6 py-3 text-right">Total</th>
                                 <th className="px-6 py-3 text-center">Estado</th>
-                                <th className="px-6 py-3 text-center">Recibo</th>
+                                <th className="px-6 py-3 text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -90,21 +109,35 @@ export default function PurchasesPage() {
                                                 {purchase.status === 'paid' ? 'Pagada' : 'Pendiente'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            {purchase.receiptUrl ? (
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                {purchase.receiptUrl && (
+                                                    <button
+                                                        onClick={() => {
+                                                            const win = window.open();
+                                                            win?.document.write(`<img src="${purchase.receiptUrl}" style="max-width:100%"/>`);
+                                                        }}
+                                                        className="p-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
+                                                        title="Ver Recibo"
+                                                    >
+                                                        <FileText size={18} />
+                                                    </button>
+                                                )}
                                                 <button
-                                                    onClick={() => {
-                                                        const win = window.open();
-                                                        win?.document.write(`<img src="${purchase.receiptUrl}" style="max-width:100%"/>`);
-                                                    }}
-                                                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
-                                                    title="Ver Recibo"
+                                                    onClick={() => handleEdit(purchase)}
+                                                    className="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                                    title="Editar"
                                                 >
-                                                    <FileText size={18} />
+                                                    <Edit size={18} />
                                                 </button>
-                                            ) : (
-                                                <span className="text-gray-300 dark:text-gray-600">-</span>
-                                            )}
+                                                <button
+                                                    onClick={() => handleDelete(purchase.id, purchase.number)}
+                                                    className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -116,8 +149,9 @@ export default function PurchasesPage() {
 
             {isFormOpen && (
                 <PurchaseForm
-                    onClose={() => setIsFormOpen(false)}
-                    onSuccess={() => setIsFormOpen(false)}
+                    initialData={editingPurchase}
+                    onClose={handleCloseForm}
+                    onSuccess={handleCloseForm}
                 />
             )}
         </div>

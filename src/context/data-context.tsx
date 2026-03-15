@@ -58,6 +58,8 @@ interface DataContextType {
     deleteProduct: (id: string) => Promise<void>;
 
     addPurchase: (purchase: Omit<Purchase, "id" | "createdAt">) => Promise<void>;
+    updatePurchase: (id: string, purchase: Partial<Purchase>) => Promise<void>;
+    deletePurchase: (id: string) => Promise<void>;
 
     addContact: (contact: Omit<Contact, "id" | "createdAt">) => Promise<string>;
     updateContact: (id: string, contact: Partial<Contact>) => Promise<void>;
@@ -176,6 +178,8 @@ const DataContext = createContext<DataContextType>({
     updateProduct: async () => { },
     deleteProduct: async () => { },
     addPurchase: async () => { },
+    updatePurchase: async () => { },
+    deletePurchase: async () => { },
 
     addWifiNetwork: async () => { },
     updateWifiNetwork: async () => { },
@@ -926,6 +930,46 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const updatePurchase = async (id: string, patch: Partial<Purchase>) => {
+        setPurchases(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
+
+        const dbPatch: any = { ...patch };
+        if (patch.supplierId !== undefined) dbPatch.supplier_id = patch.supplierId;
+        if (patch.supplierName !== undefined) dbPatch.supplier_name = patch.supplierName;
+        if (patch.businessIdentityId !== undefined) dbPatch.business_identity_id = patch.businessIdentityId;
+        if (patch.receiptUrl !== undefined) dbPatch.receipt_url = patch.receiptUrl;
+
+        delete dbPatch.supplierId; delete dbPatch.supplierName; 
+        delete dbPatch.businessIdentityId; delete dbPatch.receiptUrl;
+        delete dbPatch.items;
+
+        if (patch.items) {
+            // Handle items update
+            await supabase.from('purchase_items').delete().eq('purchase_id', id);
+            
+            const dbItems = patch.items.map(item => ({
+                purchase_id: id,
+                product_id: item.productId,
+                product_name: item.productName,
+                unit_cost: item.unitCost,
+                quantity: item.quantity,
+                total: item.total
+            }));
+            await supabase.from('purchase_items').insert(dbItems);
+        }
+
+        const { error } = await supabase.from('purchases').update(dbPatch).eq('id', id);
+        if (error) console.error("Error updating purchase:", error);
+    };
+
+    const deletePurchase = async (id: string) => {
+        setPurchases(prev => prev.filter(p => p.id !== id));
+        // Delete items first
+        await supabase.from('purchase_items').delete().eq('purchase_id', id);
+        const { error } = await supabase.from('purchases').delete().eq('id', id);
+        if (error) console.error("Error deleting purchase:", error);
+    };
+
     const addWifiNetwork = async (data: Omit<WifiNetwork, "id" | "createdAt">) => {
         const newItem = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
         setWifiNetworks(prev => [...prev, newItem]);
@@ -1462,7 +1506,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addPaymentMethod, deletePaymentMethod, addPayment,
         addExpenseCategory, updateExpenseCategory, deleteExpenseCategory,
         addProduct, updateProduct, deleteProduct,
-        addPurchase,
+        addPurchase, updatePurchase, deletePurchase,
         addWifiNetwork, updateWifiNetwork, deleteWifiNetwork,
         addServiceOrder, updateServiceOrder, deleteServiceOrder,
         addRemoteAccess, updateRemoteAccess, deleteRemoteAccess,

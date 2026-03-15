@@ -1,37 +1,44 @@
-"use client";
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useData } from "@/context/data-context";
-import { X, Plus, Trash2, Save, ShoppingCart, Search, FileUp, FileText, AlertTriangle, Camera } from "lucide-react";
+import { X, Plus, Trash2, Save, ShoppingCart, Search, FileUp, FileText, AlertTriangle, Camera, ScanLine, Loader2 } from "lucide-react";
 import type { Purchase, PurchaseItem, Contact, Product } from "@/types";
 import { parseDianXml } from "@/lib/xml-parser";
 import { ProductFormModal } from "@/components/inventory/product-form-modal";
 import { compressImage } from "@/lib/image-utils";
 import { ContactFormModal } from "@/components/forms/contact-form-modal";
 import { MoneyInput } from "@/components/ui/money-input";
+import { OCRService } from "@/lib/ocr-service";
 
 interface PurchaseFormProps {
+    initialData?: Purchase;
     onClose: () => void;
     onSuccess?: () => void;
 }
 
-export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
-    const { contacts, products, addPurchase, addContact, businessIdentities, purchases } = useData();
+export function PurchaseForm({ initialData, onClose, onSuccess }: PurchaseFormProps) {
+    const { contacts, products, addPurchase, updatePurchase, addContact, businessIdentities, purchases } = useData();
+    const [loading, setLoading] = useState(false);
+    const [ocrLoading, setOcrLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const voucherInputRef = useRef<HTMLInputElement>(null);
 
-    const [supplierId, setSupplierId] = useState("");
+    const isEditing = !!initialData;
+
+    const [supplierId, setSupplierId] = useState(initialData?.supplierId || "");
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-    const [businessIdentityId, setBusinessIdentityId] = useState("");
+    const [businessIdentityId, setBusinessIdentityId] = useState(initialData?.businessIdentityId || "");
 
     // Filter suppliers and sort by frequency
-    const suppliers = contacts
-        .filter(c => c.type === 'supplier')
-        .sort((a, b) => {
-            const countA = purchases.filter(p => p.supplierId === a.id).length;
-            const countB = purchases.filter(p => p.supplierId === b.id).length;
-            return countB - countA; // Descending
-        });
+    const suppliers = useMemo(() => {
+        return contacts
+            .filter(c => c.type === 'supplier')
+            .sort((a, b) => {
+                const countA = purchases.filter(p => p.supplierId === a.id).length;
+                const countB = purchases.filter(p => p.supplierId === b.id).length;
+                return countB - countA; // Descending
+            });
+    }, [contacts, purchases]);
 
     // Auto-select defaults
     useEffect(() => {
@@ -45,12 +52,12 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
             }
         }
     }, [businessIdentities, businessIdentityId]);
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [number, setNumber] = useState("");
-    const [items, setItems] = useState<PurchaseItem[]>([]);
-    const [notes, setNotes] = useState("");
-    const [status, setStatus] = useState("paid");
-    const [receiptUrl, setReceiptUrl] = useState("");
+    const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
+    const [number, setNumber] = useState(initialData?.number || "");
+    const [items, setItems] = useState<PurchaseItem[]>(initialData?.items || []);
+    const [notes, setNotes] = useState(initialData?.notes || "");
+    const [status, setStatus] = useState(initialData?.status || "paid");
+    const [receiptUrl, setReceiptUrl] = useState(initialData?.receiptUrl || "");
 
     // New Item Inputs
     const [selectedProductId, setSelectedProductId] = useState("");
@@ -153,19 +160,12 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                     }
                 }
 
-                // 3. Auto-fill Items
-                // We'll map XML items to Purchase Items. 
-                // Problem: XML items don't map to Inventory Products 1:1 automatically.
-                // Solution: Add them as "Unlinked" items or try to match by name?
-                // For now, let's just add them to the visual list, maybe highlighting they need product mapping?
-                // For this MVP, we will just fill the "Items" table but they won't be linked to inventory PRODUCT IDs unless we find a name match.
-
                 const newItems: PurchaseItem[] = parsed.items.map(xmlItem => {
                     // Try exact name match
                     const productMatch = products.find(p => p.name.toLowerCase() === xmlItem.description.toLowerCase());
 
                     return {
-                        productId: productMatch?.id || "unknown", // "unknown" or empty string to indicate manual mapping needed?
+                        productId: productMatch?.id || "unknown", 
                         productName: xmlItem.description,
                         quantity: xmlItem.quantity,
                         unitCost: xmlItem.unitPrice,
@@ -180,6 +180,64 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
             }
         };
         reader.readAsText(file);
+    };
+
+    const handleVoucherUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setOcrLoading(true);
+
+        try {
+            // 1. Compress Image
+            const compressed = await compressImage(file);
+            setReceiptUrl(compressed);
+
+            // 2. Process with OCR
+            const text = await OCRService.recognizeText(file);
+            const parsed = OCRService.parseTransferReceipt(text, contacts); 
+
+            // 3. Auto-fill based on OCR
+            let messages: string[] = [];
+
+            if (parsed.amount) {
+                // If it's a simple receipt, maybe add it as a single generic item?
+                // Or just fill total if we support total without items? No, purchases need items.
+                // Let's add a generic item.
+                const genericItem: PurchaseItem = {
+                    productId: "unknown",
+                    productName: "Compra General (OCR)",
+                    quantity: 1,
+                    unitCost: parsed.amount,
+                    total: parsed.amount
+                };
+                setItems([genericItem]);
+                messages.push(`Monto detectado: $${parsed.amount.toLocaleString()}`);
+            }
+
+            if (parsed.date) {
+                setDate(parsed.date);
+                messages.push(`Fecha detectada: ${parsed.date}`);
+            }
+
+            if (parsed.matchedContactId) {
+                setSupplierId(parsed.matchedContactId);
+                const contactName = contacts.find(c => c.id === parsed.matchedContactId)?.name;
+                messages.push(`Proveedor detectado: ${contactName}`);
+            }
+
+            if (messages.length > 0) {
+                alert(`Comprobante leído con éxito:\n\n${messages.join('\n')}`);
+            } else {
+                alert("No se pudo extraer información clara del comprobante, pero la imagen se adjuntó.");
+            }
+
+        } catch (error) {
+            console.error("OCR Error:", error);
+            alert("Error al procesar el comprobante.");
+        } finally {
+            setOcrLoading(false);
+        }
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,6 +266,7 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
             return;
         }
 
+        setLoading(true);
         const total = items.reduce((sum, item) => sum + item.total, 0);
 
         const purchaseData: Omit<Purchase, "id" | "createdAt"> = {
@@ -219,17 +278,23 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
             total,
             status: status as 'pending' | 'paid',
             businessIdentityId,
-            receiptUrl, // Save the image
+            receiptUrl,
             notes
         };
 
         try {
-            await addPurchase(purchaseData);
+            if (isEditing && initialData) {
+                await updatePurchase(initialData.id, purchaseData);
+            } else {
+                await addPurchase(purchaseData);
+            }
             if (onSuccess) onSuccess();
             onClose();
         } catch (error) {
             console.error(error);
             alert("Error al guardar la compra.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -245,8 +310,8 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
         setProductModalData({
             name: item.productName,
             cost: item.unitCost,
-            price: item.unitCost * 1.3, // Suggest 30% margin?
-            stock: 0 // Initial stock is 0, purchase adds to it
+            price: item.unitCost * 1.3, 
+            stock: 0 
         });
         setProductModalOpen(true);
     };
@@ -263,7 +328,7 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
             newItems[editingItemIndex] = {
                 ...newItems[editingItemIndex],
                 productId: product.id,
-                productName: product.name // Update name in case user changed it in modal
+                productName: product.name 
             };
             setItems(newItems);
         } else {
@@ -279,7 +344,7 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                 <div className="flex justify-between items-center p-6 border-b border-border sticky top-0 bg-background z-10 transition-colors">
                     <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                         <ShoppingCart className="text-indigo-600 dark:text-indigo-400" />
-                        Registrar Compra
+                        {isEditing ? 'Editar Compra' : 'Registrar Compra'}
                     </h2>
 
                     <div className="flex items-center gap-2">
@@ -290,12 +355,29 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                             className="hidden"
                             onChange={handleXmlUpload}
                         />
+                        <input
+                            type="file"
+                            accept="image/*"
+                            ref={voucherInputRef}
+                            className="hidden"
+                            onChange={handleVoucherUpload}
+                        />
+
+                        <button
+                            onClick={() => voucherInputRef.current?.click()}
+                            disabled={ocrLoading}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 text-sm font-medium transition-colors"
+                        >
+                            {ocrLoading ? <Loader2 size={18} className="animate-spin" /> : <ScanLine size={18} />}
+                            {ocrLoading ? 'Leyendo...' : 'Subir Comprobante (OCR)'}
+                        </button>
+
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 text-sm font-medium transition-colors"
                         >
                             <FileUp size={18} />
-                            Importar XML
+                            XML
                         </button>
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 p-1 transition-colors">
                             <X size={24} />
@@ -367,16 +449,13 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                             <label className="block text-sm font-medium text-foreground mb-1">Estado de Pago</label>
                             <select
                                 className="w-full px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 text-foreground"
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
+                                onChange={(e) => setStatus(e.target.value as 'pending' | 'paid')}
                             >
                                 <option value="paid">Pagada / Contado</option>
                                 <option value="pending">Pendiente / Crédito</option>
                             </select>
                         </div>
                     </div>
-
-                    {/* Pending: XML Import Button Here */}
 
                     {/* Items Section */}
                     <div className="bg-muted/50 p-4 rounded-xl border border-border">
@@ -525,7 +604,7 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                             <input
                                 type="file"
                                 accept="image/*"
-                                capture="environment" // Hints mobile browsers to open camera
+                                capture="environment" 
                                 ref={imageInputRef}
                                 className="hidden"
                                 onChange={handleImageUpload}
@@ -570,10 +649,11 @@ export function PurchaseForm({ onClose, onSuccess }: PurchaseFormProps) {
                         </button>
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 font-medium shadow-sm shadow-indigo-200 dark:shadow-none"
+                            disabled={loading}
+                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 font-medium shadow-sm shadow-indigo-200 dark:shadow-none disabled:opacity-50"
                         >
-                            <Save size={18} />
-                            Guardar Compra
+                            {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                            {isEditing ? 'Guardar Cambios' : 'Guardar Compra'}
                         </button>
                     </div>
                 </form>

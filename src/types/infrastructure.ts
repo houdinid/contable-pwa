@@ -66,5 +66,6 @@ export interface TaxDeadline {
     taxId: string; // NIT
     taxType: string; // Renta, IVA, ICA, Cámara de Comercio, Retefuente
     expirationDate: string;
+    completed: boolean;
     createdAt: string;
 }
