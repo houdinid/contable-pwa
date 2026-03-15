@@ -106,17 +106,11 @@ export function PushNotificationManager() {
     const sendTestNotification = async () => {
         setLoading(true);
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-push`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token}`
-                },
-                body: JSON.stringify({ testUserId: user?.id })
+            const { error: funcError } = await supabase.functions.invoke('send-push', {
+                body: { testUserId: user?.id }
             });
 
-            if (!response.ok) throw new Error('Error al enviar la prueba');
+            if (funcError) throw funcError;
             alert('¡Notificación de prueba enviada! Deberías recibirla en unos segundos.');
         } catch (err: any) {
             setError('Error al enviar prueba: ' + err.message);
