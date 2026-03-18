@@ -17,69 +17,93 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS
+  console.log(`Request received: ${req.method} ${req.url}`);
+  
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-
-  // Parse body for test mode
-  let testUserId = null;
   try {
-    const body = await req.json();
-    testUserId = body.testUserId;
-  } catch (e) { /* ignore parse errors for empty bodies */ }
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
-  const today = new Date().toISOString().split("T")[0];
-  
-  // 1. Get deadlines
-  const { data: deadlines, error: dlError } = await supabaseClient
-    .from("tax_deadlines")
-    .select("*")
-    .eq("expiration_date", today)
-    .eq("completed", false);
+    // Parse body for test mode
+    let testUserId = null;
+    try {
+      const body = await req.json();
+      testUserId = body.testUserId;
+      console.log(`Test mode for user: ${testUserId}`);
+    } catch (e) {
+      console.log("Normal mode (no body or invalid JSON)");
+    }
 
-  if (dlError) throw dlError;
+    const today = new Date().toISOString().split("T")[0];
+    
+    // 1. Get deadlines
+    const { data: deadlines, error: dlError } = await supabaseClient
+      .from("tax_deadlines")
+      .select("*")
+      .eq("expiration_date", today)
+      .eq("completed", false);
 
-  // 2. Get subscriptions (filtered if testing)
-  let query = supabaseClient.from("push_subscriptions").select("*");
-  if (testUserId) {
-    query = query.eq("user_id", testUserId);
-  }
-  
-  const { data: subscriptions, error: subError } = await query;
-  if (subError) throw subError;
+    if (dlError) {
+      console.error("Database error (deadlines):", dlError);
+      throw dlError;
+    }
 
-  // 3. Send notifications
-  if (subscriptions && subscriptions.length > 0) {
-    const sendPromises = subscriptions.map(async (sub) => {
-      const payload = JSON.stringify({
-        title: testUserId ? "🔔 Prueba de Notificación" : "¡Vencimiento Hoy!",
-        body: testUserId 
-          ? "Si ves esto, tus notificaciones están configuradas correctamente." 
-          : `Tienes ${deadlines.length} obligación(es) que vencen hoy.`,
-        url: "/dashboard/tax-deadlines"
+    // 2. Get subscriptions (filtered if testing)
+    let query = supabaseClient.from("push_subscriptions").select("*");
+    if (testUserId) {
+      query = query.eq("user_id", testUserId);
+    }
+    
+    const { data: subscriptions, error: subError } = await query;
+    if (subError) {
+      console.error("Database error (subscriptions):", subError);
+      throw subError;
+    }
+
+    console.log(`Found ${subscriptions?.length || 0} subscriptions to notify.`);
+
+    // 3. Send notifications
+    if (subscriptions && subscriptions.length > 0) {
+      const sendPromises = subscriptions.map(async (sub) => {
+        const payload = JSON.stringify({
+          title: testUserId ? "🔔 Prueba de Notificación" : "¡Vencimiento Hoy!",
+          body: testUserId 
+            ? "Si ves esto, tus notificaciones están configuradas correctamente." 
+            : `Tienes ${deadlines.length} obligación(es) que vencen hoy.`,
+          url: "/dashboard/tax-deadlines"
+        });
+
+        try {
+          console.log(`Sending to subscription ${sub.id}...`);
+          await webpush.sendNotification(sub.subscription, payload);
+          console.log(`Success for ${sub.id}`);
+        } catch (error) {
+          console.error(`Error for subscription ${sub.id}:`, error);
+          if (error.statusCode === 404 || error.statusCode === 410) {
+            console.log(`Subscription ${sub.id} is expired, deleting...`);
+            await supabaseClient.from("push_subscriptions").delete().eq("id", sub.id);
+          }
+        }
       });
 
-      try {
-        await webpush.sendNotification(sub.subscription, payload);
-      } catch (error) {
-        console.error("Error enviando notificación:", error);
-        if (error.statusCode === 404 || error.statusCode === 410) {
-          await supabaseClient.from("push_subscriptions").delete().eq("id", sub.id);
-        }
-      }
+      await Promise.all(sendPromises);
+    }
+
+    return new Response(JSON.stringify({ success: true, notifiedCount: subscriptions?.length || 0 }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
     });
 
-    await Promise.all(sendPromises);
+  } catch (error) {
+    console.error("Global function error:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
   }
-
-  return new Response(JSON.stringify({ success: true, notifiedCount: subscriptions?.length || 0 }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-    status: 200,
-  });
 });

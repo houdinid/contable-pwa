@@ -269,7 +269,7 @@ export default function ContactsPage() {
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <button
-                                            onClick={() => setEditingContact(contact)}
+                                            onClick={() => handleEdit(contact)}
                                             className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors bg-background rounded-md border border-border"
                                             title="Editar contacto"
                                         >
