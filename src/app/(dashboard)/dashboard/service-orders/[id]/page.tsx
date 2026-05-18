@@ -223,7 +223,7 @@ export default function EditServiceOrderPage() {
                             <tbody className="divide-y divide-gray-200">
                                 {order.items.map((item) => (
                                     <tr key={item.id}>
-                                        <td className="py-2 break-words whitespace-pre-wrap">{item.description}</td>
+                                        <td className="py-2 break-words whitespace-pre-wrap text-justify">{item.description}</td>
                                         <td className="py-2 text-center text-gray-700">{item.quantity}</td>
                                         <td className="py-2 text-right text-gray-700">${item.price.toLocaleString()}</td>
                                         <td className="py-2 text-right font-medium">${item.total.toLocaleString()}</td>
@@ -257,13 +257,13 @@ export default function EditServiceOrderPage() {
                             {order.notes && (
                                 <div className="mb-2">
                                     <p className="font-bold mb-0.5">Notas de la Orden:</p>
-                                    <p className="whitespace-pre-wrap">{order.notes}</p>
+                                    <p className="whitespace-pre-wrap text-justify">{order.notes}</p>
                                 </div>
                             )}
                             {order.technicianNotes && (
                                 <div className="mb-2">
                                     <p className="font-bold mb-0.5">Reporte Técnico:</p>
-                                    <p className="whitespace-pre-wrap">{order.technicianNotes}</p>
+                                    <p className="whitespace-pre-wrap text-justify">{order.technicianNotes}</p>
                                 </div>
                             )}
                             <p className="mt-4 text-center text-gray-400">Generado por Contable PWA</p>

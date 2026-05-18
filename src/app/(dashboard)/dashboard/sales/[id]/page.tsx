@@ -411,7 +411,7 @@ export default function InvoiceDetailPage() {
                             <tbody className="divide-y divide-gray-100">
                                 {invoice.items.map((item) => (
                                     <tr key={item.id}>
-                                        <td className="py-2 text-gray-900 break-words whitespace-pre-wrap">{item.description}</td>
+                                        <td className="py-2 text-gray-900 break-words whitespace-pre-wrap text-justify">{item.description}</td>
                                         <td className="py-2 text-center text-gray-700">{item.quantity}</td>
                                         <td className="py-2 text-right text-gray-700">${item.price.toLocaleString()}</td>
                                         <td className="py-2 text-right font-medium text-gray-900">${item.total.toLocaleString()}</td>
@@ -448,7 +448,7 @@ export default function InvoiceDetailPage() {
                             {invoice.notes && (
                                 <div className="mb-4 text-left">
                                     <p className="font-semibold text-gray-700">Notas:</p>
-                                    <p>{invoice.notes}</p>
+                                    <p className="text-justify whitespace-pre-wrap">{invoice.notes}</p>
                                 </div>
                             )}
                             {includeBankDetails && emitter?.bankAccounts && emitter.bankAccounts.length > 0 && (
