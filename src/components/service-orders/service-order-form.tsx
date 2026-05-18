@@ -46,24 +46,33 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
     ]);
 
     const [hasDraft, setHasDraft] = useState(false);
+    const [isEditDraft, setIsEditDraft] = useState(false);
 
     // Detect saved draft on mount
     useEffect(() => {
-        if (!isEditing) {
-            const savedDraft = localStorage.getItem("contable_draft_service_order");
-            if (savedDraft) {
-                try {
-                    const parsed = JSON.parse(savedDraft);
+        const key = isEditing && initialData?.id 
+            ? `contable_draft_edit_service_order_${initialData.id}` 
+            : "contable_draft_service_order";
+            
+        const savedDraft = localStorage.getItem(key);
+        if (savedDraft) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                if (isEditing) {
+                    setHasDraft(true);
+                    setIsEditDraft(true);
+                } else {
                     const hasContent = parsed.clientName || (parsed.items && parsed.items.some((item: any) => item.description || item.price > 0)) || parsed.notes || parsed.technicianNotes;
                     if (hasContent) {
                         setHasDraft(true);
+                        setIsEditDraft(false);
                     }
-                } catch (e) {
-                    console.error("Error checking draft:", e);
                 }
+            } catch (e) {
+                console.error("Error checking draft:", e);
             }
         }
-    }, [isEditing]);
+    }, [isEditing, initialData?.id]);
 
     const isFirstRender = useRef(true);
 
@@ -74,7 +83,24 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
             return;
         }
 
-        if (!isEditing) {
+        const key = isEditing && initialData?.id 
+            ? `contable_draft_edit_service_order_${initialData.id}` 
+            : "contable_draft_service_order";
+
+        if (isEditing && initialData?.id) {
+            const draftData = {
+                clientName,
+                clientId,
+                date,
+                estimatedDate,
+                businessIdentityId,
+                status,
+                notes,
+                technicianNotes,
+                items
+            };
+            localStorage.setItem(key, JSON.stringify(draftData));
+        } else if (!isEditing) {
             const hasContent = clientName || (items && items.some(item => item.description || item.price > 0)) || estimatedDate || notes || technicianNotes;
             
             if (hasContent) {
@@ -89,15 +115,19 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
                     technicianNotes,
                     items
                 };
-                localStorage.setItem("contable_draft_service_order", JSON.stringify(draftData));
+                localStorage.setItem(key, JSON.stringify(draftData));
             } else {
-                localStorage.removeItem("contable_draft_service_order");
+                localStorage.removeItem(key);
             }
         }
-    }, [clientName, clientId, date, estimatedDate, businessIdentityId, status, notes, technicianNotes, items, isEditing]);
+    }, [clientName, clientId, date, estimatedDate, businessIdentityId, status, notes, technicianNotes, items, isEditing, initialData?.id]);
 
     const restoreDraft = () => {
-        const savedDraft = localStorage.getItem("contable_draft_service_order");
+        const key = isEditing && initialData?.id 
+            ? `contable_draft_edit_service_order_${initialData.id}` 
+            : "contable_draft_service_order";
+            
+        const savedDraft = localStorage.getItem(key);
         if (savedDraft) {
             try {
                 const parsed = JSON.parse(savedDraft);
@@ -118,7 +148,11 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
     };
 
     const discardDraft = () => {
-        localStorage.removeItem("contable_draft_service_order");
+        const key = isEditing && initialData?.id 
+            ? `contable_draft_edit_service_order_${initialData.id}` 
+            : "contable_draft_service_order";
+            
+        localStorage.removeItem(key);
         setHasDraft(false);
     };
 
@@ -225,7 +259,10 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
             };
 
             await onSubmit(submissionData);
-            localStorage.removeItem("contable_draft_service_order");
+            const key = isEditing && initialData?.id 
+                ? `contable_draft_edit_service_order_${initialData.id}` 
+                : "contable_draft_service_order";
+            localStorage.removeItem(key);
             router.push("/dashboard/service-orders");
         } catch (err) {
             alert("Error al guardar: " + (err as Error).message);
@@ -252,10 +289,13 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
                         </div>
                         <div>
                             <h4 className="font-semibold text-indigo-900 dark:text-indigo-200 text-sm">
-                                Borrador encontrado
+                                {isEditDraft ? 'Cambios sin guardar detectados' : 'Borrador encontrado'}
                             </h4>
                             <p className="text-xs text-indigo-700 dark:text-indigo-400">
-                                Tienes una sesión anterior sin guardar para esta Orden de Servicio. ¿Deseas restaurarla?
+                                {isEditDraft 
+                                    ? 'Tienes cambios temporales sin guardar para la edición de esta Orden de Servicio. ¿Deseas restaurarlos?'
+                                    : 'Tienes una sesión anterior sin guardar para esta Orden de Servicio. ¿Deseas restaurarla?'
+                                }
                             </p>
                         </div>
                     </div>

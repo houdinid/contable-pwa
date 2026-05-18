@@ -49,24 +49,33 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
     });
 
     const [hasDraft, setHasDraft] = useState(false);
+    const [isEditDraft, setIsEditDraft] = useState(false);
 
     // Detect saved draft on mount
     useEffect(() => {
-        if (!isEditing) {
-            const savedDraft = localStorage.getItem("contable_draft_invoice");
-            if (savedDraft) {
-                try {
-                    const parsed = JSON.parse(savedDraft);
+        const key = isEditing && initialData?.id 
+            ? `contable_draft_edit_invoice_${initialData.id}` 
+            : "contable_draft_invoice";
+            
+        const savedDraft = localStorage.getItem(key);
+        if (savedDraft) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                if (isEditing) {
+                    setHasDraft(true);
+                    setIsEditDraft(true);
+                } else {
                     const hasContent = parsed.contactName || (parsed.items && parsed.items.some((item: any) => item.description || item.price > 0));
                     if (hasContent) {
                         setHasDraft(true);
+                        setIsEditDraft(false);
                     }
-                } catch (e) {
-                    console.error("Error checking draft:", e);
                 }
+            } catch (e) {
+                console.error("Error checking draft:", e);
             }
         }
-    }, [isEditing]);
+    }, [isEditing, initialData?.id]);
 
     const isFirstRender = useRef(true);
 
@@ -77,7 +86,24 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
             return;
         }
 
-        if (!isEditing) {
+        const key = isEditing && initialData?.id 
+            ? `contable_draft_edit_invoice_${initialData.id}` 
+            : "contable_draft_invoice";
+
+        if (isEditing && initialData?.id) {
+            const draftData = {
+                contactName,
+                contactId,
+                date,
+                dueDate,
+                creditDays,
+                type,
+                issuerId,
+                items,
+                destinationAccountId: formData.destinationAccountId
+            };
+            localStorage.setItem(key, JSON.stringify(draftData));
+        } else if (!isEditing) {
             const hasContent = contactName || (items && items.some(item => item.description || item.price > 0)) || dueDate || creditDays;
             
             if (hasContent) {
@@ -92,15 +118,19 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                     items,
                     destinationAccountId: formData.destinationAccountId
                 };
-                localStorage.setItem("contable_draft_invoice", JSON.stringify(draftData));
+                localStorage.setItem(key, JSON.stringify(draftData));
             } else {
-                localStorage.removeItem("contable_draft_invoice");
+                localStorage.removeItem(key);
             }
         }
-    }, [contactName, contactId, date, dueDate, creditDays, type, issuerId, items, formData.destinationAccountId, isEditing]);
+    }, [contactName, contactId, date, dueDate, creditDays, type, issuerId, items, formData.destinationAccountId, isEditing, initialData?.id]);
 
     const restoreDraft = () => {
-        const savedDraft = localStorage.getItem("contable_draft_invoice");
+        const key = isEditing && initialData?.id 
+            ? `contable_draft_edit_invoice_${initialData.id}` 
+            : "contable_draft_invoice";
+            
+        const savedDraft = localStorage.getItem(key);
         if (savedDraft) {
             try {
                 const parsed = JSON.parse(savedDraft);
@@ -123,7 +153,11 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
     };
 
     const discardDraft = () => {
-        localStorage.removeItem("contable_draft_invoice");
+        const key = isEditing && initialData?.id 
+            ? `contable_draft_edit_invoice_${initialData.id}` 
+            : "contable_draft_invoice";
+            
+        localStorage.removeItem(key);
         setHasDraft(false);
     };
 
@@ -296,7 +330,10 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
             };
 
             await onSubmit(submissionData);
-            localStorage.removeItem("contable_draft_invoice");
+            const key = isEditing && initialData?.id 
+                ? `contable_draft_edit_invoice_${initialData.id}` 
+                : "contable_draft_invoice";
+            localStorage.removeItem(key);
             router.push("/dashboard/sales");
         } catch (err) {
             alert("Error al guardar: " + (err as Error).message);
@@ -328,10 +365,13 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                         </div>
                         <div>
                             <h4 className="font-semibold text-indigo-900 dark:text-indigo-200 text-sm">
-                                Borrador encontrado
+                                {isEditDraft ? 'Cambios sin guardar detectados' : 'Borrador encontrado'}
                             </h4>
                             <p className="text-xs text-indigo-700 dark:text-indigo-400">
-                                Tienes una sesión anterior sin guardar para esta {type === 'invoice' ? 'factura' : 'cotización'}. ¿Deseas restaurarla?
+                                {isEditDraft 
+                                    ? `Tienes cambios temporales sin guardar para la edición de esta ${type === 'invoice' ? 'factura' : 'cotización'}. ¿Deseas restaurarlos?`
+                                    : `Tienes una sesión anterior sin guardar para esta ${type === 'invoice' ? 'factura' : 'cotización'}. ¿Deseas restaurarla?`
+                                }
                             </p>
                         </div>
                     </div>
