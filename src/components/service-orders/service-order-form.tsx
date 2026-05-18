@@ -29,7 +29,7 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
     const [activeItemId, setActiveItemId] = useState<string | null>(null);
     const [productSuggestions, setProductSuggestions] = useState<{ itemId: string, products: any[] } | null>(null);
 
-    const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState((initialData?.date && initialData.date !== "") ? initialData.date : new Date().toISOString().split('T')[0]);
     const [estimatedDate, setEstimatedDate] = useState(initialData?.estimatedDate || "");
 
     // Default issuer logic
@@ -91,7 +91,7 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
             const draftData = {
                 clientName,
                 clientId,
-                date,
+                date: date || new Date().toISOString().split('T')[0],
                 estimatedDate,
                 businessIdentityId,
                 status,
@@ -107,7 +107,7 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
                 const draftData = {
                     clientName,
                     clientId,
-                    date,
+                    date: date || new Date().toISOString().split('T')[0],
                     estimatedDate,
                     businessIdentityId,
                     status,
@@ -133,7 +133,7 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
                 const parsed = JSON.parse(savedDraft);
                 if (parsed.clientName !== undefined) setClientName(parsed.clientName);
                 if (parsed.clientId !== undefined) setClientId(parsed.clientId);
-                if (parsed.date !== undefined) setDate(parsed.date);
+                if (parsed.date) setDate(parsed.date);
                 if (parsed.estimatedDate !== undefined) setEstimatedDate(parsed.estimatedDate);
                 if (parsed.businessIdentityId !== undefined) setBusinessIdentityId(parsed.businessIdentityId);
                 if (parsed.status !== undefined) setStatus(parsed.status);
@@ -411,7 +411,7 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
                                 <input
                                     type="date"
                                     value={date}
-                                    onChange={(e) => setDate(e.target.value)}
+                                    onChange={(e) => setDate(e.target.value || new Date().toISOString().split('T')[0])}
                                     className="w-full pl-10 pr-4 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-colors"
                                     required
                                 />
