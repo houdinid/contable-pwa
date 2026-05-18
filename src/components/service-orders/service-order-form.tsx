@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useData } from "@/context/data-context";
 import { Plus, Trash, Save, ArrowLeft, Calendar, User, FileText } from "lucide-react";
@@ -65,8 +65,15 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
         }
     }, [isEditing]);
 
+    const isFirstRender = useRef(true);
+
     // Save draft on form changes
     useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
         if (!isEditing) {
             const hasContent = clientName || (items && items.some(item => item.description || item.price > 0)) || estimatedDate || notes || technicianNotes;
             

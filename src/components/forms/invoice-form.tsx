@@ -68,8 +68,15 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
         }
     }, [isEditing]);
 
+    const isFirstRender = useRef(true);
+
     // Save draft on form changes
     useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
         if (!isEditing) {
             const hasContent = contactName || (items && items.some(item => item.description || item.price > 0)) || dueDate || creditDays;
             
