@@ -45,6 +45,76 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
         { id: '1', description: '', quantity: 1, price: 0, total: 0 }
     ]);
 
+    const [hasDraft, setHasDraft] = useState(false);
+
+    // Detect saved draft on mount
+    useEffect(() => {
+        if (!isEditing) {
+            const savedDraft = localStorage.getItem("contable_draft_service_order");
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    const hasContent = parsed.clientName || (parsed.items && parsed.items.some((item: any) => item.description || item.price > 0)) || parsed.notes || parsed.technicianNotes;
+                    if (hasContent) {
+                        setHasDraft(true);
+                    }
+                } catch (e) {
+                    console.error("Error checking draft:", e);
+                }
+            }
+        }
+    }, [isEditing]);
+
+    // Save draft on form changes
+    useEffect(() => {
+        if (!isEditing) {
+            const hasContent = clientName || (items && items.some(item => item.description || item.price > 0)) || estimatedDate || notes || technicianNotes;
+            
+            if (hasContent) {
+                const draftData = {
+                    clientName,
+                    clientId,
+                    date,
+                    estimatedDate,
+                    businessIdentityId,
+                    status,
+                    notes,
+                    technicianNotes,
+                    items
+                };
+                localStorage.setItem("contable_draft_service_order", JSON.stringify(draftData));
+            } else {
+                localStorage.removeItem("contable_draft_service_order");
+            }
+        }
+    }, [clientName, clientId, date, estimatedDate, businessIdentityId, status, notes, technicianNotes, items, isEditing]);
+
+    const restoreDraft = () => {
+        const savedDraft = localStorage.getItem("contable_draft_service_order");
+        if (savedDraft) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                if (parsed.clientName !== undefined) setClientName(parsed.clientName);
+                if (parsed.clientId !== undefined) setClientId(parsed.clientId);
+                if (parsed.date !== undefined) setDate(parsed.date);
+                if (parsed.estimatedDate !== undefined) setEstimatedDate(parsed.estimatedDate);
+                if (parsed.businessIdentityId !== undefined) setBusinessIdentityId(parsed.businessIdentityId);
+                if (parsed.status !== undefined) setStatus(parsed.status);
+                if (parsed.notes !== undefined) setNotes(parsed.notes);
+                if (parsed.technicianNotes !== undefined) setTechnicianNotes(parsed.technicianNotes);
+                if (parsed.items !== undefined) setItems(parsed.items);
+                setHasDraft(false);
+            } catch (e) {
+                console.error("Error restoring draft:", e);
+            }
+        }
+    };
+
+    const discardDraft = () => {
+        localStorage.removeItem("contable_draft_service_order");
+        setHasDraft(false);
+    };
+
     // Filter contacts based on input and type 'client'
     const filteredContacts = contacts.filter(c =>
         c.type === 'client' && (
@@ -148,6 +218,7 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
             };
 
             await onSubmit(submissionData);
+            localStorage.removeItem("contable_draft_service_order");
             router.push("/dashboard/service-orders");
         } catch (err) {
             alert("Error al guardar: " + (err as Error).message);
@@ -165,6 +236,40 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
                 onClose={() => setShowNewContactModal(false)}
                 onSuccess={handleNewContactSuccess}
             />
+
+            {hasDraft && (
+                <div className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg">
+                            <span className="text-xl">📝</span>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-indigo-900 dark:text-indigo-200 text-sm">
+                                Borrador encontrado
+                            </h4>
+                            <p className="text-xs text-indigo-700 dark:text-indigo-400">
+                                Tienes una sesión anterior sin guardar para esta Orden de Servicio. ¿Deseas restaurarla?
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 self-end sm:self-center shrink-0">
+                        <button
+                            type="button"
+                            onClick={restoreDraft}
+                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
+                        >
+                            Restaurar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={discardDraft}
+                            className="px-3 py-1.5 border border-indigo-200 hover:bg-indigo-100 dark:border-indigo-800 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                        >
+                            Descartar
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
                 <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">

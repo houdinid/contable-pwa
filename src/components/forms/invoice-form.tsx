@@ -48,6 +48,78 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
         destinationAccountId: initialData?.destinationAccountId || ""
     });
 
+    const [hasDraft, setHasDraft] = useState(false);
+
+    // Detect saved draft on mount
+    useEffect(() => {
+        if (!isEditing) {
+            const savedDraft = localStorage.getItem("contable_draft_invoice");
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    const hasContent = parsed.contactName || (parsed.items && parsed.items.some((item: any) => item.description || item.price > 0));
+                    if (hasContent) {
+                        setHasDraft(true);
+                    }
+                } catch (e) {
+                    console.error("Error checking draft:", e);
+                }
+            }
+        }
+    }, [isEditing]);
+
+    // Save draft on form changes
+    useEffect(() => {
+        if (!isEditing) {
+            const hasContent = contactName || (items && items.some(item => item.description || item.price > 0)) || dueDate || creditDays;
+            
+            if (hasContent) {
+                const draftData = {
+                    contactName,
+                    contactId,
+                    date,
+                    dueDate,
+                    creditDays,
+                    type,
+                    issuerId,
+                    items,
+                    destinationAccountId: formData.destinationAccountId
+                };
+                localStorage.setItem("contable_draft_invoice", JSON.stringify(draftData));
+            } else {
+                localStorage.removeItem("contable_draft_invoice");
+            }
+        }
+    }, [contactName, contactId, date, dueDate, creditDays, type, issuerId, items, formData.destinationAccountId, isEditing]);
+
+    const restoreDraft = () => {
+        const savedDraft = localStorage.getItem("contable_draft_invoice");
+        if (savedDraft) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                if (parsed.contactName !== undefined) setContactName(parsed.contactName);
+                if (parsed.contactId !== undefined) setContactId(parsed.contactId);
+                if (parsed.date !== undefined) setDate(parsed.date);
+                if (parsed.dueDate !== undefined) setDueDate(parsed.dueDate);
+                if (parsed.creditDays !== undefined) setCreditDays(parsed.creditDays || "");
+                if (parsed.type !== undefined) setType(parsed.type);
+                if (parsed.issuerId !== undefined) setIssuerId(parsed.issuerId);
+                if (parsed.items !== undefined) setItems(parsed.items);
+                if (parsed.destinationAccountId !== undefined) {
+                    setFormData((prev: any) => ({ ...prev, destinationAccountId: parsed.destinationAccountId }));
+                }
+                setHasDraft(false);
+            } catch (e) {
+                console.error("Error restoring draft:", e);
+            }
+        }
+    };
+
+    const discardDraft = () => {
+        localStorage.removeItem("contable_draft_invoice");
+        setHasDraft(false);
+    };
+
     // Filter contacts based on input and type 'client'
     const filteredContacts = contacts.filter(c =>
         c.type === 'client' && (
@@ -217,6 +289,7 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
             };
 
             await onSubmit(submissionData);
+            localStorage.removeItem("contable_draft_invoice");
             router.push("/dashboard/sales");
         } catch (err) {
             alert("Error al guardar: " + (err as Error).message);
@@ -239,6 +312,40 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
                 onClose={() => setShowNewProductModal(false)}
                 onSuccess={handleNewProductSuccess}
             />
+
+            {hasDraft && (
+                <div className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg">
+                            <span className="text-xl">📝</span>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-indigo-900 dark:text-indigo-200 text-sm">
+                                Borrador encontrado
+                            </h4>
+                            <p className="text-xs text-indigo-700 dark:text-indigo-400">
+                                Tienes una sesión anterior sin guardar para esta {type === 'invoice' ? 'factura' : 'cotización'}. ¿Deseas restaurarla?
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 self-end sm:self-center shrink-0">
+                        <button
+                            type="button"
+                            onClick={restoreDraft}
+                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
+                        >
+                            Restaurar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={discardDraft}
+                            className="px-3 py-1.5 border border-indigo-200 hover:bg-indigo-100 dark:border-indigo-800 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                        >
+                            Descartar
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
