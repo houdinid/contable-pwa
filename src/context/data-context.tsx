@@ -1162,7 +1162,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             business_identity_id: (orderHeader.businessIdentityId && orderHeader.businessIdentityId !== "") ? orderHeader.businessIdentityId : null
         });
 
-        if (error) { console.error("Error adding service order:", error); return ""; }
+        if (error) {
+            console.error("Error adding service order:", error);
+            // Rollback optimistic update
+            setServiceOrders(prev => prev.filter(o => o.id !== newOrder.id));
+            throw new Error(error.message || "Error al agregar orden de servicio en la base de datos");
+        }
 
         if (items && items.length > 0) {
             const itemsToInsert = items.map(item => ({
@@ -1176,7 +1181,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 return { ...rest, product_id: productId };
             });
             const { error: itemsError } = await supabase.from('service_order_items').insert(dbItems);
-            if (itemsError) console.error("Error adding service order items:", itemsError);
+            if (itemsError) {
+                console.error("Error adding service order items:", itemsError);
+                throw new Error(itemsError.message || "Error al agregar los ítems de la orden de servicio");
+            }
         }
 
         return newOrder.id;
@@ -1202,7 +1210,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         delete dbPatch.invoiceId; delete dbPatch.businessIdentityId; delete dbPatch.items;
 
         const { error } = await supabase.from('service_orders').update(dbPatch).eq('id', id);
-        if (error) console.error("Error updating service order:", error);
+        if (error) {
+            console.error("Error updating service order:", error);
+            throw new Error(error.message || "Error al actualizar orden de servicio en la base de datos");
+        }
     };
 
     const deleteServiceOrder = async (id: string) => {
