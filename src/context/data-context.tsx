@@ -1170,15 +1170,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (items && items.length > 0) {
-            const itemsToInsert = items.map(item => ({
-                ...item,
-                service_order_id: newOrder.id,
-                product_id: item.productId
-            }));
-            // Map keys
-            const dbItems = itemsToInsert.map(i => {
-                const { productId, ...rest } = i;
-                return { ...rest, product_id: productId };
+            // Map keys and strip local React id to let postgres generate a random uuid automatically
+            const dbItems = items.map(item => {
+                const { id, productId, ...rest } = item;
+                return {
+                    ...rest,
+                    service_order_id: newOrder.id,
+                    product_id: (productId && productId !== "") ? productId : null
+                };
             });
             const { error: itemsError } = await supabase.from('service_order_items').insert(dbItems);
             if (itemsError) {
