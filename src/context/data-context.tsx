@@ -1194,14 +1194,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setServiceOrders(prev => prev.map(o => o.id === id ? { ...o, ...patch, updatedAt: now } : o));
 
         const dbPatch: any = { ...patch, updated_at: now };
-        if (patch.clientId !== undefined) dbPatch.client_id = patch.clientId;
-        if (patch.clientName !== undefined) dbPatch.client_name = patch.clientName;
-        if (patch.clientEmail !== undefined) dbPatch.client_email = patch.clientEmail;
-        if (patch.clientPhone !== undefined) dbPatch.client_phone = patch.clientPhone;
-        if (patch.estimatedDate !== undefined) dbPatch.estimated_date = patch.estimatedDate;
-        if (patch.technicianNotes !== undefined) dbPatch.technician_notes = patch.technicianNotes;
-        if (patch.invoiceId !== undefined) dbPatch.invoice_id = patch.invoiceId;
-        if (patch.businessIdentityId !== undefined) dbPatch.business_identity_id = patch.businessIdentityId;
+        if (patch.clientId !== undefined) dbPatch.client_id = (patch.clientId && patch.clientId !== "") ? patch.clientId : null;
+        if (patch.clientName !== undefined) dbPatch.client_name = patch.clientName || null;
+        if (patch.clientEmail !== undefined) dbPatch.client_email = patch.clientEmail || null;
+        if (patch.clientPhone !== undefined) dbPatch.client_phone = patch.clientPhone || null;
+        if (patch.estimatedDate !== undefined) dbPatch.estimated_date = (patch.estimatedDate && patch.estimatedDate !== "") ? patch.estimatedDate : null;
+        if (patch.technicianNotes !== undefined) dbPatch.technician_notes = patch.technicianNotes || null;
+        if (patch.invoiceId !== undefined) dbPatch.invoice_id = (patch.invoiceId && patch.invoiceId !== "") ? patch.invoiceId : null;
+        if (patch.businessIdentityId !== undefined) dbPatch.business_identity_id = (patch.businessIdentityId && patch.businessIdentityId !== "") ? patch.businessIdentityId : null;
         if (patch.updatedAt) delete dbPatch.updatedAt; // we set updated_at manually
 
         delete dbPatch.clientId; delete dbPatch.clientName; delete dbPatch.clientEmail;
