@@ -326,15 +326,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     createdAt: e.created_at
                 })));
 
-                setBusinessIdentities((identitiesData || []).map((id: any) => ({
-                    ...id,
-                    taxId: id.tax_id,
-                    dv: id.dv,
-                    logoUrl: id.logo_url,
-                    isDefault: id.is_default,
-                    isTaxPayer: id.is_tax_payer,
-                    bankAccounts: id.bank_accounts
-                })));
+                setBusinessIdentities((identitiesData || []).map((id: any) => {
+                    const [cleanTaxId, parsedDv] = (id.tax_id || "").split('-');
+                    return {
+                        ...id,
+                        taxId: cleanTaxId || id.tax_id,
+                        dv: parsedDv || "",
+                        logoUrl: id.logo_url,
+                        isDefault: id.is_default,
+                        isTaxPayer: id.is_tax_payer,
+                        bankAccounts: id.bank_accounts
+                    };
+                }));
 
                 setSupplierCategories(categoriesData || []);
                 setPaymentMethods(methodsData || []);
@@ -562,7 +565,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         if (error) {
             console.error("Error adding contact:", error);
-            // Rollback could go here
+            // Rollback optimistic update
+            setContacts(prev => prev.filter(c => c.id !== newContact.id));
+            throw new Error(error.message || "Error al agregar contacto en la base de datos");
         }
         return newContact.id;
     };
@@ -766,11 +771,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             setBusinessIdentities(prev => [...prev, newIdentity]);
         }
 
+        const taxIdWithDv = newIdentity.dv ? `${newIdentity.taxId}-${newIdentity.dv}` : newIdentity.taxId;
         const { error } = await supabase.from('business_identities').insert({
             id: newIdentity.id,
             name: newIdentity.name,
-            tax_id: newIdentity.taxId,
-            dv: newIdentity.dv || null,
+            tax_id: taxIdWithDv,
             address: newIdentity.address || null,
             city: newIdentity.city || null,
             email: newIdentity.email || null,
@@ -779,7 +784,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             is_tax_payer: newIdentity.isTaxPayer || false,
             bank_accounts: newIdentity.bankAccounts || []
         });
-        if (error) console.error("Error adding identity:", error);
+        if (error) {
+            console.error("Error adding identity:", error);
+            // Rollback optimistic update
+            setBusinessIdentities(prev => prev.filter(i => i.id !== newIdentity.id));
+            throw new Error(error.message || "Error al agregar razón social en la base de datos");
+        }
     };
 
     const updateBusinessIdentity = async (id: string, patch: Partial<BusinessIdentity>) => {
@@ -790,23 +800,40 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
 
         const dbPatch: any = { ...patch };
-        if (patch.taxId !== undefined) dbPatch.tax_id = patch.taxId;
-        if (patch.dv !== undefined) dbPatch.dv = patch.dv || null;
         if (patch.logoUrl !== undefined) dbPatch.logo_url = patch.logoUrl;
         if (patch.isDefault !== undefined) dbPatch.is_default = patch.isDefault;
         if (patch.isTaxPayer !== undefined) dbPatch.is_tax_payer = patch.isTaxPayer;
         if (patch.bankAccounts !== undefined) dbPatch.bank_accounts = patch.bankAccounts;
 
-        delete dbPatch.taxId; delete dbPatch.dv; delete dbPatch.logoUrl; delete dbPatch.isDefault; delete dbPatch.isTaxPayer; delete dbPatch.bankAccounts;
+        if (patch.taxId !== undefined || patch.dv !== undefined) {
+            const currentIdentity = businessIdentities.find(i => i.id === id);
+            const finalTaxId = patch.taxId !== undefined ? patch.taxId : (currentIdentity?.taxId || "");
+            const finalDv = patch.dv !== undefined ? patch.dv : (currentIdentity?.dv || "");
+            dbPatch.tax_id = finalDv ? `${finalTaxId}-${finalDv}` : finalTaxId;
+        }
+
+        // Remove properties that don't exist in DB
+        delete dbPatch.taxId;
+        delete dbPatch.dv;
+        delete dbPatch.logoUrl;
+        delete dbPatch.isDefault;
+        delete dbPatch.isTaxPayer;
+        delete dbPatch.bankAccounts;
 
         const { error } = await supabase.from('business_identities').update(dbPatch).eq('id', id);
-        if (error) console.error("Error updating identity:", error);
+        if (error) {
+            console.error("Error updating identity:", error);
+            throw new Error(error.message || "Error al actualizar razón social en la base de datos");
+        }
     };
 
     const deleteBusinessIdentity = async (id: string) => {
         setBusinessIdentities(prev => prev.filter(i => i.id !== id));
         const { error } = await supabase.from('business_identities').delete().eq('id', id);
-        if (error) console.error("Error deleting identity:", error);
+        if (error) {
+            console.error("Error deleting identity:", error);
+            throw new Error(error.message || "Error al eliminar razón social en la base de datos");
+        }
     };
 
     const addSupplierCategory = async (name: string) => {
@@ -1477,7 +1504,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 'purchases', 'purchase_items',
                 'service_orders', 'service_order_items', 'payments',
                 'remote_access', 'antivirus_licenses', 'antivirus_devices',
-                'corporate_emails', 'software_licenses', 'tax_deadlines',
+                'corporate_emails', 'software_licenses', 'tax_deadlines', 'tax_types',
                 'roles', 'modules', 'permissions', 'user_roles'
             ];
 
