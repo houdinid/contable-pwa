@@ -16,7 +16,7 @@ export default function InvoiceDetailPage() {
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [includeBankDetails, setIncludeBankDetails] = useState(true);
+    const [includeBankDetails, setIncludeBankDetails] = useState(false);
 
     const handleDownloadPDF = async () => {
         if (!invoice) return;
