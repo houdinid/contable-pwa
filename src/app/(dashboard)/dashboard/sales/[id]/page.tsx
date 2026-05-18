@@ -16,6 +16,7 @@ export default function InvoiceDetailPage() {
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [includeBankDetails, setIncludeBankDetails] = useState(true);
 
     const handleDownloadPDF = async () => {
         if (!invoice) return;
@@ -450,6 +451,22 @@ export default function InvoiceDetailPage() {
                                     <p>{invoice.notes}</p>
                                 </div>
                             )}
+                            {includeBankDetails && emitter?.bankAccounts && emitter.bankAccounts.length > 0 && (
+                                <div className="mb-6 text-left p-3 bg-gray-50 dark:bg-gray-850/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <p className="font-bold text-gray-800 dark:text-gray-200 text-xs mb-2 flex items-center gap-1.5">
+                                        <span>🏦</span> Cuentas Bancarias Autorizadas para Pago:
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {emitter.bankAccounts.map((acc, idx) => (
+                                            <div key={idx} className="bg-white dark:bg-card p-2 rounded-lg border border-gray-150 dark:border-border text-[10px] text-gray-600 dark:text-gray-400 shadow-sm">
+                                                <p className="font-semibold text-gray-800 dark:text-gray-200">{acc.bankName}</p>
+                                                <p className="font-medium mt-0.5">N° Cuenta: <span className="font-mono text-xs text-gray-900 dark:text-gray-100">{acc.accountNumber}</span></p>
+                                                <p className="text-gray-500 mt-0.5 capitalize">{acc.accountType === 'savings' ? 'Ahorros' : 'Corriente'}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             <p>Favor realizar sus pagos a nombre de {emitter?.name}.</p>
                             <p className="mt-0.5">Esta factura de venta se asimila en todos sus efectos a una letra de cambio según los términos del Art. 774 del Código de Comercio.</p>
                             <p className="mt-2 text-gray-400">Generado por Contable PWA | © Todos los derechos reservados por Lg Ingenieros Sas</p>
@@ -459,6 +476,24 @@ export default function InvoiceDetailPage() {
 
                 {/* Sidebar: Payments & Status (Hidden on Print) */}
                 <div className="space-y-6 print:hidden">
+                    {/* Bank Accounts Inclusion Toggle */}
+                    {emitter?.bankAccounts && emitter.bankAccounts.length > 0 && (
+                        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3 text-sm">
+                                🏦 Cuentas de Cobro
+                            </h3>
+                            <label className="flex items-center gap-3 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
+                                <input
+                                    type="checkbox"
+                                    checked={includeBankDetails}
+                                    onChange={(e) => setIncludeBankDetails(e.target.checked)}
+                                    className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                />
+                                Incluir datos bancarios en PDF/Impresión
+                            </label>
+                        </div>
+                    )}
+
                     {/* Payment Status Card */}
                     <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
                         <h3 className="font-semibold text-gray-900 mb-4">Estado del Pago</h3>
