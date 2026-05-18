@@ -777,6 +777,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             name: newIdentity.name,
             tax_id: taxIdWithDv,
             address: newIdentity.address || null,
+            phone: newIdentity.phone || null,
             city: newIdentity.city || null,
             email: newIdentity.email || null,
             logo_url: newIdentity.logoUrl || null,

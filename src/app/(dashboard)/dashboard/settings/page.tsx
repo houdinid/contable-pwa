@@ -37,6 +37,7 @@ export default function SettingsPage() {
         dv: "",
         address: "",
         city: "",
+        phone: "",
         email: "",
         logoUrl: "",
         isDefault: false,
@@ -60,7 +61,7 @@ export default function SettingsPage() {
     };
 
     const resetForm = () => {
-        setIdentityForm({ name: "", taxId: "", dv: "", address: "", city: "", email: "", logoUrl: "", isDefault: false, isTaxPayer: true, bankAccounts: [] });
+        setIdentityForm({ name: "", taxId: "", dv: "", address: "", city: "", phone: "", email: "", logoUrl: "", isDefault: false, isTaxPayer: true, bankAccounts: [] });
         setEditingId(null);
     };
 
@@ -73,6 +74,7 @@ export default function SettingsPage() {
                 dv: identity.dv || "",
                 address: identity.address || "",
                 city: identity.city || "",
+                phone: identity.phone || "",
                 email: identity.email || "",
                 logoUrl: identity.logoUrl || "",
                 isDefault: identity.isDefault,
@@ -201,6 +203,7 @@ export default function SettingsPage() {
                             dv,
                             address,
                             city,
+                            phone: "",
                             email,
                             isDefault: false,
                             isTaxPayer: true,
@@ -295,7 +298,10 @@ export default function SettingsPage() {
                                                 <span className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">Predeterminado</span>
                                             )}
                                         </div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">NIT: {id.taxId}{id.dv ? `-${id.dv}` : ''} | {id.address}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            NIT: {id.taxId}{id.dv ? `-${id.dv}` : ''} | {id.address}
+                                            {id.phone && ` | Cel: ${id.phone}`}
+                                        </p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
@@ -408,14 +414,27 @@ export default function SettingsPage() {
                                     onChange={e => setIdentityForm({ ...identityForm, address: e.target.value })}
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1">Email (Opcional)</label>
-                                <input
-                                    type="email"
-                                    className="w-full px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 text-foreground"
-                                    value={identityForm.email}
-                                    onChange={e => setIdentityForm({ ...identityForm, email: e.target.value })}
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground mb-1">Celular / Teléfono (Opcional)</label>
+                                    <input
+                                        type="tel"
+                                        className="w-full px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 text-foreground"
+                                        value={identityForm.phone || ""}
+                                        onChange={e => setIdentityForm({ ...identityForm, phone: e.target.value })}
+                                        placeholder="Ej: 3001234567"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground mb-1">Email (Opcional)</label>
+                                    <input
+                                        type="email"
+                                        className="w-full px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 text-foreground"
+                                        value={identityForm.email}
+                                        onChange={e => setIdentityForm({ ...identityForm, email: e.target.value })}
+                                        placeholder="Ej: contacto@empresa.com"
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer mb-2">
