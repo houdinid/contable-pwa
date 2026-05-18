@@ -202,12 +202,14 @@ export default function EditServiceOrderPage() {
                                 </div>
                             )}
                         </div>
-                        <div className="text-right">
-                            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Detalles</h3>
-                            <div className="text-gray-600 text-sm space-y-0.5">
-                                {order.estimatedDate && <p><span className="font-medium">Entrega Estimada:</span> {order.estimatedDate.split('T')[0]}</p>}
+                        {order.estimatedDate && (
+                            <div className="text-right">
+                                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Detalles</h3>
+                                <div className="text-gray-600 text-sm space-y-0.5">
+                                    <p><span className="font-medium">Entrega Estimada:</span> {order.estimatedDate.split('T')[0]}</p>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     <div className="mb-6">

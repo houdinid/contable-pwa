@@ -375,7 +375,7 @@ export default function InvoiceDetailPage() {
                     {/* Client Info */}
                     <div className="mb-6 flex flex-col sm:flex-row justify-between gap-4 sm:gap-0">
                         <div>
-                            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Facturar A</h3>
+                            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Cliente</h3>
                             <p className="font-semibold text-gray-900 text-base">{invoice.contactName}</p>
                             {contact ? (
                                 <div className="text-gray-600 text-sm mt-1 space-y-0.5">
@@ -388,13 +388,15 @@ export default function InvoiceDetailPage() {
                                 <p className="italic text-gray-400 text-xs">Datos no vinculados a contacto</p>
                             )}
                         </div>
-                        <div className="sm:text-right">
-                            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Detalles</h3>
-                            <div className="text-gray-600 text-sm space-y-0.5">
-                                {invoice.dueDate && <p><span className="font-medium">Vence:</span> {invoice.dueDate.split('T')[0]}</p>}
-                                {invoice.creditDays && <p><span className="font-medium">Plazo:</span> {invoice.creditDays} días</p>}
+                        {(invoice.dueDate || invoice.creditDays) && (
+                            <div className="sm:text-right">
+                                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Detalles</h3>
+                                <div className="text-gray-600 text-sm space-y-0.5">
+                                    {invoice.dueDate && <p><span className="font-medium">Vence:</span> {invoice.dueDate.split('T')[0]}</p>}
+                                    {invoice.creditDays && <p><span className="font-medium">Plazo:</span> {invoice.creditDays} días</p>}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Items Table */}
