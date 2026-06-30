@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Landmark, Calendar } from "lucide-react";
+import { ArrowLeft, Save, Landmark, Calendar, Link2 } from "lucide-react";
 import { useData } from "@/context/data-context";
 
 export default function EditTaxDeadlinePage() {
@@ -21,6 +21,7 @@ export default function EditTaxDeadlinePage() {
     const [taxId, setTaxId] = useState("");
     const [taxType, setTaxType] = useState("");
     const [expirationDate, setExpirationDate] = useState("");
+    const [paymentLink, setPaymentLink] = useState("");
 
     useEffect(() => {
         if (!id || taxDeadlines.length === 0) return;
@@ -30,6 +31,7 @@ export default function EditTaxDeadlinePage() {
             setBusinessName(deadline.businessName || "");
             setTaxId(deadline.taxId || "");
             setTaxType(deadline.taxType || "");
+            setPaymentLink(deadline.paymentLink || "");
 
             if (deadline.expirationDate) {
                 setExpirationDate(new Date(deadline.expirationDate).toISOString().split('T')[0]);
@@ -61,7 +63,8 @@ export default function EditTaxDeadlinePage() {
                 businessName,
                 taxId,
                 taxType,
-                expirationDate
+                expirationDate,
+                paymentLink: paymentLink.trim() || ""
             });
             router.push("/dashboard/tax-deadlines");
         } catch (error) {
@@ -170,6 +173,20 @@ export default function EditTaxDeadlinePage() {
                                     value={expirationDate}
                                     onChange={(e) => setExpirationDate(e.target.value)}
                                     className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="col-span-1 md:col-span-2">
+                            <label className="block text-sm font-medium text-foreground mb-1">Link de Pago (Opcional)</label>
+                            <div className="relative">
+                                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input
+                                    type="url"
+                                    value={paymentLink}
+                                    onChange={(e) => setPaymentLink(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                    placeholder="https://ejemplo.com/pagar"
                                 />
                             </div>
                         </div>

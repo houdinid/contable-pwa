@@ -461,6 +461,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     taxType: t.tax_type,
                     expirationDate: t.expiration_date,
                     completed: t.completed,
+                    paymentLink: t.payment_link,
                     createdAt: t.created_at
                 })));
 
@@ -1420,6 +1421,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             tax_type: newRecord.taxType,
             expiration_date: newRecord.expirationDate,
             completed: newRecord.completed,
+            payment_link: newRecord.paymentLink || null,
             user_id: user?.id,
             created_at: newRecord.createdAt
         };
@@ -1440,6 +1442,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (patch.taxType !== undefined) dbPatch.tax_type = patch.taxType;
         if (patch.expirationDate !== undefined) dbPatch.expiration_date = patch.expirationDate;
         if (patch.completed !== undefined) dbPatch.completed = patch.completed;
+        if (patch.paymentLink !== undefined) dbPatch.payment_link = patch.paymentLink || null;
 
         const { error } = await supabase.from('tax_deadlines').update(dbPatch).eq('id', id);
         if (error) console.error("Error updating tax deadline:", error);

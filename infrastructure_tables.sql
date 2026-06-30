@@ -69,6 +69,7 @@ create table if not exists tax_deadlines (
     -- Renta, IVA, ICA, Cámara de Comercio, Retefuente
     expiration_date date not null,
     completed boolean default false,
+    payment_link text,
     created_at timestamptz default now()
 );
 

@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS public.tax_deadlines (
     tax_type TEXT NOT NULL,
     expiration_date DATE NOT NULL,
     completed BOOLEAN DEFAULT FALSE,
+    payment_link TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 -- 7. Tipos de Impuestos (Dinámico)

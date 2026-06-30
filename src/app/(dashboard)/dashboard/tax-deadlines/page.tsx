@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Edit, Trash2, Landmark, Calendar, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Landmark, Calendar, AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
 import { useData } from "@/context/data-context";
 
 export default function TaxDeadlinesListPage() {
@@ -165,6 +165,23 @@ export default function TaxDeadlinesListPage() {
                                                         {status.label}
                                                     </span>
                                                 </div>
+
+                                                {/* Link de Pago */}
+                                                {deadline.paymentLink && (
+                                                    <div className="min-w-[120px]">
+                                                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Link de Pago</p>
+                                                        <a
+                                                            href={deadline.paymentLink}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900 rounded-lg text-xs font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors shadow-xs"
+                                                            title="Ir al link de pago"
+                                                        >
+                                                            <ExternalLink size={12} />
+                                                            Pagar en línea
+                                                        </a>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Individual Actions */}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Landmark, Calendar, Search, Plus } from "lucide-react";
+import { ArrowLeft, Save, Landmark, Calendar, Search, Plus, Link2 } from "lucide-react";
 import { useData } from "@/context/data-context";
 import { TaxTypeFormModal } from "@/components/tax-deadlines/tax-type-modal";
 
@@ -19,6 +19,7 @@ export default function CreateTaxDeadlinePage() {
     const [taxId, setTaxId] = useState("");
     const [taxType, setTaxType] = useState("");
     const [expirationDate, setExpirationDate] = useState("");
+    const [paymentLink, setPaymentLink] = useState("");
 
     const handleSelectIdentity = (id: string) => {
         const identity = businessIdentities.find(b => b.id === id);
@@ -47,6 +48,7 @@ export default function CreateTaxDeadlinePage() {
                 taxId,
                 taxType,
                 expirationDate,
+                paymentLink: paymentLink.trim() || undefined,
                 completed: false
             });
             router.push("/dashboard/tax-deadlines");
@@ -173,6 +175,20 @@ export default function CreateTaxDeadlinePage() {
                                     value={expirationDate}
                                     onChange={(e) => setExpirationDate(e.target.value)}
                                     className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="col-span-1 md:col-span-2">
+                            <label className="block text-sm font-medium text-foreground mb-1">Link de Pago (Opcional)</label>
+                            <div className="relative">
+                                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input
+                                    type="url"
+                                    value={paymentLink}
+                                    onChange={(e) => setPaymentLink(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                    placeholder="https://ejemplo.com/pagar"
                                 />
                             </div>
                         </div>
