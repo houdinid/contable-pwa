@@ -1205,6 +1205,32 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (patch.businessIdentityId !== undefined) dbPatch.business_identity_id = (patch.businessIdentityId && patch.businessIdentityId !== "") ? patch.businessIdentityId : null;
         if (patch.updatedAt) delete dbPatch.updatedAt; // we set updated_at manually
 
+        if (patch.items !== undefined) {
+            // First delete existing items
+            const { error: deleteError } = await supabase.from('service_order_items').delete().eq('service_order_id', id);
+            if (deleteError) {
+                console.error("Error deleting old service order items:", deleteError);
+                throw new Error(deleteError.message || "Error al actualizar los ítems antiguos de la orden de servicio");
+            }
+
+            // Then insert new/updated items
+            if (patch.items && patch.items.length > 0) {
+                const dbItems = patch.items.map(item => {
+                    const { id: itemId, productId, ...rest } = item;
+                    return {
+                        ...rest,
+                        service_order_id: id,
+                        product_id: (productId && productId !== "") ? productId : null
+                    };
+                });
+                const { error: insertError } = await supabase.from('service_order_items').insert(dbItems);
+                if (insertError) {
+                    console.error("Error inserting new service order items:", insertError);
+                    throw new Error(insertError.message || "Error al insertar los nuevos ítems de la orden de servicio");
+                }
+            }
+        }
+
         delete dbPatch.clientId; delete dbPatch.clientName; delete dbPatch.clientEmail;
         delete dbPatch.clientPhone; delete dbPatch.estimatedDate; delete dbPatch.technicianNotes;
         delete dbPatch.invoiceId; delete dbPatch.businessIdentityId; delete dbPatch.items;
