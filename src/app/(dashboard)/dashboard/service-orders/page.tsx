@@ -8,15 +8,23 @@ import { useState } from "react";
 export default function ServiceOrdersPage() {
     const { serviceOrders, loadingData } = useData();
     const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
 
     if (loadingData) {
         return <div className="p-8 text-center text-muted-foreground">Cargando órdenes de servicio...</div>;
     }
 
-    const filteredOrders = serviceOrders.filter(order =>
-        order.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.number.toLowerCase().includes(searchTerm.toLowerCase())
-    ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const filteredOrders = serviceOrders.filter(order => {
+        const matchesSearch = 
+            order.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (order.notes && order.notes.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (order.technicianNotes && order.technicianNotes.toLowerCase().includes(searchTerm.toLowerCase()));
+            
+        const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+        
+        return matchesSearch && matchesStatus;
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (
         <div className="space-y-6">
@@ -34,23 +42,37 @@ export default function ServiceOrdersPage() {
                 </Link>
             </div>
 
-            {/* Search and Filter */}
-            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-                <div className="p-4 border-b border-border flex items-center gap-4 bg-muted/30">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Buscar por cliente o número..."
-                            className="w-full pl-10 pr-4 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-colors"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
+            {/* Buscador y Filtros */}
+            <div className="bg-card rounded-xl shadow-sm border border-border p-4 flex flex-col sm:flex-row gap-4 bg-muted/20">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por cliente, número o notas..."
+                        className="w-full pl-10 pr-4 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-colors text-sm text-foreground"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
+                <div className="shrink-0">
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full sm:w-auto px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-foreground cursor-pointer"
+                    >
+                        <option value="all">Todos los Estados</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="in_progress">En Progreso</option>
+                        <option value="completed">Completado</option>
+                        <option value="billed">Facturado</option>
+                        <option value="cancelled">Cancelado</option>
+                    </select>
+                </div>
+            </div>
 
-                {/* Desktop Table View */}
-                <div className="hidden md:block overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+                <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
                             <tr>
@@ -67,7 +89,7 @@ export default function ServiceOrdersPage() {
                             {filteredOrders.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
-                                        No se encontraron órdenes de servicio.
+                                        {serviceOrders.length === 0 ? "No hay órdenes de servicio registradas." : "No se encontraron órdenes con los filtros seleccionados."}
                                     </td>
                                 </tr>
                             ) : (
@@ -105,7 +127,7 @@ export default function ServiceOrdersPage() {
             <div className="md:hidden space-y-4">
                 {filteredOrders.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground bg-card rounded-lg border border-border">
-                        No hay órdenes registradas.
+                        {serviceOrders.length === 0 ? "No hay órdenes de servicio registradas." : "No se encontraron órdenes con los filtros seleccionados."}
                     </div>
                 ) : (
                     filteredOrders.map((order) => (

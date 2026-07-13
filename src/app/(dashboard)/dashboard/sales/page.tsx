@@ -1,19 +1,36 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useData } from "@/context/data-context";
-import { Plus, FileText, FileCheck, FileX, Printer } from "lucide-react";
+import { Plus, FileText, FileCheck, FileX, Printer, Search } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
 export default function SalesPage() {
     const { invoices, loadingData } = useData();
     const { canCreate } = usePermissions();
 
+    const [searchTerm, setSearchTerm] = useState("");
+    const [typeFilter, setTypeFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("all");
+
     if (loadingData) {
         return <div className="p-8 text-center">Cargando facturas...</div>;
     }
 
-    const sortedInvoices = [...invoices].sort((a, b) => {
+    const filteredInvoices = invoices.filter(inv => {
+        const matchesSearch = 
+            inv.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            inv.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (inv.notes && inv.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+            
+        const matchesType = typeFilter === "all" || inv.type === typeFilter;
+        const matchesStatus = statusFilter === "all" || inv.status === statusFilter;
+        
+        return matchesSearch && matchesType && matchesStatus;
+    });
+
+    const sortedInvoices = [...filteredInvoices].sort((a, b) => {
         const dateA = new Date(a.date).getTime();
         const dateB = new Date(b.date).getTime();
         if (dateB !== dateA) return dateB - dateA;
@@ -39,6 +56,42 @@ export default function SalesPage() {
                 )}
             </div>
 
+            {/* Search and Filters */}
+            <div className="bg-card rounded-xl shadow-sm border border-border p-4 flex flex-col sm:flex-row gap-4 bg-muted/20">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por cliente, número o notas..."
+                        className="w-full pl-10 pr-4 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-colors text-sm text-foreground"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className="flex gap-2 shrink-0">
+                    <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        className="px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-foreground cursor-pointer"
+                    >
+                        <option value="all">Todos los Tipos</option>
+                        <option value="invoice">Facturas</option>
+                        <option value="quote">Cotizaciones</option>
+                    </select>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-3 py-2 border border-border bg-background rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-foreground cursor-pointer"
+                    >
+                        <option value="all">Todos los Estados</option>
+                        <option value="draft">Borrador</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="paid">Pagada</option>
+                        <option value="cancelled">Anulada</option>
+                    </select>
+                </div>
+            </div>
+
             {/* Desktop Table View */}
             <div className="hidden md:block bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                 <table className="w-full text-left text-sm">
@@ -53,10 +106,10 @@ export default function SalesPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {invoices.length === 0 ? (
+                        {sortedInvoices.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
-                                    No hay documentos registrados.
+                                    {invoices.length === 0 ? "No hay documentos registrados." : "No se encontraron documentos con los filtros seleccionados."}
                                 </td>
                             </tr>
                         ) : (
@@ -88,44 +141,44 @@ export default function SalesPage() {
 
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
-                {invoices.length === 0 ? (
+                {sortedInvoices.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground bg-card rounded-lg border border-border">
-                        No hay documentos registrados.
+                        {invoices.length === 0 ? "No hay documentos registrados." : "No se encontraron documentos con los filtros seleccionados."}
                     </div>
                 ) : (
                     sortedInvoices.map((inv) => (
-                        <div key={inv.id} className="bg-card p-4 rounded-lg shadow-sm border border-border space-y-3">
-                            <div className="flex justify-between items-start">
-                                <div className="flex items-center gap-2">
-                                    <FileText size={20} className={inv.type === 'quote' ? 'text-orange-500' : 'text-blue-500'} />
-                                    <div>
-                                        <span className="font-bold text-gray-900 dark:text-gray-100 block">
-                                            {inv.type === 'quote' ? 'COT-' : 'FACT-'}{inv.number}
-                                        </span>
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                                            {new Date(inv.date).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </div>
-                                <StatusBadge status={inv.status} />
-                            </div>
+                         <div key={inv.id} className="bg-card p-4 rounded-lg shadow-sm border border-border space-y-3">
+                             <div className="flex justify-between items-start">
+                                 <div className="flex items-center gap-2">
+                                     <FileText size={20} className={inv.type === 'quote' ? 'text-orange-500' : 'text-blue-500'} />
+                                     <div>
+                                         <span className="font-bold text-gray-900 dark:text-gray-100 block">
+                                             {inv.type === 'quote' ? 'COT-' : 'FACT-'}{inv.number}
+                                         </span>
+                                         <span className="text-xs text-gray-500 dark:text-gray-400">
+                                             {new Date(inv.date).toLocaleDateString()}
+                                         </span>
+                                     </div>
+                                 </div>
+                                 <StatusBadge status={inv.status} />
+                             </div>
 
-                            <div className="flex justify-between items-center border-t border-gray-100 dark:border-gray-800 pt-3">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{inv.contactName}</p>
-                                    <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                                        ${inv.total.toLocaleString()}
-                                    </p>
-                                </div>
-                                <Link
-                                    href={`/dashboard/sales/${inv.id}`}
-                                    className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                >
-                                    Ver Detalle
-                                </Link>
-                            </div>
-                        </div>
-                    ))
+                             <div className="flex justify-between items-center border-t border-gray-100 dark:border-gray-800 pt-3">
+                                 <div>
+                                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{inv.contactName}</p>
+                                     <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                                         ${inv.total.toLocaleString()}
+                                     </p>
+                                 </div>
+                                 <Link
+                                     href={`/dashboard/sales/${inv.id}`}
+                                     className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                 >
+                                     Ver Detalle
+                                 </Link>
+                             </div>
+                         </div>
+                     ))
                 )}
             </div>
         </div>
