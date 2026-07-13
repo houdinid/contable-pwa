@@ -52,7 +52,12 @@ export function PurchaseForm({ initialData, onClose, onSuccess }: PurchaseFormPr
             }
         }
     }, [businessIdentities, businessIdentityId]);
-    const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState(() => {
+        if (initialData?.date) {
+            return initialData.date.split('T')[0];
+        }
+        return new Date().toISOString().split('T')[0];
+    });
     const [number, setNumber] = useState(initialData?.number || "");
     const [items, setItems] = useState<PurchaseItem[]>(initialData?.items || []);
     const [notes, setNotes] = useState(initialData?.notes || "");

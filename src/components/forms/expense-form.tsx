@@ -45,7 +45,7 @@ export function ExpenseForm({ initialData, onSubmit, isEditing = false }: Expens
     const [formData, setFormData] = useState<Omit<Expense, "id" | "createdAt">>({
         description: initialData?.description || "",
         amount: initialData?.amount || 0,
-        date: initialData?.date || new Date().toISOString().split('T')[0],
+        date: initialData?.date ? initialData.date.split('T')[0] : new Date().toISOString().split('T')[0],
         categoryId: initialData?.categoryId || defaultCategoryId,
         supplierId: initialData?.supplierId || "",
         businessIdentityId: initialData?.businessIdentityId || "",

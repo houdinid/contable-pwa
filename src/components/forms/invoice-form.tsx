@@ -30,8 +30,18 @@ export function InvoiceForm({ initialData, onSubmit, isEditing = false }: Invoic
     const [activeItemId, setActiveItemId] = useState<string | null>(null);
     const [productSuggestions, setProductSuggestions] = useState<{ itemId: string, products: any[], show?: boolean } | null>(null);
 
-    const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
-    const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
+    const [date, setDate] = useState(() => {
+        if (initialData?.date) {
+            return initialData.date.split('T')[0];
+        }
+        return new Date().toISOString().split('T')[0];
+    });
+    const [dueDate, setDueDate] = useState(() => {
+        if (initialData?.dueDate) {
+            return initialData.dueDate.split('T')[0];
+        }
+        return "";
+    });
     const [creditDays, setCreditDays] = useState(initialData?.creditDays?.toString() || "");
     const [type, setType] = useState<'invoice' | 'quote'>(initialData?.type || 'quote'); // Default to quote
 

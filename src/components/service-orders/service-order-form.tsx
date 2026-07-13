@@ -29,8 +29,18 @@ export function ServiceOrderForm({ initialData, onSubmit, isEditing = false }: S
     const [activeItemId, setActiveItemId] = useState<string | null>(null);
     const [productSuggestions, setProductSuggestions] = useState<{ itemId: string, products: any[] } | null>(null);
 
-    const [date, setDate] = useState((initialData?.date && initialData.date !== "") ? initialData.date : new Date().toISOString().split('T')[0]);
-    const [estimatedDate, setEstimatedDate] = useState(initialData?.estimatedDate || "");
+    const [date, setDate] = useState(() => {
+        if (initialData?.date) {
+            return initialData.date.split('T')[0];
+        }
+        return new Date().toISOString().split('T')[0];
+    });
+    const [estimatedDate, setEstimatedDate] = useState(() => {
+        if (initialData?.estimatedDate) {
+            return initialData.estimatedDate.split('T')[0];
+        }
+        return "";
+    });
 
     // Default issuer logic
     const defaultIssuer = businessIdentities.find(b => b.isDefault) || businessIdentities[0];
