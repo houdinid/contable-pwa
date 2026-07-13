@@ -21,7 +21,16 @@ export default function SettingsPage() {
         deleteBusinessIdentity,
         uploadBackupToCloud,
         listCloudBackups,
-        restoreFromCloud
+        restoreFromCloud,
+        deleteCloudBackup,
+        contacts,
+        invoices,
+        expenses,
+        products,
+        purchases,
+        serviceOrders,
+        softwareLicenses,
+        taxDeadlines
     } = useData();
     const [status, setStatus] = useState<string>("");
     const [cloudBackups, setCloudBackups] = useState<any[]>([]);
@@ -576,98 +585,177 @@ export default function SettingsPage() {
                         Copias de Seguridad (Backup)
                     </h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        Descarga una copia de toda tu información (Clientes, Facturas, etc.) para guardarla en tu computador.
+                        Respalda tu información localmente o en la nube para prevenir pérdida de datos.
                     </p>
                 </div>
 
-                <div className="p-6 space-y-6">
-                    {/* Export Section */}
-                    <div className="flex items-start gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
-                        <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full text-blue-600 dark:text-blue-400">
-                            <Download size={24} />
-                        </div>
-                        <div>
-                            <h3 className="font-medium text-blue-900 dark:text-blue-100">Exportar Datos</h3>
-                            <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                                Genera un archivo <code>.json</code> con toda tu información encriptada.
-                            </p>
-                            <button
-                                onClick={handleExport}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                            >
-                                Descargar Copia de Seguridad
-                            </button>
-                            {status === "success-export" && (
-                                <p className="text-green-600 dark:text-green-400 text-sm mt-2 flex items-center gap-1">
-                                    <CheckCircle size={14} /> Archivo descargado exitosamente.
-                                </p>
-                            )}
+                <div className="p-6 space-y-8">
+                    {/* Database Statistics */}
+                    <div className="bg-muted/30 border border-border rounded-xl p-5">
+                        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Estadísticas de Datos a Respaldar
+                        </h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div className="bg-card p-3 rounded-lg border border-border flex flex-col justify-between shadow-xs">
+                                <span className="text-xs text-muted-foreground">Clientes/Prov.</span>
+                                <span className="text-xl font-bold text-foreground mt-1">{contacts.length}</span>
+                            </div>
+                            <div className="bg-card p-3 rounded-lg border border-border flex flex-col justify-between shadow-xs">
+                                <span className="text-xs text-muted-foreground">Facturas/Cotiz.</span>
+                                <span className="text-xl font-bold text-foreground mt-1">{invoices.length}</span>
+                            </div>
+                            <div className="bg-card p-3 rounded-lg border border-border flex flex-col justify-between shadow-xs">
+                                <span className="text-xs text-muted-foreground">Gastos</span>
+                                <span className="text-xl font-bold text-foreground mt-1">{expenses.length}</span>
+                            </div>
+                            <div className="bg-card p-3 rounded-lg border border-border flex flex-col justify-between shadow-xs">
+                                <span className="text-xs text-muted-foreground">Órdenes Serv.</span>
+                                <span className="text-xl font-bold text-foreground mt-1">{serviceOrders.length}</span>
+                            </div>
+                            <div className="bg-card p-3 rounded-lg border border-border flex flex-col justify-between shadow-xs">
+                                <span className="text-xs text-muted-foreground">Productos</span>
+                                <span className="text-xl font-bold text-foreground mt-1">{products.length}</span>
+                            </div>
+                            <div className="bg-card p-3 rounded-lg border border-border flex flex-col justify-between shadow-xs">
+                                <span className="text-xs text-muted-foreground">Compras</span>
+                                <span className="text-xl font-bold text-foreground mt-1">{purchases.length}</span>
+                            </div>
+                            <div className="bg-card p-3 rounded-lg border border-border flex flex-col justify-between shadow-xs">
+                                <span className="text-xs text-muted-foreground">Licencias Soft.</span>
+                                <span className="text-xl font-bold text-foreground mt-1">{softwareLicenses.length}</span>
+                            </div>
+                            <div className="bg-card p-3 rounded-lg border border-border flex flex-col justify-between shadow-xs">
+                                <span className="text-xs text-muted-foreground">Oblig. Fiscales</span>
+                                <span className="text-xl font-bold text-foreground mt-1">{taxDeadlines.length}</span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Import Section */}
-                    <div className="flex items-start gap-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-100 dark:border-orange-800">
-                        <div className="bg-orange-100 dark:bg-orange-900/40 p-2 rounded-full text-orange-600 dark:text-orange-400">
-                            <Upload size={24} />
-                        </div>
-                        <div>
-                            <h3 className="font-medium text-orange-900 dark:text-orange-100">Restaurar Datos</h3>
-                            <p className="text-sm text-orange-700 dark:text-orange-300 mb-3">
-                                Carga un archivo de respaldo previamente descargado.
-                                <br />
-                                <strong>Nota:</strong> Esto reemplazará toda la información actual.
-                            </p>
-                            <label className="px-4 py-2 bg-card border border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors text-sm font-medium cursor-pointer inline-block">
-                                Seleccionar Archivo...
-                                <input type="file" accept=".json" onChange={handleImport} className="hidden" />
-                            </label>
-                        </div>
-                    </div>
-
-                    {/* Cloud Backup Section */}
-                    <div className="flex flex-col gap-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-full text-indigo-600 dark:text-indigo-400">
-                                <Building2 size={24} />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="font-medium text-indigo-900 dark:text-indigo-100">Copia de Seguridad en la Nube</h3>
-                                <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-3">
-                                    Guarda tus datos de forma segura en nuestros servidores de Supabase.
-                                </p>
-                                <button
-                                    onClick={handleCloudBackup}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-                                >
-                                    Guardar en la Nube Ahora
-                                </button>
-                            </div>
-                        </div>
-
-                        {cloudBackups.length > 0 && (
-                            <div className="mt-4 border-t border-indigo-200 dark:border-indigo-800 pt-4">
-                                <h4 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mb-2">Respaldos Recientes en la Nube</h4>
-                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                    {cloudBackups.map((backup) => (
-                                        <div key={backup.name} className="flex justify-between items-center text-sm p-3 bg-white/50 dark:bg-black/20 rounded border border-indigo-100 dark:border-indigo-900">
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-gray-700 dark:text-gray-300">{backup.name}</span>
-                                                <span className="text-xs text-gray-500">{(backup.metadata.size / 1024).toFixed(2)} KB | {new Date(backup.created_at).toLocaleString()}</span>
-                                            </div>
-                                            <button
-                                                onClick={() => handleCloudRestore(backup.name)}
-                                                className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold"
-                                            >
-                                                Restaurar
-                                            </button>
-                                        </div>
-                                    ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Export/Import local */}
+                        <div className="space-y-6">
+                            {/* Local Export */}
+                            <div className="flex items-start gap-4 p-5 bg-blue-50/50 dark:bg-blue-950/15 rounded-xl border border-blue-100 dark:border-blue-900/40">
+                                <div className="bg-blue-100 dark:bg-blue-900/30 p-2.5 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
+                                    <Download size={22} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-blue-900 dark:text-blue-200">Exportación Local</h3>
+                                    <p className="text-xs text-blue-700 dark:text-blue-400 mt-1 leading-relaxed">
+                                        Descarga un archivo JSON encriptado con todo el contenido actual para guardarlo de forma física.
+                                    </p>
+                                    <button
+                                        onClick={handleExport}
+                                        className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs font-semibold shadow-sm inline-flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <Download size={14} /> Descargar Archivo JSON
+                                    </button>
+                                    {status === "success-export" && (
+                                        <p className="text-green-600 dark:text-green-400 text-xs mt-2 flex items-center gap-1">
+                                            <CheckCircle size={12} /> ¡Archivo descargado con éxito!
+                                        </p>
+                                    )}
                                 </div>
                             </div>
-                        )}
-                        {isLoadingCloud && (
-                            <p className="text-xs text-indigo-500 animate-pulse">Cargando respaldos de la nube...</p>
-                        )}
+
+                            {/* Local Import Dropzone */}
+                            <div className="flex items-start gap-4 p-5 bg-orange-50/50 dark:bg-orange-950/15 rounded-xl border border-orange-100 dark:border-orange-900/40">
+                                <div className="bg-orange-100 dark:bg-orange-900/30 p-2.5 rounded-lg text-orange-600 dark:text-orange-400 shrink-0">
+                                    <Upload size={22} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-orange-900 dark:text-orange-200">Restauración Local</h3>
+                                    <p className="text-xs text-orange-700 dark:text-orange-400 mt-1 mb-3 leading-relaxed">
+                                        Carga un respaldo <code>.json</code>. <strong>Esto fusionará/sobrescribirá</strong> los registros mediante su ID único.
+                                    </p>
+                                    
+                                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-orange-200 dark:border-orange-900/60 rounded-xl p-4 bg-card cursor-pointer hover:bg-orange-50/20 dark:hover:bg-orange-950/5 transition-colors">
+                                        <div className="flex flex-col items-center gap-1 text-center">
+                                            <Upload size={20} className="text-orange-500" />
+                                            <span className="text-xs font-medium text-foreground">Arrastra o selecciona un archivo .json</span>
+                                            <span className="text-[10px] text-muted-foreground">Formatos válidos: JSON generado por la App</span>
+                                        </div>
+                                        <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Cloud Backup */}
+                        <div className="space-y-6">
+                            <div className="flex flex-col gap-4 p-5 bg-indigo-50/50 dark:bg-indigo-950/15 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2.5 rounded-lg text-indigo-600 dark:text-indigo-400 shrink-0">
+                                        <Building2 size={22} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-semibold text-indigo-900 dark:text-indigo-200">Copia de Seguridad en la Nube</h3>
+                                        <p className="text-xs text-indigo-700 dark:text-indigo-400 mt-1 leading-relaxed">
+                                            Respalda y restaura de forma directa en el bucket seguro de Supabase.
+                                        </p>
+                                        <button
+                                            onClick={handleCloudBackup}
+                                            className="mt-3 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-xs font-semibold shadow-sm inline-flex items-center gap-1.5 cursor-pointer"
+                                        >
+                                            <Building2 size={14} /> Subir Copia a la Nube
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Cloud Backup List */}
+                                <div className="mt-2 border-t border-indigo-100 dark:border-indigo-900/50 pt-4">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h4 className="text-xs font-semibold text-indigo-950 dark:text-indigo-300">Copias de Seguridad Disponibles</h4>
+                                        <button 
+                                            onClick={loadCloudBackups}
+                                            className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline cursor-pointer"
+                                        >
+                                            Actualizar Lista
+                                        </button>
+                                    </div>
+
+                                    {isLoadingCloud ? (
+                                        <div className="flex justify-center py-6">
+                                            <span className="text-xs text-indigo-500 animate-pulse">Obteniendo respaldos...</span>
+                                        </div>
+                                    ) : cloudBackups.length === 0 ? (
+                                        <p className="text-xs text-muted-foreground italic text-center py-4">No hay copias en la nube todavía.</p>
+                                    ) : (
+                                        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                            {cloudBackups.map((backup) => (
+                                                <div key={backup.name} className="flex justify-between items-center text-xs p-3 bg-card border border-border rounded-lg hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors">
+                                                    <div className="flex flex-col min-w-0 pr-2">
+                                                        <span className="font-semibold text-foreground truncate" title={backup.name}>{backup.name}</span>
+                                                        <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+                                                            {new Date(backup.created_at).toLocaleString('es-CO')} | {(backup.metadata?.size / 1024).toFixed(2)} KB
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <button
+                                                            onClick={() => handleCloudRestore(backup.name)}
+                                                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900 rounded font-semibold text-[10px] cursor-pointer"
+                                                        >
+                                                            Restaurar
+                                                        </button>
+                                                        <button
+                                                            onClick={async () => {
+                                                                await deleteCloudBackup(backup.name);
+                                                                loadCloudBackups();
+                                                            }}
+                                                            className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/60 rounded transition-colors cursor-pointer"
+                                                            title="Eliminar Respaldo"
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -107,6 +107,7 @@ interface DataContextType {
     uploadBackupToCloud: () => Promise<void>;
     listCloudBackups: () => Promise<any[]>;
     restoreFromCloud: (fileName: string) => Promise<void>;
+    deleteCloudBackup: (fileName: string) => Promise<void>;
 
     loadingData: boolean;
 }
@@ -200,6 +201,7 @@ const DataContext = createContext<DataContextType>({
     uploadBackupToCloud: async () => { },
     listCloudBackups: async () => [],
     restoreFromCloud: async () => { },
+    deleteCloudBackup: async () => { },
     loadingData: true,
 });
 
@@ -1649,6 +1651,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const deleteCloudBackup = async (fileName: string) => {
+        if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente el respaldo "${fileName}" de la nube?`)) return;
+        
+        try {
+            setLoadingData(true);
+            const { error } = await supabase.storage
+                .from('backups')
+                .remove([fileName]);
+
+            if (error) throw error;
+            alert("Respaldo eliminado de la nube correctamente.");
+        } catch (error) {
+            console.error("Error deleting cloud backup:", error);
+            alert("Error al eliminar el respaldo de la nube.");
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
     const importData = async (jsonData: string) => {
         if (!confirm("⚠️ ADVERTENCIA: Esta acción intentará fusionar/actualizar los datos existentes. Se recomienda tener una copia de seguridad previa. ¿Continuar?")) {
             return;
@@ -1719,7 +1740,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addTaxType, deleteTaxType,
         exportData: downloadBackup, // Rename internal downloadBackup to external exportData for UI compatibility
         importData, 
-        uploadBackupToCloud, listCloudBackups, restoreFromCloud,
+        uploadBackupToCloud, listCloudBackups, restoreFromCloud, deleteCloudBackup,
         loadingData,
         isTaxTypesTableMissing,
     }), [
