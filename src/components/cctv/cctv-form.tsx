@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useData } from "@/context/data-context"; // Assuming contacts are here? Actually need to check data-context
-import { Plus, Trash2, Save, Upload, X, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Save, Upload, X, ArrowLeft, Copy, Send } from "lucide-react";
 import { compressImage } from "@/lib/image-utils";
 import type { Contact } from "@/types";
 import type { CctvFormData, CctvSystem, CctvUser } from "@/types/cctv";
@@ -209,6 +209,36 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
         }
     };
 
+    const copyUserCredentials = (user: { username: string; password?: string; is_admin?: boolean }) => {
+        const clientObj = clients.find(c => c.id === formData.client_id);
+        const clientName = clientObj?.name || "Sistema CCTV";
+        const text = `📹 ACCESO SISTEMA CCTV\nCliente: ${clientName}${formData.branch ? ` (${formData.branch})` : ''}\nIP: ${formData.ip_address || 'N/A'}\nPuerto HTTP: ${formData.http_port || 'N/A'}\nUsuario: ${user.username}\nContraseña: ${user.password || '(sin contraseña)'}`;
+        navigator.clipboard.writeText(text);
+        alert("Credenciales copiadas al portapapeles");
+    };
+
+    const sendUserWhatsApp = (user: { username: string; password?: string; is_admin?: boolean }) => {
+        const clientObj = clients.find(c => c.id === formData.client_id);
+        const clientName = clientObj?.name || "Sistema CCTV";
+        let text = `📹 *ACCESO SISTEMA CCTV*\n`;
+        text += `🏢 *Cliente:* ${clientName}${formData.branch ? ` - ${formData.branch}` : ''}\n`;
+        if (formData.brand || formData.model) {
+            text += `⚙️ *Equipo:* ${formData.brand} ${formData.model}\n`;
+        }
+        if (formData.ip_address) {
+            text += `🌐 *IP:* ${formData.ip_address}\n`;
+        }
+        if (formData.http_port) {
+            text += `🔌 *Puerto HTTP:* ${formData.http_port}\n`;
+        }
+        text += `👤 *Usuario:* ${user.username}\n`;
+        text += `🔑 *Contraseña:* ${user.password || '(sin contraseña)'}\n`;
+        if (user.is_admin) text += `⭐ *Rol:* Administrador\n`;
+
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+    };
+
     return (
         <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto pb-20">
             <div className="flex items-center gap-4 mb-6">
@@ -368,42 +398,64 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
 
                 <div className="space-y-3">
                     {formData.users.map((user, index) => (
-                        <div key={index} className="flex gap-2 items-start p-3 bg-muted/50 rounded-lg">
-                            <div className="flex-1">
-                                <span className="text-xs text-gray-500 mb-1 block">Usuario</span>
+                        <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 bg-muted/50 rounded-lg border border-border">
+                            <div className="flex-1 w-full sm:w-auto">
+                                <span className="text-xs text-gray-500 mb-1 block font-medium">Usuario</span>
                                 <input
-                                    className="w-full border rounded p-1 text-sm"
+                                    className="w-full border rounded p-1.5 text-sm bg-background"
                                     value={user.username}
                                     onChange={e => handleUserChange(index, 'username', e.target.value)}
                                     placeholder="admin"
                                 />
                             </div>
-                            <div className="flex-1">
-                                <span className="text-xs text-gray-500 mb-1 block">Contraseña</span>
+                            <div className="flex-1 w-full sm:w-auto">
+                                <span className="text-xs text-gray-500 mb-1 block font-medium">Contraseña</span>
                                 <input
-                                    className="w-full border rounded p-1 text-sm"
+                                    className="w-full border rounded p-1.5 text-sm font-mono bg-background"
                                     type="text" // Visible for admin convenience
                                     value={user.password}
                                     onChange={e => handleUserChange(index, 'password', e.target.value)}
                                 />
                             </div>
-                            <div className="w-20 pt-5">
-                                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <div className="pt-2 sm:pt-4">
+                                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                                     <input
                                         type="checkbox"
                                         checked={user.is_admin}
                                         onChange={e => handleUserChange(index, 'is_admin', e.target.checked)}
+                                        className="rounded text-indigo-600 focus:ring-indigo-500"
                                     />
                                     Admin
                                 </label>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => removeUser(index)}
-                                className="text-red-500 p-2 hover:bg-red-50 rounded mt-4"
-                            >
-                                <Trash2 size={16} />
-                            </button>
+                            <div className="flex items-center gap-1 pt-2 sm:pt-4 w-full sm:w-auto justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => copyUserCredentials(user)}
+                                    className="px-2.5 py-1.5 bg-background border border-border text-foreground hover:bg-muted rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+                                    title="Copiar usuario y contraseña"
+                                >
+                                    <Copy size={14} />
+                                    <span>Copiar</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => sendUserWhatsApp(user)}
+                                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+                                    title="Enviar por WhatsApp"
+                                >
+                                    <Send size={14} />
+                                    <span>WhatsApp</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => removeUser(index)}
+                                    className="text-red-500 p-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+                                    title="Eliminar usuario"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>

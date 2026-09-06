@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Plus, Search, Eye, Edit, Video } from "lucide-react";
+import { Plus, Search, Eye, Edit, Video, Copy, Send, Users } from "lucide-react";
 import type { CctvSystem } from "@/types/cctv";
 
 export function CCTVList() {
@@ -19,10 +19,10 @@ export function CCTVList() {
 
     async function loadSystems() {
         setLoading(true);
-        // Fetch systems with client name
+        // Fetch systems with client name and users
         const { data, error } = await supabase
             .from('cctv_systems')
-            .select('*, client:contacts(name)')
+            .select('*, client:contacts(name), users:cctv_users(*)')
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -32,6 +32,43 @@ export function CCTVList() {
         }
         setLoading(false);
     }
+
+    const copySystemCredentials = (sys: CctvSystem) => {
+        const clientName = sys.client?.name || "Sistema CCTV";
+        let text = `📹 ACCESO SISTEMA CCTV\nCliente: ${clientName}${sys.branch ? ` (${sys.branch})` : ''}\nIP: ${sys.ip_address || 'N/A'}\nPuerto HTTP: ${sys.http_port || 'N/A'}\n`;
+        if (sys.users && sys.users.length > 0) {
+            sys.users.forEach((u, i) => {
+                text += `\nUsuario ${i + 1}: ${u.username}\nContraseña: ${u.password || '(sin contraseña)'}`;
+            });
+        }
+        navigator.clipboard.writeText(text);
+        alert("Credenciales de usuario copiadas al portapapeles");
+    };
+
+    const sendSystemWhatsApp = (sys: CctvSystem) => {
+        const clientName = sys.client?.name || "Sistema CCTV";
+        let text = `📹 *ACCESO SISTEMA CCTV*\n`;
+        text += `🏢 *Cliente:* ${clientName}${sys.branch ? ` - ${sys.branch}` : ''}\n`;
+        if (sys.brand || sys.model) {
+            text += `⚙️ *Equipo:* ${sys.brand || ''} ${sys.model || ''}\n`;
+        }
+        if (sys.ip_address) {
+            text += `🌐 *IP:* ${sys.ip_address}\n`;
+        }
+        if (sys.http_port) {
+            text += `🔌 *Puerto HTTP:* ${sys.http_port}\n`;
+        }
+        if (sys.users && sys.users.length > 0) {
+            text += `\n👥 *Usuarios:*`;
+            sys.users.forEach((u) => {
+                text += `\n• *User:* ${u.username} | *Pass:* ${u.password || '(sin contraseña)'}`;
+                if (u.is_admin) text += ` (Admin)`;
+            });
+        }
+
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+    };
 
     const filteredSystems = systems.filter(sys =>
         sys.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,6 +166,22 @@ export function CCTVList() {
                                 </div>
 
                                 <div className="flex gap-2 mt-4 pt-4 border-t">
+                                    <button
+                                        type="button"
+                                        onClick={() => copySystemCredentials(sys)}
+                                        className="p-2 border border-border text-foreground hover:bg-muted rounded-lg text-xs font-medium flex items-center justify-center gap-1 transition-colors"
+                                        title="Copiar accesos al portapapeles"
+                                    >
+                                        <Copy size={16} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => sendSystemWhatsApp(sys)}
+                                        className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1 transition-colors shadow-sm"
+                                        title="Enviar accesos por WhatsApp"
+                                    >
+                                        <Send size={16} />
+                                    </button>
                                     <Link
                                         href={`/dashboard/cctv/${sys.id}`}
                                         className="flex-1 bg-indigo-50 text-indigo-700 py-2 rounded-lg text-center text-sm font-medium hover:bg-indigo-100 flex items-center justify-center gap-2"
