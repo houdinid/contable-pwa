@@ -193,15 +193,6 @@ export default function RemoteAccessListPage() {
                                         </div>
                                     )}
                                 </div>
-
-                                {/* WhatsApp Action Button */}
-                                <button
-                                    onClick={() => sendWhatsApp(access)}
-                                    className="w-full mt-3 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
-                                >
-                                    <Send size={14} />
-                                    <span>Enviar acceso remoto por WhatsApp</span>
-                                </button>
                             </div>
                         </div>
                     ))

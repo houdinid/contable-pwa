@@ -177,7 +177,7 @@ export function CCTVList() {
                                     <button
                                         type="button"
                                         onClick={() => sendSystemWhatsApp(sys)}
-                                        className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1 transition-colors shadow-sm"
+                                        className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 rounded-lg transition-colors"
                                         title="Enviar accesos por WhatsApp"
                                     >
                                         <Send size={16} />
