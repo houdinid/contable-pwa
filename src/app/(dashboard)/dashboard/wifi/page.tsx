@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Wifi, Copy, Eye, EyeOff, Router, Edit, Trash2, MapPin, User, Server, Shield } from "lucide-react";
+import { Plus, Search, Wifi, Copy, Eye, EyeOff, Router, Edit, Trash2, MapPin, User, Server, Shield, Send } from "lucide-react";
 import { useData } from "@/context/data-context";
 import { WifiNetwork } from "@/types";
 
@@ -30,6 +30,12 @@ export default function WifiListPage() {
         navigator.clipboard.writeText(text);
         // You would typically show a toast notification here
         alert(`${label} copiado al portapapeles`);
+    };
+
+    const sendWhatsApp = (network: WifiNetwork) => {
+        const text = `📶 *Red WiFi:* ${network.ssid}\n🔑 *Contraseña:* ${network.password || ''}`;
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
     };
 
     const handleDelete = async (id: string) => {
@@ -138,6 +144,13 @@ export default function WifiListPage() {
                                         >
                                             <Copy size={16} />
                                         </button>
+                                        <button
+                                            onClick={() => sendWhatsApp(network)}
+                                            className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 rounded transition-colors"
+                                            title="Enviar WiFi por WhatsApp"
+                                        >
+                                            <Send size={16} />
+                                        </button>
                                     </div>
                                 </div>
 
@@ -178,6 +191,15 @@ export default function WifiListPage() {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* WhatsApp Action Button */}
+                                <button
+                                    onClick={() => sendWhatsApp(network)}
+                                    className="w-full mt-3 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+                                >
+                                    <Send size={14} />
+                                    <span>Enviar accesos WiFi por WhatsApp</span>
+                                </button>
                             </div>
 
                             {/* Photo (if exists) */}
