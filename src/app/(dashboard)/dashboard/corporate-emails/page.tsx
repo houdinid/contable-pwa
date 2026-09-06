@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Copy, Eye, EyeOff, Edit, Trash2, Mail, User, Phone, Shield } from "lucide-react";
+import { Plus, Search, Copy, Eye, EyeOff, Edit, Trash2, Mail, User, Phone, Shield, Send } from "lucide-react";
 import { useData } from "@/context/data-context";
 
 export default function CorporateEmailsListPage() {
@@ -28,6 +28,28 @@ export default function CorporateEmailsListPage() {
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
         alert(`${label} copiado al portapapeles`);
+    };
+
+    const sendWhatsApp = (email: any) => {
+        const clientName = getClientName(email.clientId);
+        let text = `📧 *ACCESO DE CORREO CORPORATIVO*\n`;
+        if (clientName && clientName !== "Sin Cliente") {
+            text += `🏢 *Cliente:* ${clientName}\n`;
+        }
+        text += `✉️ *Correo:* ${email.emailAddress}\n`;
+        text += `🔑 *Contraseña:* ${email.password || '(sin contraseña)'}\n`;
+        if (email.assignedTo) {
+            text += `👤 *Asignado a:* ${email.assignedTo}\n`;
+        }
+        if (email.recoveryEmail) {
+            text += `📩 *Correo Recuperación:* ${email.recoveryEmail}\n`;
+        }
+        if (email.recoveryPhone) {
+            text += `📱 *Teléfono Recuperación:* ${email.recoveryPhone}\n`;
+        }
+
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
     };
 
     const handleDelete = async (id: string) => {
@@ -136,6 +158,13 @@ export default function CorporateEmailsListPage() {
                                         >
                                             <Copy size={16} />
                                         </button>
+                                        <button
+                                            onClick={() => sendWhatsApp(email)}
+                                            className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 rounded transition-colors"
+                                            title="Enviar credenciales por WhatsApp"
+                                        >
+                                            <Send size={16} />
+                                        </button>
                                     </div>
                                 </div>
 
@@ -144,7 +173,7 @@ export default function CorporateEmailsListPage() {
                                     {email.assignedTo && (
                                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                                             <User size={14} className="text-gray-400" />
-                                            <span className="truncate">Usuario: font-medium {email.assignedTo}</span>
+                                            <span className="truncate">Usuario: <span className="font-medium text-foreground">{email.assignedTo}</span></span>
                                         </div>
                                     )}
 
@@ -166,6 +195,15 @@ export default function CorporateEmailsListPage() {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* WhatsApp Send Action */}
+                                <button
+                                    onClick={() => sendWhatsApp(email)}
+                                    className="w-full mt-3 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+                                >
+                                    <Send size={14} />
+                                    <span>Enviar accesos por WhatsApp</span>
+                                </button>
                             </div>
                         </div>
                     ))
