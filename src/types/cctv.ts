@@ -14,6 +14,7 @@ export interface CctvSystem {
     email?: string;
     qr_code_url?: string;
     photo_url?: string;
+    optional_image_url?: string;
     observations?: string;
     created_at?: string;
 

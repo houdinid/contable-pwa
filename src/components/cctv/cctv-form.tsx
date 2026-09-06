@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useData } from "@/context/data-context"; // Assuming contacts are here? Actually need to check data-context
 import { Plus, Trash2, Save, Upload, X, ArrowLeft } from "lucide-react";
+import { compressImage } from "@/lib/image-utils";
 import type { Contact } from "@/types";
 import type { CctvFormData, CctvSystem, CctvUser } from "@/types/cctv";
 
-// Helper to upload file
+// Helper to upload file with Base64 fallback
 async function uploadFile(file: File): Promise<string | null> {
     try {
         const fileExt = file.name.split('.').pop();
@@ -20,15 +21,15 @@ async function uploadFile(file: File): Promise<string | null> {
             .upload(filePath, file);
 
         if (uploadError) {
-            console.error('Error uploading:', uploadError);
-            return null;
+            console.warn('Storage upload error, falling back to base64:', uploadError.message);
+            return await compressImage(file);
         }
 
         const { data } = supabase.storage.from('cctv-images').getPublicUrl(filePath);
-        return data.publicUrl;
+        return data.publicUrl || (await compressImage(file));
     } catch (error) {
-        console.error('Upload exception:', error);
-        return null;
+        console.warn('Upload exception, falling back to base64:', error);
+        return await compressImage(file);
     }
 }
 
@@ -65,10 +66,11 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
         })) || [{ username: "", password: "", is_admin: false }]
     });
 
-    const [files, setFiles] = useState<{ qr?: File | null, photo?: File | null }>({});
-    const [previews, setPreviews] = useState<{ qr?: string, photo?: string }>({
+    const [files, setFiles] = useState<{ qr?: File | null, photo?: File | null, optional?: File | null }>({});
+    const [previews, setPreviews] = useState<{ qr?: string, photo?: string, optional?: string }>({
         qr: initialData?.qr_code_url,
-        photo: initialData?.photo_url
+        photo: initialData?.photo_url,
+        optional: initialData?.optional_image_url
     });
 
     useEffect(() => {
@@ -106,11 +108,16 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
         setFormData(prev => ({ ...prev, users: newUsers }));
     };
 
-    const handleFileChange = (type: 'qr' | 'photo', e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (type: 'qr' | 'photo' | 'optional', e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             setFiles(prev => ({ ...prev, [type]: file }));
-            setPreviews(prev => ({ ...prev, [type]: URL.createObjectURL(file) }));
+            try {
+                const compressed = await compressImage(file);
+                setPreviews(prev => ({ ...prev, [type]: compressed }));
+            } catch {
+                setPreviews(prev => ({ ...prev, [type]: URL.createObjectURL(file) }));
+            }
         }
     };
 
@@ -119,18 +126,20 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
         setLoading(true);
 
         try {
-            // Upload files first
-            let qrUrl = initialData?.qr_code_url;
-            let photoUrl = initialData?.photo_url;
-
-            if (files.qr) {
-                const url = await uploadFile(files.qr);
-                if (url) qrUrl = url;
+            // Upload / compress files
+            let qrUrl: string | null = previews.qr ? (initialData?.qr_code_url || previews.qr) : null;
+            if (previews.qr && files.qr) {
+                qrUrl = await uploadFile(files.qr);
             }
 
-            if (files.photo) {
-                const url = await uploadFile(files.photo);
-                if (url) photoUrl = url;
+            let photoUrl: string | null = previews.photo ? (initialData?.photo_url || previews.photo) : null;
+            if (previews.photo && files.photo) {
+                photoUrl = await uploadFile(files.photo);
+            }
+
+            let optionalUrl: string | null = previews.optional ? (initialData?.optional_image_url || previews.optional) : null;
+            if (previews.optional && files.optional) {
+                optionalUrl = await uploadFile(files.optional);
             }
 
             // Save System
@@ -149,7 +158,8 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
                 email: formData.email,
                 observations: formData.observations,
                 qr_code_url: qrUrl,
-                photo_url: photoUrl
+                photo_url: photoUrl,
+                optional_image_url: optionalUrl
             };
 
             let systemId = initialData?.id;
@@ -402,7 +412,7 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
             {/* Imágenes */}
             <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Imágenes (Opcional)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* QR Code */}
                     <div>
                         <label className="block text-sm font-medium mb-2">Código QR App</label>
@@ -463,6 +473,39 @@ export function CCTVForm({ initialData, isEditing = false }: CCTVFormProps) {
                                         accept="image/*"
                                         className="absolute inset-0 opacity-0 cursor-pointer"
                                         onChange={e => handleFileChange('photo', e)}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Optional Image */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Imagen Opcional</label>
+                        <div className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center min-h-[150px] relative bg-muted/50 text-center">
+                            {previews.optional ? (
+                                <div className="relative w-full h-full flex flex-col items-center">
+                                    <img src={previews.optional} alt="Opcional" className="h-40 object-contain mb-2" />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFiles(p => ({ ...p, optional: null }));
+                                            setPreviews(p => ({ ...p, optional: undefined }));
+                                        }}
+                                        className="absolute top-0 right-0 bg-red-100 text-red-600 p-1 rounded-full"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <Upload className="text-gray-400 mb-2" size={32} />
+                                    <p className="text-sm text-gray-500">Click para subir imagen opcional</p>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        onChange={e => handleFileChange('optional', e)}
                                     />
                                 </>
                             )}

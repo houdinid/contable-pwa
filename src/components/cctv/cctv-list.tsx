@@ -109,6 +109,25 @@ export function CCTVList() {
                                     </div>
                                 </div>
 
+                                {/* Images Badge Preview */}
+                                <div className="flex items-center gap-2 mb-3">
+                                    {sys.qr_code_url && (
+                                        <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs flex items-center gap-1 font-medium">
+                                            QR App
+                                        </span>
+                                    )}
+                                    {sys.photo_url && (
+                                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-xs flex items-center gap-1 font-medium">
+                                            Foto Montaje
+                                        </span>
+                                    )}
+                                    {sys.optional_image_url && (
+                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs flex items-center gap-1 font-medium">
+                                            Opcional
+                                        </span>
+                                    )}
+                                </div>
+
                                 <div className="flex gap-2 mt-4 pt-4 border-t">
                                     <Link
                                         href={`/dashboard/cctv/${sys.id}`}
