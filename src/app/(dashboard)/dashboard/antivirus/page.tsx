@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Shield, Copy, Edit, Trash2, Calendar, Monitor, User, ExternalLink } from "lucide-react";
+import { Plus, Search, Shield, Copy, Edit, Trash2, Calendar, Monitor, User, ExternalLink, Send } from "lucide-react";
 import { useData } from "@/context/data-context";
+import { AntivirusLicense } from "@/types";
 
 export default function AntivirusListPage() {
     const { antivirusLicenses, deleteAntivirusLicense, contacts } = useData();
@@ -22,6 +23,20 @@ export default function AntivirusListPage() {
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
         alert(`${label} copiado al portapapeles`);
+    };
+
+    const sendWhatsApp = (license: AntivirusLicense) => {
+        let text = `🛡️ *LICENCIA DE ANTIVIRUS*\n`;
+        text += `📦 *Producto:* ${license.licenseName}\n`;
+        text += `🔑 *Clave:* ${license.productKey || '(sin clave)'}`;
+        if (license.expirationDate) {
+            text += `\n📅 *Vencimiento:* ${new Date(license.expirationDate).toLocaleDateString()}`;
+        }
+        if (license.downloadUrl) {
+            text += `\n🔗 *Descarga:* ${license.downloadUrl}`;
+        }
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
     };
 
     const handleDelete = async (id: string) => {
@@ -133,13 +148,22 @@ export default function AntivirusListPage() {
                                                 {license.productKey || "Sin Clave"}
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => copyToClipboard(license.productKey || "", "Clave")}
-                                            className="p-1.5 text-gray-400 hover:text-foreground rounded transition-colors"
-                                            title="Copiar Clave"
-                                        >
-                                            <Copy size={16} />
-                                        </button>
+                                        <div className="flex gap-1">
+                                            <button
+                                                onClick={() => copyToClipboard(license.productKey || "", "Clave")}
+                                                className="p-1.5 text-gray-400 hover:text-foreground rounded transition-colors"
+                                                title="Copiar Clave"
+                                            >
+                                                <Copy size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => sendWhatsApp(license)}
+                                                className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 rounded transition-colors"
+                                                title="Enviar por WhatsApp"
+                                            >
+                                                <Send size={16} />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {/* Download Link Section */}
