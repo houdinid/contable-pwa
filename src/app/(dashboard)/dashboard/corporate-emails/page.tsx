@@ -31,23 +31,7 @@ export default function CorporateEmailsListPage() {
     };
 
     const sendWhatsApp = (email: any) => {
-        const clientName = getClientName(email.clientId);
-        let text = `📧 *ACCESO DE CORREO CORPORATIVO*\n`;
-        if (clientName && clientName !== "Sin Cliente") {
-            text += `🏢 *Cliente:* ${clientName}\n`;
-        }
-        text += `✉️ *Correo:* ${email.emailAddress}\n`;
-        text += `🔑 *Contraseña:* ${email.password || '(sin contraseña)'}\n`;
-        if (email.assignedTo) {
-            text += `👤 *Asignado a:* ${email.assignedTo}\n`;
-        }
-        if (email.recoveryEmail) {
-            text += `📩 *Correo Recuperación:* ${email.recoveryEmail}\n`;
-        }
-        if (email.recoveryPhone) {
-            text += `📱 *Teléfono Recuperación:* ${email.recoveryPhone}\n`;
-        }
-
+        const text = `✉️ *Correo:* ${email.emailAddress}\n🔑 *Contraseña:* ${email.password || ''}`;
         const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
         window.open(url, '_blank');
     };
