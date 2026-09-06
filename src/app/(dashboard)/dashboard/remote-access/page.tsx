@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Copy, Eye, EyeOff, Edit, Trash2, User, Server, MonitorSmartphone } from "lucide-react";
+import { Plus, Search, Copy, Eye, EyeOff, Edit, Trash2, User, Server, MonitorSmartphone, Send } from "lucide-react";
 import { useData } from "@/context/data-context";
+import { RemoteAccess } from "@/types";
 
 export default function RemoteAccessListPage() {
     const { remoteAccesses, contacts, deleteRemoteAccess } = useData();
@@ -28,6 +29,17 @@ export default function RemoteAccessListPage() {
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
         alert(`${label} copiado al portapapeles`);
+    };
+
+    const sendWhatsApp = (access: RemoteAccess) => {
+        let text = `🖥️ *ACCESO REMOTO (${access.softwareType || 'Remoto'})*\n`;
+        text += `🆔 *ID/Código:* ${access.connectionCode || ''}\n`;
+        text += `🔑 *Contraseña:* ${access.password || ''}`;
+        if (access.hostname) {
+            text += `\n💻 *Equipo:* ${access.hostname}`;
+        }
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
     };
 
     const handleDelete = async (id: string) => {
@@ -154,6 +166,13 @@ export default function RemoteAccessListPage() {
                                         >
                                             <Copy size={16} />
                                         </button>
+                                        <button
+                                            onClick={() => sendWhatsApp(access)}
+                                            className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 rounded transition-colors"
+                                            title="Enviar acceso por WhatsApp"
+                                        >
+                                            <Send size={16} />
+                                        </button>
                                     </div>
                                 </div>
 
@@ -174,6 +193,15 @@ export default function RemoteAccessListPage() {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* WhatsApp Action Button */}
+                                <button
+                                    onClick={() => sendWhatsApp(access)}
+                                    className="w-full mt-3 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+                                >
+                                    <Send size={14} />
+                                    <span>Enviar acceso remoto por WhatsApp</span>
+                                </button>
                             </div>
                         </div>
                     ))
