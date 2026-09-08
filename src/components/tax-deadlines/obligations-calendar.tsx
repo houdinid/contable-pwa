@@ -33,9 +33,15 @@ export function ObligationsCalendar({ deadlines, taxTypes, onEdit, onDelete }: O
     };
 
     const getDeadlinesForDate = (date: Date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const dStr = String(date.getDate()).padStart(2, '0');
+        const dateString = `${y}-${m}-${dStr}`;
+
         return deadlines.filter(d => {
-            const exp = new Date(d.expirationDate + 'T00:00:00');
-            return isSameDay(exp, date);
+            if (!d.expirationDate) return false;
+            const expStr = d.expirationDate.split('T')[0];
+            return expStr === dateString;
         });
     };
 
@@ -67,7 +73,7 @@ export function ObligationsCalendar({ deadlines, taxTypes, onEdit, onDelete }: O
         const days = [];
         // empty slots before first day
         for (let i = 0; i < firstDay; i++) {
-            days.push(<div key={`empty-${i}`} className="h-24 bg-muted/10 border border-border/50 rounded-lg"></div>);
+            days.push(<div key={`empty-${i}`} className="min-h-[50px] sm:h-24 bg-muted/10 border border-border/50 rounded-lg"></div>);
         }
 
         for (let i = 1; i <= daysInMonth; i++) {
@@ -80,23 +86,23 @@ export function ObligationsCalendar({ deadlines, taxTypes, onEdit, onDelete }: O
                 <div 
                     key={i} 
                     onClick={() => setSelectedDate(date)}
-                    className={`h-24 p-2 border rounded-lg cursor-pointer transition-all flex flex-col relative overflow-hidden group
+                    className={`min-h-[50px] sm:h-24 p-1 sm:p-2 border rounded-lg cursor-pointer transition-all flex flex-col relative overflow-hidden group
                         ${isToday ? 'border-amber-500 bg-amber-50/10' : 'border-border/50 hover:border-amber-300 bg-card'}
                         ${isSelected ? 'ring-2 ring-amber-500 shadow-md' : ''}
                     `}
                 >
                     <div className="flex justify-between items-start mb-1">
-                        <span className={`text-sm font-medium ${isToday ? 'bg-amber-500 text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                        <span className={`text-[10px] sm:text-sm font-medium ${isToday ? 'bg-amber-500 text-white w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center' : 'text-muted-foreground group-hover:text-foreground'}`}>
                             {i}
                         </span>
                         {dayDeadlines.length > 0 && (
-                            <span className="text-[10px] font-bold bg-muted px-1.5 py-0.5 rounded-full">
+                            <span className="text-[9px] sm:text-[10px] font-bold bg-muted px-1 sm:px-1.5 py-0.5 rounded-full hidden sm:inline-block">
                                 {dayDeadlines.length}
                             </span>
                         )}
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto space-y-1 hide-scrollbar">
+                    <div className="flex-1 overflow-y-auto space-y-1 hide-scrollbar hidden sm:block">
                         {dayDeadlines.map((d) => {
                             const color = getColorForTaxType(d.taxType);
                             return (
@@ -104,6 +110,16 @@ export function ObligationsCalendar({ deadlines, taxTypes, onEdit, onDelete }: O
                                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }}></div>
                                     <span className="truncate">{d.taxType}</span>
                                 </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Mobile only dots */}
+                    <div className="flex sm:hidden flex-wrap gap-1 mt-auto mb-0.5 justify-center">
+                        {dayDeadlines.map((d) => {
+                            const color = getColorForTaxType(d.taxType);
+                            return (
+                                <div key={d.id} className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0" style={{ backgroundColor: color }}></div>
                             );
                         })}
                     </div>
@@ -120,10 +136,10 @@ export function ObligationsCalendar({ deadlines, taxTypes, onEdit, onDelete }: O
                         <button onClick={nextMonth} className="p-2 hover:bg-muted rounded-lg border border-border"><ChevronRight size={20}/></button>
                     </div>
                 </div>
-                <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold text-muted-foreground uppercase">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground uppercase">
                     <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
                 </div>
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2">
                     {days}
                 </div>
             </div>
