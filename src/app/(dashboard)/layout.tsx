@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Sidebar } from "@/components/navigation/sidebar";
 import { Menu } from "lucide-react";
+import { useObligationAlerts } from "@/hooks/useObligationAlerts";
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    useObligationAlerts();
     const { isAuthenticated, isLoading: authLoading } = useAuth();
     const [forceLoadingFinished, setForceLoadingFinished] = useState(false);
     const router = useRouter();

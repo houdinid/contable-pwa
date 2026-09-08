@@ -20,6 +20,9 @@ export default function CreateTaxDeadlinePage() {
     const [taxType, setTaxType] = useState("");
     const [expirationDate, setExpirationDate] = useState("");
     const [paymentLink, setPaymentLink] = useState("");
+    const [amount, setAmount] = useState("");
+    const [alertDaysBefore, setAlertDaysBefore] = useState("3");
+    const [contactNumber, setContactNumber] = useState("");
 
     const handleSelectIdentity = (id: string) => {
         const identity = businessIdentities.find(b => b.id === id);
@@ -49,6 +52,9 @@ export default function CreateTaxDeadlinePage() {
                 taxType,
                 expirationDate,
                 paymentLink: paymentLink.trim() || undefined,
+                amount: amount ? Number(amount) : undefined,
+                alertDaysBefore: alertDaysBefore ? parseInt(alertDaysBefore) : 3,
+                contactNumber: contactNumber.trim() || undefined,
                 completed: false
             });
             router.push("/dashboard/tax-deadlines");
@@ -191,6 +197,49 @@ export default function CreateTaxDeadlinePage() {
                                     placeholder="https://ejemplo.com/pagar"
                                 />
                             </div>
+                        </div>
+
+                        {/* Monto */}
+                        <div>
+                            <label className="block text-sm font-medium text-foreground mb-1">Monto Estimado (Opcional)</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    className="w-full pl-8 pr-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Alerta */}
+                        <div>
+                            <label className="block text-sm font-medium text-foreground mb-1">Avisar X días antes</label>
+                            <input
+                                type="number"
+                                min="0"
+                                required
+                                value={alertDaysBefore}
+                                onChange={(e) => setAlertDaysBefore(e.target.value)}
+                                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                placeholder="Ej: 3"
+                            />
+                        </div>
+
+                        {/* WhatsApp Contact */}
+                        <div className="col-span-1 md:col-span-2">
+                            <label className="block text-sm font-medium text-foreground mb-1">Teléfono para WhatsApp (Opcional)</label>
+                            <input
+                                type="tel"
+                                value={contactNumber}
+                                onChange={(e) => setContactNumber(e.target.value)}
+                                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                placeholder="Ej: 3001234567"
+                            />
                         </div>
                     </div>
                 </div>

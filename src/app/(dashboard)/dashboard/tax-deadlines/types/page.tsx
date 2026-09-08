@@ -8,7 +8,18 @@ import { useData } from "@/context/data-context";
 export default function TaxTypesManagementPage() {
     const { taxTypes, addTaxType, deleteTaxType } = useData();
     const [newName, setNewName] = useState("");
+    const [newColor, setNewColor] = useState("#3b82f6"); // Default blue
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const PREDEFINED_COLORS = [
+        { name: "Azul", hex: "#3b82f6" },
+        { name: "Rojo", hex: "#ef4444" },
+        { name: "Verde", hex: "#10b981" },
+        { name: "Ámbar", hex: "#f59e0b" },
+        { name: "Púrpura", hex: "#8b5cf6" },
+        { name: "Rosa", hex: "#ec4899" },
+        { name: "Gris", hex: "#6b7280" },
+    ];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -16,8 +27,9 @@ export default function TaxTypesManagementPage() {
 
         setIsSubmitting(true);
         try {
-            await addTaxType({ name: newName.trim() });
+            await addTaxType({ name: newName.trim(), color: newColor });
             setNewName("");
+            setNewColor("#3b82f6");
         } catch (error) {
             console.error("Error adding tax type:", error);
             alert("No se pudo crear el tipo de impuesto.");
@@ -73,6 +85,21 @@ export default function TaxTypesManagementPage() {
                                     className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-2">Color de Categoría</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {PREDEFINED_COLORS.map(c => (
+                                        <button
+                                            key={c.hex}
+                                            type="button"
+                                            onClick={() => setNewColor(c.hex)}
+                                            className={`w-8 h-8 rounded-full border-2 transition-transform ${newColor === c.hex ? 'scale-110 border-foreground shadow-md' : 'border-transparent hover:scale-105'}`}
+                                            style={{ backgroundColor: c.hex }}
+                                            title={c.name}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
                             <button
                                 type="submit"
                                 disabled={isSubmitting || !newName.trim()}
@@ -101,7 +128,7 @@ export default function TaxTypesManagementPage() {
                                 taxTypes.map((type) => (
                                     <div key={type.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors group">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                                            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: type.color || '#3b82f6' }}></div>
                                             <span className="font-medium text-foreground">{type.name}</span>
                                         </div>
                                         <button

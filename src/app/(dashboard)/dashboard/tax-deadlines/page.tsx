@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Edit, Trash2, Landmark, Calendar, AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Landmark, Calendar, AlertTriangle, CheckCircle2, ExternalLink, List as ListIcon, Calendar as CalendarIconView, Send } from "lucide-react";
 import { useData } from "@/context/data-context";
+import { ObligationsCalendar } from "@/components/tax-deadlines/obligations-calendar";
 
 export default function TaxDeadlinesListPage() {
-    const { taxDeadlines, deleteTaxDeadline } = useData();
+    const { taxDeadlines, taxTypes, deleteTaxDeadline } = useData();
     const [searchTerm, setSearchTerm] = useState("");
+    const [activeView, setActiveView] = useState<'list' | 'calendar'>('calendar');
 
     const filteredDeadlines = taxDeadlines.filter(deadline => {
         const searchLower = searchTerm.toLowerCase();
@@ -25,6 +27,19 @@ export default function TaxDeadlinesListPage() {
         if (window.confirm("¿Estás seguro de eliminar esta obligación fiscal?")) {
             await deleteTaxDeadline(id);
         }
+    };
+
+    const handleSendWhatsApp = (deadline: any) => {
+        const phone = deadline.contactNumber ? deadline.contactNumber.replace(/\D/g, '') : '';
+        const dateStr = new Date(deadline.expirationDate + 'T00:00:00').toLocaleDateString();
+        const amountStr = deadline.amount ? ` por un valor estimado de $${deadline.amount}` : '';
+        const message = `Recordatorio: Tienes un vencimiento de *${deadline.taxType}* para la empresa *${deadline.businessName}* el día *${dateStr}*${amountStr}.`;
+        
+        const url = phone 
+            ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+            : `https://wa.me/?text=${encodeURIComponent(message)}`;
+            
+        window.open(url, '_blank');
     };
 
     const getStatusInfo = (dateString: string): { label: string, color: string, icon: React.ReactNode } => {
@@ -93,20 +108,47 @@ export default function TaxDeadlinesListPage() {
                 </div>
             </div>
 
-            {/* Search */}
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                    type="text"
-                    placeholder="Buscar por empresa, NIT o tipo de impuesto..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all"
-                />
+            {/* View Switcher & Search */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full sm:max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por empresa, NIT o tipo..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                    />
+                </div>
+                
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border w-full sm:w-auto">
+                    <button
+                        onClick={() => setActiveView('calendar')}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeView === 'calendar' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        <CalendarIconView size={16} />
+                        Calendarios
+                    </button>
+                    <button
+                        onClick={() => setActiveView('list')}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeView === 'list' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        <ListIcon size={16} />
+                        Listado
+                    </button>
+                </div>
             </div>
 
-            {/* Grouped Lists */}
-            <div className="space-y-8">
+            {/* Content Area */}
+            {activeView === 'calendar' ? (
+                <ObligationsCalendar 
+                    deadlines={filteredDeadlines} 
+                    taxTypes={taxTypes}
+                    onEdit={() => {}} 
+                    onDelete={handleDelete} 
+                />
+            ) : (
+                <div className="space-y-8">
                 {Object.keys(groupedDeadlines).length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground bg-card rounded-xl border border-dashed border-border">
                         <Landmark size={48} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
@@ -182,10 +224,28 @@ export default function TaxDeadlinesListPage() {
                                                         </a>
                                                     </div>
                                                 )}
+                                                {/* Monto Opcional */}
+                                                {deadline.amount && (
+                                                    <div className="min-w-[100px]">
+                                                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Monto</p>
+                                                        <span className="font-mono font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded">
+                                                            ${deadline.amount.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                )}
+
                                             </div>
 
                                             {/* Individual Actions */}
                                             <div className="flex items-center gap-2 self-end sm:self-center opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => handleSendWhatsApp(deadline)}
+                                                    className="p-2.5 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20 rounded-xl transition-all border border-transparent hover:border-emerald-200 flex items-center gap-1.5 font-semibold text-sm"
+                                                    title="Enviar recordatorio por WhatsApp"
+                                                >
+                                                    <Send size={16} />
+                                                    <span className="hidden xl:inline">Enviar</span>
+                                                </button>
                                                 <Link
                                                     href={`/dashboard/tax-deadlines/${deadline.id}/edit`}
                                                     className="p-2.5 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition-all border border-transparent hover:border-amber-200"
@@ -209,6 +269,7 @@ export default function TaxDeadlinesListPage() {
                     ))
                 )}
             </div>
+            )}
         </div>
     );
 }

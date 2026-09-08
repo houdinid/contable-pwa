@@ -68,6 +68,9 @@ export interface TaxDeadline {
     expirationDate: string;
     completed: boolean;
     paymentLink?: string;
+    amount?: number;
+    alertDaysBefore?: number;
+    contactNumber?: string;
     user_id?: string;
     createdAt: string;
 }
@@ -75,6 +78,8 @@ export interface TaxDeadline {
 export interface TaxType {
     id: string;
     name: string;
+    color?: string;
+    icon?: string;
     user_id?: string;
     createdAt?: string;
 }

@@ -464,6 +464,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     expirationDate: t.expiration_date,
                     completed: t.completed,
                     paymentLink: t.payment_link,
+                    amount: t.amount,
+                    alertDaysBefore: t.alert_days_before,
+                    contactNumber: t.contact_number,
                     createdAt: t.created_at
                 })));
 
@@ -1450,6 +1453,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             expiration_date: newRecord.expirationDate,
             completed: newRecord.completed,
             payment_link: newRecord.paymentLink || null,
+            amount: newRecord.amount || null,
+            alert_days_before: newRecord.alertDaysBefore || 3,
+            contact_number: newRecord.contactNumber || null,
             user_id: user?.id,
             created_at: newRecord.createdAt
         };
@@ -1471,6 +1477,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (patch.expirationDate !== undefined) dbPatch.expiration_date = patch.expirationDate;
         if (patch.completed !== undefined) dbPatch.completed = patch.completed;
         if (patch.paymentLink !== undefined) dbPatch.payment_link = patch.paymentLink || null;
+        if (patch.amount !== undefined) dbPatch.amount = patch.amount || null;
+        if (patch.alertDaysBefore !== undefined) dbPatch.alert_days_before = patch.alertDaysBefore;
+        if (patch.contactNumber !== undefined) dbPatch.contact_number = patch.contactNumber || null;
 
         const { error } = await supabase.from('tax_deadlines').update(dbPatch).eq('id', id);
         if (error) console.error("Error updating tax deadline:", error);
@@ -1503,6 +1512,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.from('tax_types').insert({
             id: newItem.id,
             name: newItem.name,
+            color: newItem.color || '#3b82f6',
+            icon: newItem.icon || null,
             user_id: user?.id
         });
         
