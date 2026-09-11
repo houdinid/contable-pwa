@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, Shield, MapPin, KeyRound, MonitorSmartphone, Plus, X } from "lucide-react";
 import { useData } from "@/context/data-context";
+import { supabase } from "@/lib/supabase";
 import { ContactFormModal } from "@/components/forms/contact-form-modal";
 
 export default function EditAntivirusPage() {
@@ -28,6 +29,8 @@ export default function EditAntivirusPage() {
     const [expirationDate, setExpirationDate] = useState("");
     const [deviceLimit, setDeviceLimit] = useState(1);
     const [downloadUrl, setDownloadUrl] = useState("");
+    const [activationFileUrl, setActivationFileUrl] = useState("");
+    const [activationFile, setActivationFile] = useState<File | null>(null);
 
     // Dynamic Devices Array
     const [devices, setDevices] = useState<{ id: string, hostname: string }[]>([]);
@@ -52,6 +55,7 @@ export default function EditAntivirusPage() {
 
             setDeviceLimit(license.deviceLimit || 1);
             setDownloadUrl(license.downloadUrl || "");
+            setActivationFileUrl(license.activationFileUrl || "");
 
             // Map devices
             if (license.devices) {
@@ -100,6 +104,22 @@ export default function EditAntivirusPage() {
         setIsSubmitting(true);
 
         try {
+            let uploadedFileUrl: string | undefined = activationFileUrl || undefined;
+            if (activationFile) {
+                const fileExt = activationFile.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage.from('antivirus-files').upload(fileName, activationFile);
+                if (!uploadError) {
+                    const { data } = supabase.storage.from('antivirus-files').getPublicUrl(fileName);
+                    uploadedFileUrl = data.publicUrl;
+                } else {
+                    console.error('File upload failed:', uploadError);
+                    alert("Error al subir el archivo de activación.");
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
             await updateAntivirusLicense(id, {
                 supplierId,
                 clientId: clientId || undefined,
@@ -109,6 +129,7 @@ export default function EditAntivirusPage() {
                 expirationDate,
                 deviceLimit,
                 downloadUrl,
+                activationFileUrl: uploadedFileUrl,
                 devices: devices.map(d => ({
                     id: d.id,
                     hostname: d.hostname,
@@ -277,6 +298,25 @@ export default function EditAntivirusPage() {
                                 onChange={(e) => setDownloadUrl(e.target.value)}
                                 className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                 placeholder="https://ejemplo.com/descargar"
+                            />
+                        </div>
+                        <div className="col-span-1 md:col-span-2">
+                            <label className="block text-sm font-medium text-foreground mb-1">Archivo de Activación (.zip, .pdf, .rar) (Opcional)</label>
+                            {activationFileUrl && !activationFile && (
+                                <div className="mb-2 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm flex items-center justify-between border border-blue-100">
+                                    <span>Ya existe un archivo guardado.</span>
+                                    <a href={activationFileUrl} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Ver / Descargar</a>
+                                </div>
+                            )}
+                            <input
+                                type="file"
+                                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                                accept=".zip,.pdf,.rar,.txt"
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                        setActivationFile(e.target.files[0]);
+                                    }
+                                }}
                             />
                         </div>
                     </div>

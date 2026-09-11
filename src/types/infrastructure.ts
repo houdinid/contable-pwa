@@ -29,6 +29,7 @@ export interface AntivirusLicense {
     expirationDate?: string;
     deviceLimit: number;
     downloadUrl?: string;
+    activationFileUrl?: string;
     devices?: AntivirusDevice[]; // 1:N relations
     createdAt: string;
 

@@ -426,6 +426,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     expirationDate: a.expiration_date,
                     deviceLimit: a.device_limit,
                     downloadUrl: a.download_url,
+                    activationFileUrl: a.activation_file_url,
                     supplierName: a.supplier?.name || (contactsData || []).find((c: any) => c.id === a.supplier_id)?.name,
                     clientName: a.client?.name || (contactsData || []).find((c: any) => c.id === a.client_id)?.name,
                     createdAt: a.created_at,
@@ -1302,7 +1303,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             start_date: newRecord.startDate,
             expiration_date: newRecord.expirationDate,
             device_limit: newRecord.deviceLimit,
-            download_url: newRecord.downloadUrl
+            download_url: newRecord.downloadUrl,
+            activation_file_url: newRecord.activationFileUrl || null
         };
 
         const { error: licenseError } = await supabase.from('antivirus_licenses').insert(dbLicense);
@@ -1335,6 +1337,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (patch.expirationDate !== undefined) dbPatch.expiration_date = patch.expirationDate;
         if (patch.deviceLimit !== undefined) dbPatch.device_limit = patch.deviceLimit;
         if (patch.downloadUrl !== undefined) dbPatch.download_url = patch.downloadUrl;
+        if (patch.activationFileUrl !== undefined) dbPatch.activation_file_url = patch.activationFileUrl;
 
         if (Object.keys(dbPatch).length > 0) {
             const { error } = await supabase.from('antivirus_licenses').update(dbPatch).eq('id', id);

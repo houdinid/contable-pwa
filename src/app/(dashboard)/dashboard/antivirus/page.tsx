@@ -37,6 +37,9 @@ export default function AntivirusListPage() {
         if (license.downloadUrl) {
             text += `\n🔗 *Descarga:* ${license.downloadUrl}`;
         }
+        if (license.activationFileUrl) {
+            text += `\n📁 *Archivo:* ${license.activationFileUrl}`;
+        }
         const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
         window.open(url, '_blank');
     };
@@ -196,6 +199,27 @@ export default function AntivirusListPage() {
                                                 rel="noopener noreferrer"
                                                 className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all shadow-sm"
                                                 title="Ir al Link de Descarga"
+                                            >
+                                                <ExternalLink size={14} />
+                                            </a>
+                                        </div>
+                                    )}
+
+                                    {/* Activation File Section */}
+                                    {license.activationFileUrl && (
+                                        <div className="px-3 py-2 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-900/30 flex items-center justify-between mt-2">
+                                            <div className="flex-1 min-w-0 mr-2">
+                                                <p className="text-[10px] text-purple-600 dark:text-purple-400 uppercase font-semibold">Archivo de Activación</p>
+                                                <div className="text-xs text-purple-800 dark:text-purple-200 truncate font-medium">
+                                                    Descargar Archivo
+                                                </div>
+                                            </div>
+                                            <a
+                                                href={license.activationFileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 transition-all shadow-sm"
+                                                title="Descargar Archivo"
                                             >
                                                 <ExternalLink size={14} />
                                             </a>
