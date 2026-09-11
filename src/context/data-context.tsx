@@ -34,7 +34,7 @@ interface DataContextType {
     updateRemoteAccess: (id: string, data: Partial<RemoteAccess>) => Promise<void>;
     deleteRemoteAccess: (id: string) => Promise<void>;
 
-    addAntivirusLicense: (data: Omit<AntivirusLicense, "id" | "createdAt" | "supplierName">) => Promise<void>;
+    addAntivirusLicense: (data: Omit<AntivirusLicense, "id" | "createdAt" | "supplierName" | "clientName">) => Promise<void>;
     updateAntivirusLicense: (id: string, data: Partial<AntivirusLicense>) => Promise<void>;
     deleteAntivirusLicense: (id: string) => Promise<void>;
 
@@ -285,7 +285,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     supabase.from('wifi_networks').select('*').then(r => { console.log("Fetched: wifi_networks", r.error || "OK"); return r; }),
                     supabase.from('service_orders').select('*, items:service_order_items(*)').then(r => { console.log("Fetched: service_orders", r.error || "OK"); return r; }),
                     supabase.from('remote_access').select('*, client:contacts(name)').then(r => { console.log("Fetched: remote_access", r.error || "OK"); return r; }),
-                    supabase.from('antivirus_licenses').select('*, devices:antivirus_devices(*), supplier:contacts(name)').then(r => { console.log("Fetched: antivirus_licenses", r.error || "OK"); return r; }),
+                    supabase.from('antivirus_licenses').select('*, devices:antivirus_devices(*), supplier:contacts!antivirus_licenses_supplier_id_fkey(name), client:contacts!antivirus_licenses_client_id_fkey(name)').then(r => { console.log("Fetched: antivirus_licenses", r.error || "OK"); return r; }),
                     supabase.from('corporate_emails').select('*, client:contacts(name)').then(r => { console.log("Fetched: corporate_emails", r.error || "OK"); return r; }),
                     supabase.from('software_licenses').select('*, client:contacts(name)').then(r => { console.log("Fetched: software_licenses", r.error || "OK"); return r; }),
                     supabase.from('tax_deadlines').select('*').then(r => { console.log("Fetched: tax_deadlines", r.error || "OK"); return r; }),
@@ -419,13 +419,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 setAntivirusLicenses((antivirusLicensesData || []).map((a: any) => ({
                     ...a,
                     supplierId: a.supplier_id,
+                    clientId: a.client_id,
                     licenseName: a.license_name,
                     productKey: a.product_key,
                     startDate: a.start_date,
                     expirationDate: a.expiration_date,
                     deviceLimit: a.device_limit,
                     downloadUrl: a.download_url,
-                    supplierName: a.supplier?.name,
+                    supplierName: a.supplier?.name || (contactsData || []).find((c: any) => c.id === a.supplier_id)?.name,
+                    clientName: a.client?.name || (contactsData || []).find((c: any) => c.id === a.client_id)?.name,
                     createdAt: a.created_at,
                     devices: (a.devices || []).map((d: any) => ({
                         ...d,
@@ -1288,12 +1290,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (error) console.error("Error deleting remote access:", error);
     };
 
-    const addAntivirusLicense = async (data: Omit<AntivirusLicense, "id" | "createdAt" | "supplierName">) => {
+    const addAntivirusLicense = async (data: Omit<AntivirusLicense, "id" | "createdAt" | "supplierName" | "clientName">) => {
         const newRecord = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
 
         const dbLicense = {
             id: newRecord.id,
             supplier_id: newRecord.supplierId,
+            client_id: newRecord.clientId || null,
             license_name: newRecord.licenseName,
             product_key: newRecord.productKey,
             start_date: newRecord.startDate,
@@ -1325,6 +1328,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         const dbPatch: any = {};
         if (patch.supplierId !== undefined) dbPatch.supplier_id = patch.supplierId;
+        if (patch.clientId !== undefined) dbPatch.client_id = patch.clientId;
         if (patch.licenseName !== undefined) dbPatch.license_name = patch.licenseName;
         if (patch.productKey !== undefined) dbPatch.product_key = patch.productKey;
         if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate;

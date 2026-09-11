@@ -22,6 +22,7 @@ export interface AntivirusDevice {
 export interface AntivirusLicense {
     id: string;
     supplierId: string; // Refers to Contact
+    clientId?: string; // Opt to link to a client (Refers to Contact)
     licenseName: string;
     productKey?: string;
     startDate?: string;
@@ -33,6 +34,7 @@ export interface AntivirusLicense {
 
     // Extra computed
     supplierName?: string;
+    clientName?: string;
 }
 
 export interface CorporateEmail {

@@ -16,10 +16,12 @@ export default function EditAntivirusPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+    const [contactModalType, setContactModalType] = useState<'client' | 'supplier'>('supplier');
     const [isLoading, setIsLoading] = useState(true);
 
     // Form State
     const [supplierId, setSupplierId] = useState("");
+    const [clientId, setClientId] = useState("");
     const [licenseName, setLicenseName] = useState("");
     const [productKey, setProductKey] = useState("");
     const [startDate, setStartDate] = useState("");
@@ -36,6 +38,7 @@ export default function EditAntivirusPage() {
         const license = antivirusLicenses.find(a => a.id === id);
         if (license) {
             setSupplierId(license.supplierId || "");
+            setClientId(license.clientId || "");
             setLicenseName(license.licenseName || "");
             setProductKey(license.productKey || "");
 
@@ -99,6 +102,7 @@ export default function EditAntivirusPage() {
         try {
             await updateAntivirusLicense(id, {
                 supplierId,
+                clientId: clientId || undefined,
                 licenseName,
                 productKey,
                 startDate,
@@ -142,16 +146,17 @@ export default function EditAntivirusPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* 1. Proveedor */}
+                {/* 1. Proveedor y Cliente */}
                 <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
                     <div className="p-4 bg-muted/50 border-b border-border flex items-center gap-2">
                         <MapPin className="text-emerald-500" size={20} />
-                        <h2 className="font-semibold text-foreground">Proveedor de Licencia</h2>
+                        <h2 className="font-semibold text-foreground">Asignación de Licencia</h2>
                     </div>
-                    <div className="p-6">
-                        <label className="block text-sm font-medium text-foreground mb-1">Proveedor *</label>
-                        <div className="flex gap-2">
-                            <select
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-foreground mb-1">Proveedor *</label>
+                            <div className="flex gap-2">
+                                <select
                                 required
                                 value={supplierId}
                                 onChange={(e) => setSupplierId(e.target.value)}
@@ -161,15 +166,39 @@ export default function EditAntivirusPage() {
                                 {contacts.filter(c => c.type === 'supplier').map(supplier => (
                                     <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
                                 ))}
-                            </select>
-                            <button
-                                type="button"
-                                onClick={() => setIsContactModalOpen(true)}
-                                className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-                                title="Crear Nuevo Proveedor"
-                            >
-                                <Plus size={20} />
-                            </button>
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => { setContactModalType('supplier'); setIsContactModalOpen(true); }}
+                                    className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                                    title="Crear Nuevo Proveedor"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-foreground mb-1">Cliente (Opcional)</label>
+                            <div className="flex gap-2">
+                                <select
+                                    value={clientId}
+                                    onChange={(e) => setClientId(e.target.value)}
+                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                >
+                                    <option value="">Seleccionar Cliente...</option>
+                                    {contacts.filter(c => c.type === 'client').map(client => (
+                                        <option key={client.id} value={client.id}>{client.name}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => { setContactModalType('client'); setIsContactModalOpen(true); }}
+                                    className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                                    title="Crear Nuevo Cliente"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -333,9 +362,12 @@ export default function EditAntivirusPage() {
                 isOpen={isContactModalOpen}
                 onClose={() => setIsContactModalOpen(false)}
                 onSuccess={(newName, newId) => {
-                    if (newId) setSupplierId(newId);
+                    if (newId) {
+                        if (contactModalType === 'supplier') setSupplierId(newId);
+                        if (contactModalType === 'client') setClientId(newId);
+                    }
                 }}
-                defaultType="supplier"
+                defaultType={contactModalType}
             />
         </div>
     );

@@ -13,10 +13,12 @@ export default function AntivirusListPage() {
     const filteredLicenses = antivirusLicenses.filter(license => {
         const searchLower = searchTerm.toLowerCase();
         const supplierName = contacts.find(c => c.id === license.supplierId)?.name.toLowerCase() || "";
+        const clientName = contacts.find(c => c.id === license.clientId)?.name.toLowerCase() || "";
         return (
             license.licenseName.toLowerCase().includes(searchLower) ||
             (license.productKey || "").toLowerCase().includes(searchLower) ||
-            supplierName.includes(searchLower)
+            supplierName.includes(searchLower) ||
+            clientName.includes(searchLower)
         );
     });
 
@@ -48,6 +50,11 @@ export default function AntivirusListPage() {
     const getSupplierName = (id?: string) => {
         if (!id) return "Sin Proveedor";
         return contacts.find(c => c.id === id)?.name || "Proveedor Desconocido";
+    };
+
+    const getClientName = (id?: string) => {
+        if (!id) return null;
+        return contacts.find(c => c.id === id)?.name;
     };
 
     // Calculate days remaining
@@ -118,9 +125,17 @@ export default function AntivirusListPage() {
                                             </div>
                                             <div>
                                                 <h3 className="font-bold text-lg text-foreground line-clamp-1" title={license.licenseName}>{license.licenseName}</h3>
-                                                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                    <User size={12} />
-                                                    <span className="truncate max-w-[150px]">{getSupplierName(license.supplierId)}</span>
+                                                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    <div className="flex items-center gap-1">
+                                                        <User size={12} />
+                                                        <span className="truncate max-w-[150px]">Prov: {getSupplierName(license.supplierId)}</span>
+                                                    </div>
+                                                    {getClientName(license.clientId) && (
+                                                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                                                            <User size={12} />
+                                                            <span className="truncate max-w-[150px]">Cliente: {getClientName(license.clientId)}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

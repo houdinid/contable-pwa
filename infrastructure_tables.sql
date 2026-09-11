@@ -17,6 +17,7 @@ create table if not exists remote_access (
 create table if not exists antivirus_licenses (
     id uuid primary key default uuid_generate_v4(),
     supplier_id uuid references contacts(id) on delete cascade,
+    client_id uuid references contacts(id) on delete cascade,
     license_name text not null,
     product_key text,
     start_date date,
