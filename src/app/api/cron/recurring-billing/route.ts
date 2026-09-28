@@ -2,18 +2,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 
-// Bypassing RLS with Service Role Key
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    }
-);
-
 // Map months for Spanish formatting
 const monthNames = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -22,6 +10,18 @@ const monthNames = [
 
 export async function GET(req: Request) {
     try {
+        // Bypassing RLS with Service Role Key - Initialized inside to prevent build-time errors
+        const supabaseAdmin = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+            process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false
+                }
+            }
+        );
+
         // Simple security: Check cron secret (Authorization Bearer or a custom header/query param)
         const url = new URL(req.url);
         const authHeader = req.headers.get('authorization');
