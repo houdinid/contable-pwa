@@ -182,23 +182,32 @@ export const sharePDF = async ({ filename, elementId }: GeneratePdfOptions): Pro
         const pdfBlob = await html2pdf().set(opt).from(targetElement).output('blob');
         const file = new File([pdfBlob], filename, { type: 'application/pdf' });
 
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: filename,
-                text: 'Adjunto encontrarás el documento.'
-            });
-        } else {
-            // Fallback
+        const fallbackDownload = () => {
             const url = URL.createObjectURL(pdfBlob);
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
             a.click();
             URL.revokeObjectURL(url);
-            // alert("La función de compartir no es compatible. El archivo se ha descargado."); 
-            // Suppress alert to avoid double alerting if main catch block handles it, 
-            // but here we are successful in fallback.
+            alert("La función de compartir no está disponible en este dispositivo. El archivo ha sido descargado para que puedas enviarlo manualmente.");
+        };
+
+        if (navigator.share && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: filename,
+                    text: 'Adjunto encontrarás el documento.'
+                });
+            } catch (shareError: any) {
+                console.error("Error sharing via navigator.share:", shareError);
+                if (shareError.name !== 'AbortError') {
+                    fallbackDownload();
+                }
+            }
+        } else {
+            // Fallback
+            fallbackDownload();
         }
 
     } catch (error) {

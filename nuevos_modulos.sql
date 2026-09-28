@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS public.antivirus_licenses (
         expiration_date DATE,
         device_limit INTEGER NOT NULL DEFAULT 1,
         download_url TEXT,
+        activation_file_url TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 -- Políticas RLS para antivirus_licenses
@@ -133,3 +134,12 @@ CREATE POLICY "Enable read for all" ON public.tax_types FOR SELECT USING (true);
 CREATE POLICY "Enable insert for authenticated" ON public.tax_types FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Enable update for authenticated" ON public.tax_types FOR UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "Enable delete for authenticated" ON public.tax_types FOR DELETE USING (auth.role() = 'authenticated');
+
+-- 8. Storage Policies para antivirus-files
+-- (Asegúrate de haber creado el bucket 'antivirus-files' primero)
+INSERT INTO storage.buckets (id, name, public) VALUES ('antivirus-files', 'antivirus-files', true) ON CONFLICT DO NOTHING;
+
+CREATE POLICY "Allow authenticated uploads" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'antivirus-files');
+CREATE POLICY "Allow public reads" ON storage.objects FOR SELECT TO public USING (bucket_id = 'antivirus-files');
+CREATE POLICY "Allow authenticated updates" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'antivirus-files');
+CREATE POLICY "Allow authenticated deletes" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'antivirus-files');

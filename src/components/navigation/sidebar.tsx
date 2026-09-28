@@ -21,7 +21,8 @@ import {
     Mail,
     Key,
     Landmark,
-    Calculator
+    Calculator,
+    DatabaseBackup
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -52,6 +53,7 @@ const menuGroups = [
             { name: "Antivirus", href: "/dashboard/antivirus", icon: Shield },
             { name: "Cuentas Correo", href: "/dashboard/corporate-emails", icon: Mail },
             { name: "Lic. Software", href: "/dashboard/software-licenses", icon: Key },
+            { name: "Copias de Seguridad", href: "/dashboard/backups", icon: DatabaseBackup },
         ]
     },
     {

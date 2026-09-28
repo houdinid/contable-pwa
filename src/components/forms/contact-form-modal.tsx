@@ -29,6 +29,12 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
     const [defaultExpenseCategoryId, setDefaultExpenseCategoryId] = useState(""); // New State
     const [googleMapsUrl, setGoogleMapsUrl] = useState("");
 
+    // Recurring Billing State
+    const [isRecurringBilling, setIsRecurringBilling] = useState(false);
+    const [recurringAmount, setRecurringAmount] = useState<number | "">("");
+    const [recurringDescription, setRecurringDescription] = useState("");
+    const [recurringDayOfMonth, setRecurringDayOfMonth] = useState<number | "">("");
+
     // Bank Accounts State
     const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
 
@@ -70,6 +76,11 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
             setDefaultExpenseCategoryId(initialData.defaultExpenseCategoryId || ""); // Load
             setGoogleMapsUrl(initialData.googleMapsUrl || "");
             setBankAccounts(initialData.bankAccounts || []);
+            
+            setIsRecurringBilling(initialData.isRecurringBilling || false);
+            setRecurringAmount(initialData.recurringAmount || "");
+            setRecurringDescription(initialData.recurringDescription || "");
+            setRecurringDayOfMonth(initialData.recurringDayOfMonth || "");
 
             // Clean temp fields
             setNewBankName("");
@@ -89,6 +100,11 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
             setDefaultExpenseCategoryId(""); // Reset
             setGoogleMapsUrl("");
             setBankAccounts([]);
+            
+            setIsRecurringBilling(false);
+            setRecurringAmount("");
+            setRecurringDescription("");
+            setRecurringDayOfMonth("");
 
             setNewBankName("");
             setNewAccountNumber("");
@@ -113,7 +129,11 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                 specialtyId: type === 'supplier' ? specialtyId : undefined,
                 defaultExpenseCategoryId: type === 'supplier' ? defaultExpenseCategoryId : undefined, // Save
                 googleMapsUrl,
-                bankAccounts
+                bankAccounts,
+                isRecurringBilling,
+                recurringAmount: recurringAmount === "" ? undefined : Number(recurringAmount),
+                recurringDescription,
+                recurringDayOfMonth: recurringDayOfMonth === "" ? undefined : Number(recurringDayOfMonth),
             };
 
             let newId;
@@ -368,6 +388,64 @@ export function ContactFormModal({ isOpen, onClose, onSuccess, initialData, isEd
                                     {getCategoryOptions()}
                                 </select>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Recurring Billing (Client Only) */}
+                    {type === 'client' && (
+                        <div className="space-y-4 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={isRecurringBilling}
+                                    onChange={(e) => setIsRecurringBilling(e.target.checked)}
+                                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                                />
+                                <span className="font-medium text-indigo-900 dark:text-indigo-400">Activar Facturación Recurrente Automática</span>
+                            </label>
+                            
+                            {isRecurringBilling && (
+                                <div className="grid gap-4 mt-4 pt-4 border-t border-indigo-100 dark:border-indigo-900/50">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Día de cobro (1-31) *</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="31"
+                                                required={isRecurringBilling}
+                                                value={recurringDayOfMonth}
+                                                onChange={(e) => setRecurringDayOfMonth(e.target.value ? Number(e.target.value) : "")}
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                placeholder="Ej: 1"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Valor mensual *</label>
+                                            <input
+                                                type="number"
+                                                required={isRecurringBilling}
+                                                value={recurringAmount}
+                                                onChange={(e) => setRecurringAmount(e.target.value ? Number(e.target.value) : "")}
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                placeholder="Ej: 50000"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción del Servicio *</label>
+                                        <input
+                                            type="text"
+                                            required={isRecurringBilling}
+                                            value={recurringDescription}
+                                            onChange={(e) => setRecurringDescription(e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            placeholder="Ej: Servicio de mantenimiento"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">El sistema agregará automáticamente "- Mes Año" al final de esta descripción (Ej: Servicio de mantenimiento - Septiembre 2026).</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

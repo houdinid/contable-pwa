@@ -4,5 +4,11 @@
             "NEXT_DISABLE_ESLINT": "1",
             "NEXT_DISABLE_TYPESCRIPT": "1"
         }
-    }
+    },
+    "crons": [
+        {
+            "path": "/api/cron/recurring-billing",
+            "schedule": "0 8 * * *"
+        }
+    ]
 }

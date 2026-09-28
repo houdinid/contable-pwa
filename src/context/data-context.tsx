@@ -1714,7 +1714,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             for (const table of tableOrder) {
                 if (data[table] && Array.isArray(data[table]) && data[table].length > 0) {
                     console.log(`Importing ${table}...`);
-                    const { error } = await supabase.from(table).upsert(data[table], { onConflict: 'id' }); // Upsert by ID
+                    const conflictKey = table === 'user_roles' ? 'user_id' : 'id';
+                    const { error } = await supabase.from(table).upsert(data[table], { onConflict: conflictKey });
                     if (error) {
                         console.error(`Error importing table ${table}:`, error);
                         // Don't break completely, try next table, but warn

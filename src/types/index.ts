@@ -1,4 +1,4 @@
-﻿export type ContactType = 'client' | 'supplier';
+export type ContactType = 'client' | 'supplier';
 
 export interface BankAccount {
   id: string;
@@ -23,6 +23,13 @@ export interface Contact {
   website?: string; // Página Web
   bankAccounts?: BankAccount[]; // Multiples cuentas bancarias
   creditBalance?: number; // Saldo a favor del cliente
+  
+  // Facturación Recurrente
+  isRecurringBilling?: boolean;
+  recurringAmount?: number;
+  recurringDescription?: string;
+  recurringDayOfMonth?: number;
+  
   createdAt: string;
 }
 
