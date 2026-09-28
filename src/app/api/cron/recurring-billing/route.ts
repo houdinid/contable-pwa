@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 
-export const maxDuration = 60; // Set max duration for serverless function (optional)
-
 // Bypassing RLS with Service Role Key
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
