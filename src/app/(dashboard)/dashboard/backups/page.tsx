@@ -210,7 +210,7 @@ export default function BackupsPage() {
     };
 
     const copyScriptCommand = () => {
-        navigator.clipboard.writeText('powershell -ExecutionPolicy Bypass -File scripts/backup.ps1');
+        navigator.clipboard.writeText('powershell -ExecutionPolicy Bypass -File "D:\\contable-pwa\\scripts\\backup.ps1"');
         setCopiedScript(true);
         setTimeout(() => setCopiedScript(false), 2500);
     };
@@ -479,23 +479,27 @@ export default function BackupsPage() {
                                     <Terminal size={16} className="text-indigo-600 dark:text-indigo-400" />
                                     Cómo ejecutar esta copia en la oficina:
                                 </h3>
-                                <ol className="text-xs text-muted-foreground space-y-2 list-decimal list-inside pl-1">
-                                    <li>Conecta el disco externo (<code className="font-mono">F:</code>) al equipo de la oficina.</li>
-                                    <li>Verifica que tengas acceso al servidor <code className="font-mono">\\192.168.2.61</code>.</li>
-                                    <li>
-                                        Abre <strong>PowerShell</strong> en la carpeta del proyecto <code className="font-mono">c:\contable-pwa</code> y ejecuta:
-                                    </li>
-                                </ol>
+                                <div className="space-y-3">
+                                    <p className="text-xs text-muted-foreground">
+                                        <strong>Opción 1 (Doble clic - Más fácil):</strong> Ve a la carpeta del proyecto en el Explorador de Windows y haz doble clic sobre:
+                                    </p>
+                                    <div className="p-3 bg-muted/60 border border-border rounded-lg text-xs font-mono text-foreground font-semibold flex items-center gap-2">
+                                        <span>📁 D:\contable-pwa\ejecutar_backup.bat</span>
+                                    </div>
 
-                                <div className="flex items-center gap-2 bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs">
-                                    <span className="flex-1 truncate">powershell -ExecutionPolicy Bypass -File scripts/backup.ps1</span>
-                                    <button
-                                        onClick={copyScriptCommand}
-                                        className="p-1.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white transition-colors cursor-pointer"
-                                        title="Copiar comando"
-                                    >
-                                        {copiedScript ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
-                                    </button>
+                                    <p className="text-xs text-muted-foreground pt-1">
+                                        <strong>Opción 2 (Por consola PowerShell):</strong> Puedes pegar este comando en cualquier ventana de PowerShell:
+                                    </p>
+                                    <div className="flex items-center gap-2 bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs">
+                                        <span className="flex-1 truncate">powershell -ExecutionPolicy Bypass -File "D:\contable-pwa\scripts\backup.ps1"</span>
+                                        <button
+                                            onClick={copyScriptCommand}
+                                            className="p-1.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white transition-colors cursor-pointer"
+                                            title="Copiar comando"
+                                        >
+                                            {copiedScript ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <p className="text-[11px] text-muted-foreground">
