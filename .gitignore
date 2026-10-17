@@ -36,6 +36,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# backup script runtime files
+scripts/progress.json
+scripts/pause.flag
+scripts/*.flag
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

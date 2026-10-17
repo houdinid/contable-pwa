@@ -1,18 +1,32 @@
 import { NextResponse } from 'next/server';
-import { spawn, exec } from 'child_process';
+import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 
 const execAsync = promisify(exec);
 
+const isWindows = process.platform === 'win32';
+const isCloud = !isWindows || !!process.env.VERCEL;
+
 const SCRIPT_DIR = path.join(process.cwd(), 'scripts');
 const SCRIPT_PATH = path.join(SCRIPT_DIR, 'backup.ps1');
 const PAUSE_FLAG = path.join(SCRIPT_DIR, 'pause.flag');
 const PROGRESS_FILE = path.join(SCRIPT_DIR, 'progress.json');
 
+function safeUnlink(filePath: string) {
+    try {
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+    } catch (e) {
+        console.warn(`Could not unlink ${filePath}:`, e);
+    }
+}
+
 // Helper to check if a process is running
 async function isScriptRunning() {
+    if (!isWindows) return false;
     try {
         const { stdout } = await execAsync('wmic process where "name=\'powershell.exe\'" get commandline');
         return stdout.includes('backup.ps1');
@@ -22,6 +36,18 @@ async function isScriptRunning() {
 }
 
 export async function GET() {
+    if (isCloud) {
+        return NextResponse.json({
+            isCloud: true,
+            isSupported: false,
+            isRunning: false,
+            isPaused: false,
+            progress: null,
+            scheduledTask: null,
+            message: 'El respaldo de archivos locales (CMS / Robocopy) requiere ejecutarse en un entorno local Windows.'
+        });
+    }
+
     const isRunning = await isScriptRunning();
     const isPaused = fs.existsSync(PAUSE_FLAG);
     
@@ -42,7 +68,6 @@ export async function GET() {
     let scheduledTask = null;
     try {
         const { stdout } = await execAsync('schtasks /Query /TN "ContableBackup" /FO CSV');
-        // Parse CSV roughly: "TaskName","Next Run Time","Status"
         const lines = stdout.trim().split('\n');
         if (lines.length > 1) {
             const data = lines[1].split('","');
@@ -56,6 +81,8 @@ export async function GET() {
     }
 
     return NextResponse.json({
+        isCloud: false,
+        isSupported: true,
         isRunning,
         isPaused,
         progress,
@@ -64,13 +91,21 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    if (isCloud) {
+        return NextResponse.json({ 
+            error: 'El respaldo de archivos por PowerShell/Robocopy no se puede ejecutar en la nube (Vercel). Debe ejecutarse en la máquina local de la oficina con acceso a la red \\\\192.168.2.61.' 
+        }, { status: 400 });
+    }
+
     try {
         const body = await request.json();
         const { action, options } = body;
 
         // Ensure script dir exists
         if (!fs.existsSync(SCRIPT_DIR)) {
-            fs.mkdirSync(SCRIPT_DIR, { recursive: true });
+            try {
+                fs.mkdirSync(SCRIPT_DIR, { recursive: true });
+            } catch {}
         }
 
         if (action === 'start') {
@@ -79,15 +114,10 @@ export async function POST(request: Request) {
             }
 
             // Clean up old flags/files
-            if (fs.existsSync(PAUSE_FLAG)) fs.unlinkSync(PAUSE_FLAG);
-            if (fs.existsSync(PROGRESS_FILE)) fs.unlinkSync(PROGRESS_FILE);
+            safeUnlink(PAUSE_FLAG);
+            safeUnlink(PROGRESS_FILE);
 
-            let psArgs = ['-ExecutionPolicy', 'Bypass', '-File', SCRIPT_PATH];
-            
-            if (options?.skipCanary) psArgs.push('-SkipCanaryCheck');
-            if (options?.skipVolume) psArgs.push('-SkipVolumeCheck');
-            
-            // Use 'start' without '/B' to pop up a visible window. Remove '-WindowStyle Hidden'.
+            // Use 'start' to pop up a visible window.
             const cmd = `start powershell.exe -ExecutionPolicy Bypass -File "${SCRIPT_PATH}" ${options?.skipCanary ? '-SkipCanaryCheck' : ''} ${options?.skipVolume ? '-SkipVolumeCheck' : ''} -PauseFlagPath "${PAUSE_FLAG}" -ProgressFilePath "${PROGRESS_FILE}"`;
             
             exec(cmd, { cwd: SCRIPT_DIR }, (error) => {
@@ -98,14 +128,16 @@ export async function POST(request: Request) {
         }
 
         if (action === 'pause') {
-            fs.writeFileSync(PAUSE_FLAG, 'paused');
+            try {
+                fs.writeFileSync(PAUSE_FLAG, 'paused');
+            } catch (e: any) {
+                return NextResponse.json({ error: 'No se pudo pausar: ' + e.message }, { status: 500 });
+            }
             return NextResponse.json({ success: true, message: 'Backup pausado' });
         }
 
         if (action === 'resume') {
-            if (fs.existsSync(PAUSE_FLAG)) {
-                fs.unlinkSync(PAUSE_FLAG);
-            }
+            safeUnlink(PAUSE_FLAG);
             return NextResponse.json({ success: true, message: 'Backup reanudado' });
         }
 
@@ -113,9 +145,8 @@ export async function POST(request: Request) {
             // Kill powershell and robocopy
             try {
                 await execAsync('taskkill /F /IM robocopy.exe /T');
-            } catch {} // ignore if not running
+            } catch {}
             try {
-                // Find specific powershell process running backup.ps1
                 const { stdout } = await execAsync('wmic process where "name=\'powershell.exe\'" get processid,commandline');
                 const lines = stdout.split('\n');
                 for (const line of lines) {
@@ -128,20 +159,15 @@ export async function POST(request: Request) {
                 }
             } catch {}
             
-            if (fs.existsSync(PROGRESS_FILE)) {
-                fs.unlinkSync(PROGRESS_FILE);
-            }
-            if (fs.existsSync(PAUSE_FLAG)) {
-                fs.unlinkSync(PAUSE_FLAG);
-            }
+            safeUnlink(PROGRESS_FILE);
+            safeUnlink(PAUSE_FLAG);
 
             return NextResponse.json({ success: true, message: 'Backup detenido' });
         }
 
         if (action === 'schedule') {
-            const { time } = options; // time format "HH:mm"
+            const { time } = options;
             if (!time) {
-                // Remove task if time is empty
                 try {
                     await execAsync('schtasks /Delete /TN "ContableBackup" /F');
                     return NextResponse.json({ success: true, message: 'Programación eliminada' });
@@ -150,7 +176,6 @@ export async function POST(request: Request) {
                 }
             }
 
-            // Create or update task
             const psCmd = `powershell.exe -ExecutionPolicy Bypass -File "${SCRIPT_PATH}" -ProgressFilePath "${PROGRESS_FILE}" -PauseFlagPath "${PAUSE_FLAG}"`;
             
             try {
